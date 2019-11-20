@@ -1,0 +1,480 @@
+/*
+# Copyright (c) 2006-2016 Apple Inc. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/
+package org.bedework.davtester;
+
+//import datetime;
+//import src.xmlDefs;
+//import urlparse;
+//import uuid4;
+
+import org.bedework.util.misc.Util;
+import org.bedework.util.misc.Util.PropertiesPropertyFetcher;
+import org.bedework.util.xml.XmlUtil;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+
+//from uuid
+//        from urlparse
+
+/**
+ * Class that encapsulates the server information for a CalDAV test run.
+ */
+public class Serverinfo {
+  String host;
+  int nonsslport = 80;
+  int sslport = 443;
+  String afunix;
+  String host2 = "";
+  int nonsslport2 = 80;
+  int sslport2 = 443;
+  String afunix2;
+  String authtype = "basic";
+  String certdir = "";
+
+  boolean ssl;
+  int port;
+  int port2;
+
+  Set<String> features = new TreeSet<>();
+  String user = "";
+  String pswd = "";
+  int waitcount = 120;
+  double waitdelay = 0.25;
+  int waitsuccess = 10;
+  final Properties subsdict = new Properties();
+  final Properties extrasubsdict = new Properties();
+  List<String> calendardatafilters = new ArrayList<String>();
+  List<String> addressdatafilters = new ArrayList<String>();
+  Date dtnow = new Date();
+  Calendar calNow = new GregorianCalendar();
+
+  static class KeyVal {
+    final String key;
+    final String val;
+
+    KeyVal(final String key,
+            final String val) {
+      this.key = key;
+      this.val = val;
+    }
+  }
+
+  private final PropertiesPropertyFetcher subsPfetcher =
+          new PropertiesPropertyFetcher(subsdict);
+
+  private final PropertiesPropertyFetcher extrasubsPfetcher =
+          new PropertiesPropertyFetcher(extrasubsdict);
+
+
+  Serverinfo() {
+  }
+
+  // dtnow needs to be fixed to a single date at the start of the tests just in case the tests
+  // run over a day boundary.
+
+  String subs(final String subval,
+              final PropertiesPropertyFetcher db) {
+    var sub = subval;
+
+    // Special handling for relative date-times
+    var pos = sub.indexOf("$now.");
+    while (pos != -1) {
+      var endpos = sub.indexOf(":", pos);
+      var subpos = sub.substring(pos);
+      String value;
+
+      if (subpos.startsWith("$now.year.")) {
+        var yearoffset = ival(sub, pos + 10, endpos);
+        value = String.format("%d", calNow.get(Calendar.YEAR) + yearoffset);
+      } else if (subpos.startsWith("$now.month.")) {
+        var monthoffset = ival(sub, pos + 11, endpos);
+        var month = calNow.get(Calendar.MONTH) + monthoffset;
+        var year = calNow.get(Calendar.YEAR) + (int)(month - 1 / 12);
+        month = ((month - 1) % 12) + 1;
+        value = String.format("%d%02d", year, month);
+      } else if (sub.substring(pos).startsWith("$now.week.")) {
+        var weekoffset = ival(sub, pos + 10, endpos);
+        var caloffset = (Calendar)calNow.clone();
+        caloffset.add(Calendar.DAY_OF_YEAR, 7 * weekoffset);
+        value = String.format("%d%02d%02d",
+                              caloffset.get(Calendar.YEAR),
+                              caloffset.get(Calendar.MONTH),
+                              caloffset.get(Calendar.DAY_OF_MONTH));
+      } else{
+        var dayoffset = ival(sub, pos + 5, endpos);
+        var caloffset = (Calendar)calNow.clone();
+        caloffset.add(Calendar.DAY_OF_YEAR, dayoffset);
+
+        value = String.format("%d%02d%02d",
+                              caloffset.get(Calendar.YEAR),
+                              caloffset.get(Calendar.MONTH),
+                              caloffset.get(Calendar.DAY_OF_MONTH));
+      }
+
+      sub = String.format("%s%s%s", sub.substring(0, pos), value, sub.substring(endpos + 1));
+      pos = sub.indexOf("$now.");
+    }
+
+    if (sub.contains("$uidrandom:")) {
+      sub = sub.replace("$uidrandom:", UUID.randomUUID().toString());
+    }
+
+    final PropertiesPropertyFetcher pfetcher;
+
+    if (db == null) {
+      pfetcher = subsPfetcher;
+    } else {
+      pfetcher = db;
+    }
+
+    return propertyReplace(sub, pfetcher);
+  }
+
+  void addsubs(final Map<String, String> items,
+               final Properties db) {
+    final Properties dbActual;
+
+    if (db == null) {
+      dbActual = subsdict;
+    } else {
+      dbActual = db;
+    }
+
+    for (var key: items.keySet()){
+      dbActual.put(key, items.get(key));
+    }
+
+    if (db == null) {
+      updateParams();
+    }
+  }
+
+  public boolean hasextrasubs () {
+    return extrasubsdict.size() > 0;
+  }
+
+  public String extrasubs(final String str) {
+    return subs(str, extrasubsPfetcher);
+  }
+
+  public void addextrasubs(final List<KeyVal> items) {
+    final Map<String, String> processed = new HashMap<>();
+
+    // Various "functions" might be applied to a variable name to cause the value to
+    // be changed in various ways
+    for (var keyval: items) {
+      var variable = keyval.key;
+      var value = keyval.val;
+
+      // basename() - extract just the URL last path segment from the value
+      if (variable.startsWith("basename(")) {
+        variable = variable.substring("basename(".length(),
+                                      variable.length() - 1);
+        value = value.trim();
+        if (value.endsWith("/")) {
+          value = value.substring(0, value.length() - 1);
+        }
+
+        var els = value.split("/");
+
+        value = els[els.length - 1];
+
+        // urlpath() - extract just the URL path segment from the value
+      } else if (variable.startsWith("urlpath(")) {
+        variable = variable.substring("urlpath(".length(),
+                                      variable.length() - 1);
+        URL url = null;
+        try {
+          url = new URL(value);
+        } catch (MalformedURLException e) {
+          throw new RuntimeException(e);
+        }
+        value = url.getPath();
+      }
+
+      processed.put(variable, value);
+    }
+
+    addsubs(processed, extrasubsdict);
+  }
+
+  public List<KeyVal> newUIDs () {
+    var res = new ArrayList<KeyVal>();
+
+    for (int i = 1; i <= 21; i++) {
+      var key = String.format("$uid%d:", i);
+      var val = UUID.randomUUID().toString();
+      subsdict.put(key, val);
+      extrasubsdict.put(key, val);
+      res.add(new KeyVal(key, val));
+    }
+
+    return res;
+  }
+
+  public void parseXML(final Node node) {
+    for (var child: children(node)) {
+      var text = content(child);
+      var textUtf8 = contentUtf8(child);
+          
+      if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_HOST)) {
+        try {
+          host = textUtf8;
+        } catch (final Throwable t){
+          host = "localhost";
+        }
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT)) {
+        nonsslport = Integer.valueOf(text);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SSLPORT)) {
+        sslport = Integer.valueOf(text);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
+        afunix = text;
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_HOST2)) {
+        try {
+          host2 = textUtf8;
+        } catch (final Throwable t) {
+          host2 = "localhost";
+        }
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT2)) {
+        nonsslport2 = Integer.valueOf(text);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SSLPORT2)) {
+        sslport2 = Integer.valueOf(text);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_UNIX2)) {
+        afunix2 = text;
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_AUTHTYPE)) {
+        authtype = textUtf8;
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
+        certdir = textUtf8;
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
+        waitcount = Integer.valueOf(textUtf8);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
+        waitdelay = Float.valueOf(textUtf8);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
+        waitsuccess = Integer.valueOf(text);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
+        parseFeatures(child);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
+        parseSubstitutionsXML(child);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_CALENDARDATAFILTER)) {
+        calendardatafilters.add(textUtf8);
+      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_ADDRESSDATAFILTER)) {
+        addressdatafilters.add(textUtf8);
+      }
+
+      updateParams();
+    }
+  }
+
+  public void parseFeatures (final Node node) {
+    for (var child: children(node)) {
+      if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
+        features.add(contentUtf8(child));
+      }
+    }
+  }
+
+  public void updateParams () {
+    // Expand substitutions fully at this point
+    for (var key: subsdict.keySet()) {
+      subsdict.put(key, propertyReplace(subsdict.getProperty((String)key), subsPfetcher));
+    }
+
+    // Now cache some useful substitutions
+    String user;
+    if (subsdict.contains("$userid1:")) {
+      user = "$userid1:";
+    } else {
+      user = "$userid01:";
+    }
+
+    String pswd;
+    if (subsdict.contains("$pswd1:")) {
+      pswd = "$pswd1:";
+    } else {
+      pswd = "$pswd01:";
+    }
+
+    if (!subsdict.contains(user)) {
+      throw new RuntimeException("Must have userid substitution");
+    }
+    user = subsdict.getProperty(user);
+
+    if (!subsdict.contains(pswd)) {
+      throw new RuntimeException("Must have pswd substitution");
+    }
+    pswd = subsdict.getProperty(pswd);
+  }
+
+  public void parseRepeatXML(final Node node){
+    // Look for count
+    var count = XmlUtil.numAttrs(node);
+
+    for (var child: children(node)) {
+      parseSubstitutionXML(child, count);
+    }
+  }
+
+  public void parseSubstitutionsXML(final Node node){
+    for (var child: children(node)) {
+      if(XmlUtil.nodeMatches(child,XmlDefs.ELEMENT_SUBSTITUTION)){
+        parseSubstitutionXML(child, 0);
+      }else if(XmlUtil.nodeMatches(child,XmlDefs.ELEMENT_REPEAT)){
+        parseRepeatXML(child);
+      }
+    }
+  }
+
+  public void parseSubstitutionXML(final Node node, final int repeat) {
+    if (!XmlUtil.nodeMatches(node, XmlDefs.ELEMENT_SUBSTITUTION)) {
+      return;
+    }
+
+    String key = null;
+    String value = null;
+    for (var schild : children(node)) {
+      if (XmlUtil.nodeMatches(schild, XmlDefs.ELEMENT_KEY)) {
+        key = contentUtf8(schild);
+      } else if (XmlUtil.nodeMatches(schild, XmlDefs.ELEMENT_VALUE)) {
+        var str = contentUtf8(schild);
+
+        if (str == null) {
+          value = "";
+        } else {
+          value = contentUtf8(schild);
+        }
+      }
+    }
+
+    if ((key == null) || (value == null)) {
+      return;
+    }
+
+    if (repeat == 0) {
+      subsdict.put(key, value);
+      return;
+    }
+
+    // Key is a format
+    // Value might be
+    for (var count = 1; count <= repeat; count++) {
+      if (value.contains("%")) {
+        subsdict.put(String.format(key, count),
+                     String.format(value, count));
+      } else {
+        subsdict.put(String.format(key, count), value);
+      }
+    }
+  }
+
+  public static String propertyReplace(final String val,
+                                       final Util.PropertyFetcher props) {
+    if (val == null) {
+      return null;
+    }
+
+    int pos = val.indexOf("$");
+
+    if (pos < 0) {
+      return val;
+    }
+
+    final StringBuilder sb = new StringBuilder(val.length());
+    int segStart = 0;
+
+    while (true) {
+      if (pos > 0) {
+        sb.append(val.substring(segStart, pos));
+      }
+
+      final int end = val.indexOf(":", pos);
+
+      if (end < 0) {
+        //No matching close. Just append rest and return.
+        sb.append(val.substring(pos));
+        break;
+      }
+
+      final String pval = props.get(val.substring(pos + 2, end).trim());
+
+      if (pval != null) {
+        sb.append(pval);
+      }
+
+      segStart = end + 1;
+      if (segStart > val.length()) {
+        break;
+      }
+
+      pos = val.indexOf(":", segStart);
+
+      if (pos < 0) {
+        //Done.
+        sb.append(val.substring(segStart));
+        break;
+      }
+    }
+
+    return sb.toString();
+  }
+
+  public static List<Element> children(Node nd) {
+    try {
+      return XmlUtil.getElements(nd);
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static String content(Element nd) {
+    try {
+      return XmlUtil.getElementContent(nd);
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static String contentUtf8(Element nd) {
+    try {
+      var str = XmlUtil.getElementContent(nd);
+      if (str == null) {
+        return null;
+      }
+      return StandardCharsets.UTF_8.encode(str).toString();
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static int ival(final String val, final int start, final int end) {
+    return Integer.valueOf(val.substring(start, end));
+  }
+}
