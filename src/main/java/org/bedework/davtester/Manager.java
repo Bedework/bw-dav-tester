@@ -35,15 +35,15 @@ EX_FAILED_REQUEST = "HTTP Request Failed"
  */
 
 import org.bedework.davtester.observers.BaseResultsObserver;
+import org.bedework.util.args.Args;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
 
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
+import java.util.TreeSet;
 
 /**
     Main class that runs test suites defined in an XML config file.
@@ -57,28 +57,65 @@ public class Manager implements Logged {
   // 1 for each of above
   private int[] totals = {0, 0, 0, 0};
 
-  private Serverinfo serverInfo = new Serverinfo();
+  public Serverinfo serverInfo = new Serverinfo();
   private String baseDir = "";
   private String dataDir;
-  private String pretest;
-  private String posttest;
-  private List<String> tests = new ArrayList<>();
+  String pretestFile;
+  private Caldavtest pretest;
+  String posttestFile;
+  private Caldavtest posttest;
+  private List<Caldavtest> tests = new ArrayList<>();
   private boolean textMode;
   private int pid;
-  private String memUsage;
-  private String randomSeed;
+  boolean memUsage;
+  String randomSeed;
   private String digestCache;
-  private String postgresLog;
-  private String logFile;
+  String postgresLog;
+  String logFile;
   private Writer logFileWriter;
   
   private List<BaseResultsObserver> observers = new ArrayList<>();
   private Properties results = new Properties();
   
-  private boolean stoponfail = false;
-  private boolean printRequest = false;
-  private boolean printResponse = false;
-  private boolean printRequestResponseOnError = false;
+  boolean stoponfail = false;
+  boolean printRequest = false;
+  boolean printResponse = false;
+  boolean printRequestResponseOnError = false;
+
+  public static class TestResult {
+    public int ok;
+    public int failed;
+    public int ignored;
+
+    public void add(final TestResult tr) {
+      ok += tr.ok;
+      failed += tr.failed;
+      ignored += tr.ignored;
+    }
+
+    public TestResult() {
+    }
+
+    public TestResult(final int ok,
+                      final int failed,
+                      final int ignored) {
+      this.ok = ok;
+      this.failed = failed;
+      this.ignored = ignored;
+    }
+
+    public static TestResult ok() {
+      return new TestResult(1, 0, 0);
+    }
+
+    public static TestResult failed() {
+      return new TestResult(0, 1, 0);
+    }
+
+    public static TestResult ignored() {
+      return new TestResult(0, 0, 1);
+    }
+  }
 
   public void Manager(final boolean textMode) {
     this.textMode = textMode;
@@ -184,7 +221,7 @@ public class Manager implements Logged {
                         final String testfiles,
                         final boolean ssl,
                         final boolean all, 
-                        final List moresubs) {
+                        final Properties moresubs) {
       trace(String.format("Reading Server Info from \"%s\"",
                           serverfile));
 
@@ -223,223 +260,71 @@ public class Manager implements Logged {
       }
 
       if (ssl) {
-        moresubs["$host:"] = String.format("https://%s", serverInfo.host);
-        moresubs["$host2:"] = String.format("https://%s", serverInfo.host2);
+        moresubs.put("$host:", String.format("https://%s", serverInfo.host);
+        moresubs.put("$host2:", String.format("https://%s", serverInfo.host2);
       } else {
-        moresubs["$host:"] = String.format("http://%s", serverInfo.host);
-        moresubs["$host2:"] = String.format("http://%s", serverInfo.host2);
+        moresubs.put("$host:", String.format("http://%s", serverInfo.host);
+        moresubs.put("$host2:", String.format("http://%s", serverInfo.host2);
       }
 
         if ((ssl && (serverInfo.port != 443)) || (!ssl && (serverInfo.port != 80))) {
-          moresubs["$host:"] += String.format(":%d", serverInfo.port);
+          var val = moresubs.getProperty("$host:");
+          moresubs.put("$host:",
+                       val + String.format(":%d", serverInfo.port));
         }
-        moresubs["$hostssl:"] = String.format("https://%s", serverInfo.host);
+        moresubs.put("$hostssl:",
+                     String.format("https://%s", serverInfo.host));
         if (serverInfo.sslport != 443) {
-          moresubs["$hostssl:"] += String.format(":%d", serverInfo.sslport);
+          var val = moresubs.getProperty("$hostssl:");
+          moresubs.put("$hostssl:",
+                       val + String.format(":%d", serverInfo.sslport));
         }
 
-        if ((ssl && (serverInfo.port2 != 443)) || (!ssl && (serverInfo.port2 != 80))) {
-          moresubs["$host2:"] += String.format(":%d", serverInfo.port2);
+        if ((ssl && (serverInfo.port2 != 443)) ||
+                (!ssl && (serverInfo.port2 != 80))) {
+          var val = moresubs.getProperty("$host2:");
+          moresubs.put("$host2:",
+                       val + String.format(":%d", serverInfo.port2));
         }
-        moresubs["$hostssl2:"] = String.format("https://%s", serverInfo.host2);
+        moresubs.put("$hostssl2:",
+                     String.format("https://%s", serverInfo.host2));
         if (serverInfo.sslport2 != 443) {
-          moresubs["$hostssl2:"] += String
-                  .format(":%d", serverInfo.sslport2);
+          var val = moresubs.getProperty("$hostssl2:");
+          moresubs.put("$hostssl2:",
+                       val + String.format(":%d", serverInfo.sslport2));
         }
 
         serverInfo.addsubs(moresubs)
 
-        public void _loadFile(fname, ignore_root=True) {
-            # Open and parse the config file
-            try:
-                tree = ElementTree(file=fname)
-            except ExpatError, e:
-                raise RuntimeError("Unable to parse file '%s' because: %s" % (fname, e,))
-            caldavtest_node = tree.getroot()
-            if caldavtest_node.tag != src.xmlDefs.ELEMENT_CALDAVTEST:
-                if ignore_root:
-                    message("trace", "Ignoring file \"{f}\" because it is not a test file".format(f=fname))
-                    return None
-                } else {
-                    raise EX_INVALID_CONFIG_FILE
-            if not len(caldavtest_node) {
-                raise EX_INVALID_CONFIG_FILE
+        for (ctr, testfile in enumerate(testfiles)){
+        message("load", testfile, ctr + 1, len(testfiles));
 
-            message("Reading Test Details from \"{f}\"".format(f=fname))
-            if base_dir:
-                fname = fname[len(base_dir) + 1:]
-            test = caldavtest (fname)
-            test.parseXML(caldavtest_node)
-            return test
+        // Open and parse the config file
+        var test = new Caldavtest(this, testfile, false);
 
-        for ctr, testfile in enumerate(testfiles) {
-            message("load", testfile, ctr + 1, len(testfiles))
+        // ignore if all mode and ignore-all is set
+        if (!all || !test.ignoreAll) {
+          tests.add(test);
+        }
+      }
 
-            # Open and parse the config file
-            test = _loadFile(testfile)
-            if test == null:
-                continue
-
-            # ignore if all mode and ignore-all is set
-            if !all|| !test.ignore_all:
-                tests.append(test)
-
-        if pretest != null:
-            pretest = _loadFile(pretest, False)
-        if posttest != null:
-            posttest = _loadFile(posttest, False)
+        if (pretestFile != null) {
+          pretest = new Caldavtest(this, pretestFile, false)
+        }
+        if (posttestFile != null){
+          posttest = new Caldavtest(this, posttestFile, false)
+        }
 
         message("load", None, ctr + 1, len(testfiles))
+    }
 
-    public void readCommandLine () {
-        sname = "scripts/server/serverinfo.xml"
-        dname = "scripts/tests"
-        fnames = []
-        ssl = False
-        all = False
-        excludes = set()
-        subdir = None
-        pidfile = "../CalendarServer/logs/caldavd.pid"
-        random_order = False
-        random_seed = str(random.randint(0, 1000000))
-        observer_names = []
+      public void runAll () {
+        startTime = time.time();
 
-        options, args = getopt.getopt(
-            sys.argv[1:],
-            "s:mo:x:",
-            [
-                "ssl",
-                "all",
-                "basedir=",
-                "subdir=",
-                "exclude=",
-                "pretest=",
-                "posttest=",
-                "observer=",
-                "pid=",
-                "postgres-log=",
-                "random",
-                "random-seed=",
-                "stop",
-                "print-details-onfail",
-                "always-print-request",
-                "always-print-response",
-                "debug"
-            ],
-        )
+        message("start");
 
-        # Process single options
-        for option, value in options:
-            if option == "-s":
-                sname = value
-            } else if (option == "-x":
-                dname = value
-            } else if (option == "--ssl":
-                ssl = True
-            } else if (option == "--all":
-                all = True
-            } else if (option == "--basedir":
-                base_dir = value
-                sname = os.path.join(base_dir, "serverinfo.xml")
-                dname = os.path.join(base_dir, "tests")
-                data_dir = os.path.join(base_dir, "data")
+        var count = new TestResult();
 
-                # Also add parent to PYTHON path
-                sys.path.append(os.path.dirname(base_dir))
-
-            } else if (option == "--subdir":
-                subdir = value + "/"
-            } else if (option == "--exclude":
-                excludes.add(value)
-            } else if (option == "--pretest":
-                pretest = value
-            } else if (option == "--posttest":
-                posttest = value
-            } else if (option == "-m":
-                memUsage = True
-            } else if (option == "-o":
-                logFile = open(value, "w")
-            } else if (option == "--pid":
-                pidfile = value
-            } else if (option == "--observer":
-                observer_names.append(value)
-            } else if (option == "--postgres-log":
-                postgresLog = value
-            } else if (option == "--stop":
-                stoponfail = True
-            } else if (option == "--print-details-onfail":
-                print_request_response_on_error = True
-            } else if (option == "--always-print-request":
-                print_request = True
-            } else if (option == "--always-print-response":
-                print_response = True
-            } else if (option == "--random":
-                random_order = True
-            } else if (option == "--random-seed":
-                random_seed = value
-            } else if (option == "--debug":
-                debug = True
-
-        if all|| !args:
-            files = []
-            os.path.walk(dname, lambda arg, dir, names: files.extend([os.path.join(dir, name) for name in names]) if not dir.startsWith("test") } else None, None)
-            for file in files:
-                if file.endswith(".xml") && file[len(dname) + 1:] not in excludes:
-                    if subdir == null|| file[len(dname) + 1:].startsWith(subdir) {
-                        fnames.append(file)
-
-        # Remove any server info file from files enumerated by --all
-        fnames[:] = [x for x in fnames if (x != sname)]
-
-        public void _normPath(f) {
-            # paths starting with . or .. or /
-            if f[0] in ('.', '/') {
-                f = os.path.abspath(f)
-
-                # remove unneeded leading path
-                fsplit = f.split(dname)
-                if 2 == len(fsplit) {
-                    f = dname + fsplit[1]
-
-            # relative paths
-            } else {
-                f = os.path.join(dname, f)
-            return f
-
-        # Process any file arguments as test configs
-        for f in args:
-            fnames.append(_normPath(f))
-
-        if pretest != null:
-            pretest = _normPath(pretest)
-        if posttest != null:
-            posttest = _normPath(posttest)
-
-        # Randomize file list
-        if random_order && len(fnames) > 1:
-            random.seed(random_seed)
-            random.shuffle(fnames)
-            randomSeed = random_seed
-
-        # Load observers
-        map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
-
-        readXML(sname, fnames, ssl, all)
-
-        if memUsage:
-            fd = open(pidfile, "r")
-            s = fd.read()
-            pid = int(s)
-
-    public void runAll () {
-
-        startTime = time.time()
-
-        message("start")
-
-        ok = 0
-        failed = 0
-        ignored = 0
         try:
             for ctr, test in enumerate(tests) {
                 if len(tests) > 1:
@@ -447,9 +332,10 @@ public class Manager implements Logged {
                 if pretest != null:
                     o, f, i = pretest.run()
 
-                    # Always stop the tests if the pretest fails
-                    if f != 0:
-                        break
+                    // Always stop the tests if the pretest fails
+                    if (f != 0){
+        break;
+        }
 
                 o, f, i = test.run()
                 ok += o
@@ -480,20 +366,23 @@ public class Manager implements Logged {
             logFile.close()
 
         return failed, endTime - startTime
-
+/*
     public void getMemusage () {
-        """
+          """
 
         @param pid: numeric pid of process to get memory usage for
         @type pid:  int
         @retrun:    tuple of (RSS, VSZ) values for the process
         """
 
-        fd = os.popen("ps -l -p %d" % (pid,))
-        data = fd.read()
-        lines = data.split("\n")
-        procdata = lines[1].split()
-        return int(procdata[6]), int(procdata[7])
+          fd = os.popen("ps -l -p %d" % (pid, ))
+          data = fd.read()
+          lines = data.split("\n")
+          procdata = lines[1].split()
+          return int(procdata[6]), int(procdata[7])
 
-    public void getDataPath (fpath) {
-        return os.path.join(data_dir, fpath) if data_dir } else fpath
+          private String getDataPath (fpath){
+          return os.path.join(data_dir, fpath) if data_dir } else
+          fpath
+        }
+*/

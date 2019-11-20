@@ -24,12 +24,10 @@ import org.bedework.util.misc.Util;
 import org.bedework.util.misc.Util.PropertiesPropertyFetcher;
 import org.bedework.util.xml.XmlUtil;
 
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -41,6 +39,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+
+import static org.bedework.davtester.XmlUtils.children;
+import static org.bedework.davtester.XmlUtils.content;
+import static org.bedework.davtester.XmlUtils.contentUtf8;
+import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 //from uuid
 //        from urlparse
@@ -246,47 +249,47 @@ public class Serverinfo {
       var text = content(child);
       var textUtf8 = contentUtf8(child);
           
-      if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_HOST)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_HOST)) {
         try {
           host = textUtf8;
         } catch (final Throwable t){
           host = "localhost";
         }
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT)) {
         nonsslport = Integer.valueOf(text);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SSLPORT)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_SSLPORT)) {
         sslport = Integer.valueOf(text);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
         afunix = text;
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_HOST2)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_HOST2)) {
         try {
           host2 = textUtf8;
         } catch (final Throwable t) {
           host2 = "localhost";
         }
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT2)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT2)) {
         nonsslport2 = Integer.valueOf(text);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SSLPORT2)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_SSLPORT2)) {
         sslport2 = Integer.valueOf(text);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_UNIX2)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX2)) {
         afunix2 = text;
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_AUTHTYPE)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_AUTHTYPE)) {
         authtype = textUtf8;
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
         certdir = textUtf8;
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
         waitcount = Integer.valueOf(textUtf8);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
         waitdelay = Float.valueOf(textUtf8);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
         waitsuccess = Integer.valueOf(text);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
         parseFeatures(child);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
         parseSubstitutionsXML(child);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_CALENDARDATAFILTER)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_CALENDARDATAFILTER)) {
         calendardatafilters.add(textUtf8);
-      } else if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_ADDRESSDATAFILTER)) {
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_ADDRESSDATAFILTER)) {
         addressdatafilters.add(textUtf8);
       }
 
@@ -296,7 +299,7 @@ public class Serverinfo {
 
   public void parseFeatures (final Node node) {
     for (var child: children(node)) {
-      if (XmlUtil.nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
         features.add(contentUtf8(child));
       }
     }
@@ -345,25 +348,25 @@ public class Serverinfo {
 
   public void parseSubstitutionsXML(final Node node){
     for (var child: children(node)) {
-      if(XmlUtil.nodeMatches(child,XmlDefs.ELEMENT_SUBSTITUTION)){
+      if(nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTION)){
         parseSubstitutionXML(child, 0);
-      }else if(XmlUtil.nodeMatches(child,XmlDefs.ELEMENT_REPEAT)){
+      }else if(nodeMatches(child, XmlDefs.ELEMENT_REPEAT)){
         parseRepeatXML(child);
       }
     }
   }
 
   public void parseSubstitutionXML(final Node node, final int repeat) {
-    if (!XmlUtil.nodeMatches(node, XmlDefs.ELEMENT_SUBSTITUTION)) {
+    if (!nodeMatches(node, XmlDefs.ELEMENT_SUBSTITUTION)) {
       return;
     }
 
     String key = null;
     String value = null;
     for (var schild : children(node)) {
-      if (XmlUtil.nodeMatches(schild, XmlDefs.ELEMENT_KEY)) {
+      if (nodeMatches(schild, XmlDefs.ELEMENT_KEY)) {
         key = contentUtf8(schild);
-      } else if (XmlUtil.nodeMatches(schild, XmlDefs.ELEMENT_VALUE)) {
+      } else if (nodeMatches(schild, XmlDefs.ELEMENT_VALUE)) {
         var str = contentUtf8(schild);
 
         if (str == null) {
@@ -444,34 +447,6 @@ public class Serverinfo {
     }
 
     return sb.toString();
-  }
-
-  public static List<Element> children(Node nd) {
-    try {
-      return XmlUtil.getElements(nd);
-    } catch (final Throwable t) {
-      throw new RuntimeException(t);
-    }
-  }
-
-  public static String content(Element nd) {
-    try {
-      return XmlUtil.getElementContent(nd);
-    } catch (final Throwable t) {
-      throw new RuntimeException(t);
-    }
-  }
-
-  public static String contentUtf8(Element nd) {
-    try {
-      var str = XmlUtil.getElementContent(nd);
-      if (str == null) {
-        return null;
-      }
-      return StandardCharsets.UTF_8.encode(str).toString();
-    } catch (final Throwable t) {
-      throw new RuntimeException(t);
-    }
   }
 
   public static int ival(final String val, final int start, final int end) {

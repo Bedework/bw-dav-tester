@@ -15,13 +15,21 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.xml.XmlUtil;
+
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import static org.bedework.util.xml.XmlUtil.getAttrVal;
 
 /**
 XML processing utilities.
@@ -30,21 +38,51 @@ public class XmlUtils {
 
   public static Document parseXml(final InputStream is) {
     try {
-      final Document doc = parseXml(is);
-
       final DocumentBuilderFactory factory = DocumentBuilderFactory
               .newInstance();
       factory.setNamespaceAware(true);
 
       final DocumentBuilder builder = factory.newDocumentBuilder();
 
-      final Document doc = builder.parse(new InputSource(is));
+      return builder.parse(new InputSource(is));
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
 
-      if (doc == null) {
+  public static List<Element> children(Node nd) {
+    try {
+      return XmlUtil.getElements(nd);
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static String content(Element nd) {
+    try {
+      return XmlUtil.getElementContent(nd);
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static String contentUtf8(final Element nd) {
+    try {
+      var str = XmlUtil.getElementContent(nd);
+      if (str == null) {
         return null;
       }
+      return StandardCharsets.UTF_8.encode(str).toString();
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
 
-      return doc;
+  public static boolean getYesNoAttributeValue(final Node node,
+                                        final String attr) {
+    try {
+      return XmlDefs.ATTR_VALUE_YES
+              .equals(getAttrVal(node, attr));
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
@@ -59,9 +97,6 @@ public void readStringElementList(node, ename) {
             results.append(child.text.decode("utf-8"))
     return results
 
-
-public void getYesNoAttributeValue(node, attr) {
-    return node.get(attr, src.xmlDefs.ATTR_VALUE_NO) == src.xmlDefs.ATTR_VALUE_YES
 
 
 public void getDefaultAttributeValue(node, attr, default) {
