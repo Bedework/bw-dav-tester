@@ -78,11 +78,26 @@ public class XmlUtils {
     }
   }
 
-  public static boolean getYesNoAttributeValue(final Node node,
+  public static boolean getYesNoAttributeValue(final Element node,
                                         final String attr) {
     try {
       return XmlDefs.ATTR_VALUE_YES
               .equals(getAttrVal(node, attr));
+    } catch (final Throwable t) {
+      throw new RuntimeException(t);
+    }
+  }
+
+  public static int getIntAttributeValue(final Element node,
+                                         final String attr,
+                                         final int def) {
+    try {
+      var val = getAttrVal(node, attr);
+      if (val == null) {
+        return def;
+      }
+
+      return Integer.valueOf(val);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
@@ -92,7 +107,7 @@ public class XmlUtils {
 public void readStringElementList(node, ename) {
 
     results = []
-    for child in node.getchildren() {
+    for (var child: children(node)) {
         if child.tag == ename:
             results.append(child.text.decode("utf-8"))
     return results
@@ -109,7 +124,7 @@ public void getDefaultAttributeValue(node, attr, default) {
 
 public void readOneStringElement(node, ename) {
 
-    for child in node.getchildren() {
+    for (var child: children(node)) {
         if child.tag == ename:
             return child.text.decode("utf-8")
     return ""
@@ -171,7 +186,7 @@ public void nodeForPath(root, path) {
                     } else {
                         element = test[1:]
                         value = None
-                    for child in node.getchildren() {
+                    for (var child: children(node)) {
                         if child.tag == element && (value == null|| child.text == value) {
                             results.append(node)
     } else {

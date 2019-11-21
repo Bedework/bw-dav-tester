@@ -15,7 +15,7 @@
 */
 package org.bedework.davtester;
 
-import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -27,8 +27,13 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 /**
  * Base for test classes
  */
-class TestBase {
+public class TestBase {
   protected final Manager manager;
+
+  String name;
+  String description = "";
+
+  protected boolean only;
 
   private Set<String> requireFeatures = new TreeSet<>();
   private Set<String> excludeFeatures = new TreeSet<>();
@@ -54,7 +59,7 @@ class TestBase {
   }
 
 
-  protected void parseFeatures(final Node node, final boolean require) {
+  protected void parseFeatures(final Element node, final boolean require) {
     for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
         if (require) {

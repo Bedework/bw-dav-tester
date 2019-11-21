@@ -15,17 +15,14 @@
 */
 package org.bedework.davtester;
 
-import getYesNoAttributeValue;
+import org.bedework.davtester.Serverinfo.KeyVal;
+
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import src.xmlDefs;
-import test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
-import static org.bedework.davtester.Serverinfo.*;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
@@ -35,9 +32,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Maintains a list of tests to run as part of a 'suite'.
  */
 class Testsuite extends TestBase {
-  private String name;
   private boolean ignore;
-  private boolean only;
   private boolean changeuid;
 
   private List<Test> tests = new ArrayList<>();
@@ -61,7 +56,7 @@ class Testsuite extends TestBase {
       return new ArrayList<>();
     }
 
-    public void parseXML(final Node node) {
+    public void parseXML(final Element node) {
       name = getAttrVal(node, XmlDefs.ATTR_NAME);
       ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
       only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);

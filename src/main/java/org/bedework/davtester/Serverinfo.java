@@ -104,8 +104,8 @@ public class Serverinfo {
   // dtnow needs to be fixed to a single date at the start of the tests just in case the tests
   // run over a day boundary.
 
-  String subs(final String subval,
-              final PropertiesPropertyFetcher db) {
+  public String subs(final String subval,
+                     final PropertiesPropertyFetcher db) {
     var sub = subval;
 
     // Special handling for relative date-times

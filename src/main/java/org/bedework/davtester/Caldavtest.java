@@ -93,8 +93,6 @@ public void getVersionStringFromResponse(response) {
  * Class to encapsulate a single caldav test run.
  */
 class Caldavtest extends TestBase {
-  private final String fname;
-  private String description = "";
   private final Document doc;
 
   boolean ignoreAll;
@@ -110,11 +108,11 @@ class Caldavtest extends TestBase {
   private Map<String, String> uidmaps = new HashMap<>();
 
   public Caldavtest(final Manager manager,
-                    final String fname,
+                    final String name,
                     final boolean ignoreRoot) {
     super(manager);
-    this.fname = fname;
-    final File f = new File(fname);
+    this.name = name;
+    final File f = new File(name);
 
     final InputStream is = new FileInputStream(f);
 
@@ -138,7 +136,7 @@ class Caldavtest extends TestBase {
 
     // Always need a new set of UIDs for the entire test
     for (var kv : manager.serverInfo.newUIDs()) {
-      uidmaps.put(kv.key, String.format("%s - %s", kv.val, fname));
+      uidmaps.put(kv.key, String.format("%s - %s", kv.val, name));
     }
 
     only = any([suite.only for suite in suites]);
@@ -976,26 +974,26 @@ class Caldavtest extends TestBase {
     public void parseXML (node) {
         ignore_all = node.get(src.xmlDefs.ATTR_IGNORE_ALL, src.xmlDefs.ATTR_VALUE_NO) == src.xmlDefs.ATTR_VALUE_YES
 
-        for child in node.getchildren() {
-            if child.tag == src.xmlDefs.ELEMENT_DESCRIPTION:
+        for (var child: children(node)) {
+            if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION:
                 description = child.text
-            } else if (child.tag == src.xmlDefs.ELEMENT_REQUIRE_FEATURE:
+            } else if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE:
                 parseFeatures(child, require=True)
-            } else if (child.tag == src.xmlDefs.ELEMENT_EXCLUDE_FEATURE:
+            } else if (nodeMatches(child, XmlDefs.ELEMENT_EXCLUDE_FEATURE:
                 parseFeatures(child, require=False)
-            } else if (child.tag == src.xmlDefs.ELEMENT_START:
+            } else if (nodeMatches(child, XmlDefs.ELEMENT_START:
                 start_requests = request.parseList(manager, child)
-            } else if (child.tag == src.xmlDefs.ELEMENT_TESTSUITE:
+            } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE:
                 suite = testsuite(manager)
                 suite.parseXML(child)
                 suites.append(suite)
-            } else if (child.tag == src.xmlDefs.ELEMENT_END:
+            } else if (nodeMatches(child, XmlDefs.ELEMENT_END:
                 end_requests = request.parseList(manager, child)
 
     public void parseFeatures (node, require=True) {
-        for child in node.getchildren() {
-            if child.tag == src.xmlDefs.ELEMENT_FEATURE:
-                (require_features if require } else exclude_features).add(child.text.encode("utf-8"))
+        for (var child: children(node)) {
+            if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE:
+                (require_features if require } else exclude_features).add(contentUtf8(child))
 
     public void extractProperty (propertyname, respdata) {
 
