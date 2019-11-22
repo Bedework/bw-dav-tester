@@ -78,16 +78,16 @@ public class Manager implements Logged {
   String postgresLog;
   String logFile;
   private Writer logFileWriter;
-  
+
   private List<BaseResultsObserver> observers = new ArrayList<>();
   private KeyVals results = new KeyVals();
-  
+
   boolean stoponfail = false;
   public boolean printRequest = false;
   public boolean printResponse = false;
   boolean printRequestResponseOnError = false;
 
-  public static class TestResult {
+  public static class TestResult extends RequestStats {
     public int ok;
     public int failed;
     public int ignored;
@@ -157,7 +157,7 @@ public class Manager implements Logged {
   }
 
   public void message(final String message, final KeyVals args) {
-    for (final BaseResultsObserver obs: observers) {
+    for (final BaseResultsObserver obs : observers) {
       obs.process(message, args);
     }
   }
@@ -170,13 +170,23 @@ public class Manager implements Logged {
     message("testProgress", results);
   }
 
+  public void load(final String file,
+                   final int current,
+                   final int total) {
+    final var kvs = new KeyVals("total", total);
+    kvs.put("name", file);
+    kvs.put("current", current);
+
+    message("load", kvs);
+  }
+
   public void trace(final String message) {
     message("trace", new KeyVals("message", message));
   }
-    
-  public KeyVals testFile (final String name,
-                           final String details,
-                           final Integer resultCode) {
+
+  public KeyVals testFile(final String name,
+                          final String details,
+                          final Integer resultCode) {
     var res = new KeyVals();
 
     results.put("name", name);
@@ -235,155 +245,162 @@ public class Manager implements Logged {
                       final boolean ssl,
                       final boolean all,
                       final KeyVals moresubs) {
-      trace(format("Reading Server Info from \"%s\"",
+    trace(format("Reading Server Info from \"%s\"",
+                 serverfile));
+
+    // Open and parse the server config file
+    Document doc = null;
+    try {
+      doc = XmlUtils.parseXml(serverfile);
+    } catch (final Throwable t) {
+      error(format("Unable to parse file '%s' because: %s",
                    serverfile));
 
-      // Open and parse the server config file
-    final Document doc;
-      try {
-        doc = XmlUtils.parseXml(serverfile);
-      } catch (final Throwable t) {
-        error(format("Unable to parse file '%s' because: %s",
-              serverfile));
-
-        throwException(t);
-      }
-
-      // Verify that top-level element is correct
-      Element serverinfoNode = doc.getDocumentElement();
-
-      if (!nodeMatches(serverinfoNode, XmlDefs.ELEMENT_SERVERINFO)) {
-        throwException(EX_INVALID_CONFIG_FILE);
-      }
-
-      serverInfo.parseXML(serverinfoNode);
-
-      // Setup ssl stuff
-      serverInfo.ssl = ssl;
-      if (ssl) {
-        serverInfo.port = serverInfo.nonsslport;
-        serverInfo.port2 = serverInfo.nonsslport2;
-      } else {
-        serverInfo.port = serverInfo.sslport;
-        serverInfo.port2 = serverInfo.sslport2;
-      }
-
-      if (serverInfo.certdir != null) {
-//        serverInfo.certdir = os.path
-//                .join(base_dir, serverInfo.certdir)
-      }
-
-      if (ssl) {
-        moresubs.put("$host:", format("https://%s", serverInfo.host);
-        moresubs.put("$host2:", format("https://%s", serverInfo.host2);
-      } else {
-        moresubs.put("$host:", format("http://%s", serverInfo.host);
-        moresubs.put("$host2:", format("http://%s", serverInfo.host2);
-      }
-
-        if ((ssl && (serverInfo.port != 443)) ||
-                (!ssl && (serverInfo.port != 80))) {
-          var val = moresubs.getOnlyString("$host:");
-          moresubs.put("$host:",
-                       val + format(":%d", serverInfo.port));
-        }
-        moresubs.put("$hostssl:",
-                     format("https://%s", serverInfo.host));
-        if (serverInfo.sslport != 443) {
-          var val = moresubs.getOnlyString("$hostssl:");
-          moresubs.put("$hostssl:",
-                       val + format(":%d", serverInfo.sslport));
-        }
-
-        if ((ssl && (serverInfo.port2 != 443)) ||
-                (!ssl && (serverInfo.port2 != 80))) {
-          var val = moresubs.getOnlyString("$host2:");
-          moresubs.put("$host2:",
-                       val + format(":%d", serverInfo.port2));
-        }
-        moresubs.put("$hostssl2:",
-                     format("https://%s", serverInfo.host2));
-        if (serverInfo.sslport2 != 443) {
-          var val = moresubs.getOnlyString("$hostssl2:");
-          moresubs.put("$hostssl2:",
-                       val + format(":%d", serverInfo.sslport2));
-        }
-
-        serverInfo.addsubs(moresubs, null);
-
-        var ctr = 1;
-        for (var testfile: testfiles) {
-          message("load", testfile, ctr, testfiles.size());
-          ctr++;
-        }
-
-        // Open and parse the config file
-        var test = new Caldavtest(this, testfile, false);
-
-        // ignore if all mode and ignore-all is set
-        if (!all || !test.ignoreAll) {
-          tests.add(test);
-        }
-      }
-
-        if (pretestFile != null) {
-          pretest = new Caldavtest(this, pretestFile, false)
-        }
-        if (posttestFile != null){
-          posttest = new Caldavtest(this, posttestFile, false)
-        }
-
-        message("load", null, ctr + 1, len(testfiles))
+      throwException(t);
     }
 
-      public void runAll () {
-        startTime = time.time();
+    // Verify that top-level element is correct
+    Element serverinfoNode = doc.getDocumentElement();
 
-        message("start");
+    if (!nodeMatches(serverinfoNode, XmlDefs.ELEMENT_SERVERINFO)) {
+      throwException(EX_INVALID_CONFIG_FILE);
+    }
 
-        var count = new TestResult();
+    serverInfo.parseXML(serverinfoNode);
 
-        try:
-            for ctr, test in enumerate(tests) {
-                if len(tests) > 1:
-                    testProgress(ctr + 1, len(tests))
-                if pretest != null:
-                    o, f, i = pretest.run()
+    // Setup ssl stuff
+    serverInfo.ssl = ssl;
+    if (ssl) {
+      serverInfo.port = serverInfo.nonsslport;
+      serverInfo.port2 = serverInfo.nonsslport2;
+    } else {
+      serverInfo.port = serverInfo.sslport;
+      serverInfo.port2 = serverInfo.sslport2;
+    }
 
-                    // Always stop the tests if the pretest fails
-                    if (f != 0){
-        break;
+    if (serverInfo.certdir != null) {
+//        serverInfo.certdir = os.path
+//                .join(base_dir, serverInfo.certdir)
+    }
+
+    if (ssl) {
+      moresubs.put("$host:", format("https://%s", serverInfo.host));
+      moresubs.put("$host2:", format("https://%s", serverInfo.host2));
+    } else {
+      moresubs.put("$host:", format("http://%s", serverInfo.host));
+      moresubs.put("$host2:", format("http://%s", serverInfo.host2));
+    }
+
+    if ((ssl && (serverInfo.port != 443)) ||
+            (!ssl && (serverInfo.port != 80))) {
+      var val = moresubs.getOnlyString("$host:");
+      moresubs.put("$host:",
+                   val + format(":%d", serverInfo.port));
+    }
+    moresubs.put("$hostssl:",
+                 format("https://%s", serverInfo.host));
+    if (serverInfo.sslport != 443) {
+      var val = moresubs.getOnlyString("$hostssl:");
+      moresubs.put("$hostssl:",
+                   val + format(":%d", serverInfo.sslport));
+    }
+
+    if ((ssl && (serverInfo.port2 != 443)) ||
+            (!ssl && (serverInfo.port2 != 80))) {
+      var val = moresubs.getOnlyString("$host2:");
+      moresubs.put("$host2:",
+                   val + format(":%d", serverInfo.port2));
+    }
+    moresubs.put("$hostssl2:",
+                 format("https://%s", serverInfo.host2));
+    if (serverInfo.sslport2 != 443) {
+      var val = moresubs.getOnlyString("$hostssl2:");
+      moresubs.put("$hostssl2:",
+                   val + format(":%d", serverInfo.sslport2));
+    }
+
+    serverInfo.addsubs(moresubs, null);
+
+    var ctr = 1;
+
+    for (var testfile : testfiles) {
+      load(testfile, ctr, testfiles.size());
+      ctr++;
+
+      // Open and parse the config file
+      var test = new Caldavtest(this, testfile, false);
+
+      // ignore if all mode and ignore-all is set
+      if (!all || !test.ignoreAll) {
+        tests.add(test);
+      }
+    }
+
+    if (pretestFile != null) {
+      pretest = new Caldavtest(this, pretestFile, false)
+    }
+    if (posttestFile != null) {
+      posttest = new Caldavtest(this, posttestFile, false)
+    }
+
+    load(null, ctr, testfiles.size());
+  }
+
+  public TestResult runAll() {
+    message("start", null);
+
+    var count = new TestResult();
+
+    var ctr = 1;
+
+    var res = new TestResult();
+    res.startTimer();
+
+    for (var test : tests) {
+      ctr++;
+
+      if (tests.size() > 1) {
+        testProgress(ctr + 1, tests.size());
+      }
+
+      if (pretest != null) {
+        var testResult = pretest.run();
+
+        // Always stop the tests if the pretest fails
+        if (testResult.failed != 0) {
+          break;
         }
+      }
 
-                o, f, i = test.run()
-                ok += o
-                failed += f
-                ignored += i
+      var testResult = test.run();
 
-                if failed != 0 && stoponfail:
-                    break
+      res.add(testResult);
 
-                if posttest != null:
-                    o, f, i = posttest.run()
+      if ((testResult.failed != 0) && stoponfail) {
+        break;
+      }
 
-                    # Always stop the tests if the posttest fails
-                    if f != 0:
-                        break
+      if (posttest != null) {
+        var postTestResult = posttest.run();
 
-        except:
-            failed += 1
-            import traceback
-            traceback.print_exc()
+        // Always stop the tests if the posttest fails
+        if (postTestResult.failed != 0) {
+          break;
+        }
+      }
+    }
 
-        endTime = time.time()
+    res.endTimer();
 
-        timeDiff = endTime - startTime
-        message("finish")
+    message("finish", null);
 
-        if logFile != null:
-            logFile.close()
+    if (logFile != null) {
+      logFile.close();
+    }
 
-        return failed, endTime - startTime
+    return res;
+  }
+}
 /*
     public void getMemusage () {
           """
