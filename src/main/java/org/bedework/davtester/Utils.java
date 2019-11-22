@@ -17,6 +17,13 @@ package org.bedework.davtester;
 
 import org.bedework.util.misc.Util;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.UUID;
+
 public class Utils {
   public static String upperFirst(String val) {
     if ((val == null) || (val.length() == 0)) {
@@ -67,6 +74,77 @@ public class Utils {
         return (String)val0;
       }
       return null;
+    }
+  }
+
+  public static String uuid() {
+    return UUID.randomUUID().toString();
+  }
+
+  public static class DtParts {
+    public int year;
+    public int month;
+    public int dayOfMonth;
+
+    public int hour;
+    public int minute;
+    public int seconds;
+  }
+
+  private static Calendar calStart = new GregorianCalendar();
+
+  public static DtParts getDtParts() {
+    return getDtParts(calStart);
+  }
+
+  public static DtParts getDtParts(final int dayOffset) {
+    final Calendar cal = (Calendar)calStart.clone();
+
+    cal.add(Calendar.DAY_OF_YEAR, dayOffset);
+
+    return getDtParts(cal);
+  }
+
+  public static DtParts getDtParts(final Date dt) {
+    final Calendar cal = GregorianCalendar.getInstance();
+
+    cal.setTime(dt);
+
+    return getDtParts(cal);
+  }
+
+  public static DtParts getDtParts(final Calendar cal) {
+    var res = new DtParts();
+
+    res.year = cal.get(Calendar.YEAR);
+    res.month = cal.get(Calendar.MONTH);
+    res.dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
+
+    res.hour = cal.get(Calendar.HOUR_OF_DAY);
+    res.minute = cal.get(Calendar.MINUTE);
+    res.seconds = cal.get(Calendar.SECOND);
+
+    return res;
+  }
+
+  public static String fileToString(final String fileName) {
+    final File f = new File(fileName);
+
+    if (!f.exists()) {
+      throwException("File " + fileName + " does not exist");
+      return null;// fake
+    }
+
+    if (!f.isFile()) {
+      throwException("" + fileName + " is not a file");
+      return null;// fake
+    }
+
+    try (FileInputStream fis = new FileInputStream(f)) {
+      return Util.streamToString(fis);
+    } catch (final Throwable t) {
+      throwException(t);
+      return null;// fake
     }
   }
 }

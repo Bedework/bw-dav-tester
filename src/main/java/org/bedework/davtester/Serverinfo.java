@@ -20,6 +20,7 @@ package org.bedework.davtester;
 //import urlparse;
 //import uuid4;
 
+import org.bedework.davtester.Utils.DtParts;
 import org.bedework.util.misc.Util;
 import org.bedework.util.misc.Util.PropertiesPropertyFetcher;
 import org.bedework.util.xml.XmlUtil;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import static org.bedework.davtester.Utils.getDtParts;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
@@ -54,37 +56,37 @@ public class Serverinfo {
   public int port;
   public String afunix;
 
+  public String host2 = "";
+  public int port2;
+  public String afunix2;
+
   int nonsslport = 80;
   int sslport = 443;
-  String host2 = "";
   int nonsslport2 = 80;
   int sslport2 = 443;
-  String afunix2;
   String authtype = "basic";
   String certdir = "";
 
   boolean ssl;
-  int port2;
 
   Set<String> features = new TreeSet<>();
-  String user = "";
-  String pswd = "";
+  public String user = "";
+  public String pswd = "";
   int waitcount = 120;
   double waitdelay = 0.25;
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
   final Properties extrasubsdict = new Properties();
-  List<String> calendardatafilters = new ArrayList<String>();
-  List<String> addressdatafilters = new ArrayList<String>();
+  List<String> calendardatafilters = new ArrayList<>();
+  List<String> addressdatafilters = new ArrayList<>();
   Date dtnow = new Date();
-  Calendar calNow = new GregorianCalendar();
 
-  static class KeyVal {
-    final String key;
-    final String val;
+  public static class KeyVal {
+    public final String key;
+    public final String val;
 
-    KeyVal(final String key,
-            final String val) {
+    public KeyVal(final String key,
+                  final String val) {
       this.key = key;
       this.val = val;
     }
@@ -103,6 +105,10 @@ public class Serverinfo {
   // dtnow needs to be fixed to a single date at the start of the tests just in case the tests
   // run over a day boundary.
 
+  public String subs(final String subval) {
+    return subs(subval, null);
+  }
+
   public String subs(final String subval,
                      final PropertiesPropertyFetcher db) {
     var sub = subval;
@@ -114,32 +120,32 @@ public class Serverinfo {
       var subpos = sub.substring(pos);
       String value;
 
+      DtParts dtp = getDtParts();
+
       if (subpos.startsWith("$now.year.")) {
         var yearoffset = ival(sub, pos + 10, endpos);
-        value = String.format("%d", calNow.get(Calendar.YEAR) + yearoffset);
+        value = String.format("%d", dtp.year + yearoffset);
       } else if (subpos.startsWith("$now.month.")) {
         var monthoffset = ival(sub, pos + 11, endpos);
-        var month = calNow.get(Calendar.MONTH) + monthoffset;
-        var year = calNow.get(Calendar.YEAR) + (int)(month - 1 / 12);
+        var month = dtp.month + monthoffset;
+        var year = dtp.year + (int)(month - 1 / 12);
         month = ((month - 1) % 12) + 1;
         value = String.format("%d%02d", year, month);
-      } else if (sub.substring(pos).startsWith("$now.week.")) {
-        var weekoffset = ival(sub, pos + 10, endpos);
-        var caloffset = (Calendar)calNow.clone();
-        caloffset.add(Calendar.DAY_OF_YEAR, 7 * weekoffset);
-        value = String.format("%d%02d%02d",
-                              caloffset.get(Calendar.YEAR),
-                              caloffset.get(Calendar.MONTH),
-                              caloffset.get(Calendar.DAY_OF_MONTH));
-      } else{
-        var dayoffset = ival(sub, pos + 5, endpos);
-        var caloffset = (Calendar)calNow.clone();
-        caloffset.add(Calendar.DAY_OF_YEAR, dayoffset);
+      } else {
+        final int dayOffset;
+        if (sub.substring(pos).startsWith("$now.week.")) {
+          var weekoffset = ival(sub, pos + 10, endpos);
+          dayOffset = 7 * weekoffset;
+        } else {
+          dayOffset = ival(sub, pos + 5, endpos);
+        }
+
+        var offDtp = getDtParts(dayOffset);
 
         value = String.format("%d%02d%02d",
-                              caloffset.get(Calendar.YEAR),
-                              caloffset.get(Calendar.MONTH),
-                              caloffset.get(Calendar.DAY_OF_MONTH));
+                              offDtp.year,
+                              offDtp.month,
+                              offDtp.dayOfMonth));
       }
 
       sub = String.format("%s%s%s", sub.substring(0, pos), value, sub.substring(endpos + 1));
@@ -307,33 +313,33 @@ public class Serverinfo {
   public void updateParams () {
     // Expand substitutions fully at this point
     for (var key: subsKvs.keySet()) {
-      subsKvs.put(key, propertyReplace(subsKvs.getProperty((String)key), subsPfetcher));
+      subsKvs.put(key, propertyReplace(subsKvs.getOnlyString((String)key), subsPfetcher));
     }
 
     // Now cache some useful substitutions
     String user;
-    if (subsKvs.contains("$userid1:")) {
+    if (subsKvs.containsKey("$userid1:")) {
       user = "$userid1:";
     } else {
       user = "$userid01:";
     }
 
     String pswd;
-    if (subsKvs.contains("$pswd1:")) {
+    if (subsKvs.containsKey("$pswd1:")) {
       pswd = "$pswd1:";
     } else {
       pswd = "$pswd01:";
     }
 
-    if (!subsKvs.contains(user)) {
+    user = subsKvs.getOnlyString(user);
+    if (user == null) {
       throw new RuntimeException("Must have userid substitution");
     }
-    user = subsKvs.getProperty(user);
 
-    if (!subsKvs.contains(pswd)) {
+    pswd = subsKvs.getOnlyString(pswd);
+    if (pswd == null) {
       throw new RuntimeException("Must have pswd substitution");
     }
-    pswd = subsKvs.getProperty(pswd);
   }
 
   public void parseRepeatXML(final Node node){

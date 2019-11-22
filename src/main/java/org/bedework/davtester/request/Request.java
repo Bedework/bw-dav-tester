@@ -1,11 +1,24 @@
 package org.bedework.davtester.request;
 
 import org.bedework.davtester.DavTesterBase;
+import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
+import org.bedework.davtester.Serverinfo.KeyVal;
 import org.bedework.davtester.XmlDefs;
+import org.bedework.util.misc.Util;
 
 import org.w3c.dom.Element;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static java.lang.String.format;
+import static org.bedework.davtester.Utils.fileToString;
+import static org.bedework.davtester.Utils.getDtParts;
+import static org.bedework.davtester.Utils.uuid;
+import static org.bedework.davtester.XmlUtils.attrUtf8;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
@@ -122,7 +135,7 @@ public void calcResponse(
  * Represents the HTTP request to be executed, and verification information to
  * be used to determine a satisfactory output or not.
  */
-class Request extends DavTesterBase {
+public class Request extends DavTesterBase {
   private String host;
   private int port;
   private String afunix;
@@ -136,357 +149,463 @@ class Request extends DavTesterBase {
   private boolean printResponse;
   private boolean waitForSuccess;
 
-  method = ""
-  headers = {}
-  ruris = []
-  ruri = ""
-  ruri_quote = true
+  String method;
+  List<String> ruris = new ArrayList<>();
+  String ruri;
+  boolean ruriQuote = true
   private Data data = null
-  iterate_data = false
-  count = 1
-  verifiers = []
-  graburi = null
-  grabcount = null
-  grabheader = []
-  grabproperty = []
-  grabelement = []
-  grabjson = []
-  grabcalprop = []
-  grabcalparam = []
+  boolean iterateData;
+  int count = 1;
+  List<Verify> verifiers = new ArrayList<>();
+  String graburi;
+  String grabcount;
+
+  final List<KeyVal> headers = new ArrayList<>();
+  final List<KeyVal> grabheader = new ArrayList<>();
+  final List<KeyVal> grabproperty =  new ArrayList<>();
+  final List<KeyVal> grabcalprop = new ArrayList<>();
+  final List<KeyVal> grabcalparam = new ArrayList<>();
+
+  public static class GrabElement {
+    String path;
+    String parent;
+    List<String> variables = new ArrayList<>();
+  }
+
+  final List<GrabElement> grabjson = new ArrayList<>();
+  final List<GrabElement> grabelement = new ArrayList<>();
 
   //nc = {}  // Keep track of nonce count
 
-    public Request(final Manager manager) {
-      super(manager);
-      host = manager.serverInfo.host
-      port = manager.serverInfo.port
-      afunix = manager.serverInfo.afunix
+  /** Just flags a pause.
+   *
+   */
+  public static class PauseRequest extends Request {
+    PauseRequest() {
+      super(null);
+    }
+  }
+
+  public final static Request pause = new PauseRequest();
+
+  public Request(final Manager manager) {
+    super(manager);
+    host = manager.serverInfo.host
+    port = manager.serverInfo.port
+    afunix = manager.serverInfo.afunix
+  }
+
+  @Override
+  public String getKind() {
+    return "REQUEST";
+  }
+
+  public void __str__ () {
+    return "Method: %s; uris: %s" % (method,ruris if len(ruris) > 1  else
+    ruri,)
+  }
+
+  public void getURI() {
+    uri = manager.serverInfo.extrasubs(ruri);
+    if ("**" in uri) {
+      if ("?" not in uri|| uri.find("?") > uri.find("**") {
+        uri = uri.replace("**", String.valueOf(uuid.uuid4()));
+      }
+    } else (if ("##" in uri) {
+      if ("?" not in uri|| uri.find("?") > uri.find("##") {
+        uri = uri.replace("##", String.valueOf(count))
+      }
     }
 
-    public void __str__ () {
-      return "Method: %s; uris: %s" % (method,ruris if len(ruris) > 1  else
-      ruri,)
+    return uri;
+  }
+
+  public void getHeaders () {
+    var si = manager.serverInfo;
+
+    hdrs = headers
+    for key, value in hdrs.items() {
+      hdrs[key] = si.extrasubs(value);
     }
 
-    public void getURI (si) {
-        uri = si.extrasubs(ruri)
-        if "**" in uri:
-            if "?" not in uri|| uri.find("?") > uri.find("**") {
-                uri = uri.replace("**", String.valueOf(uuid.uuid4()))
-        } else if ("##" in uri:
-            if "?" not in uri|| uri.find("?") > uri.find("##") {
-                uri = uri.replace("##", String.valueOf(count))
-        return uri
+    // Content type
+    if (data != null) {
+      hdrs["Content-Type"] = data.contentType;
+    }
 
-    public void getHeaders (si) {
-        hdrs = headers
-        for key, value in hdrs.items() {
-            hdrs[key] = si.extrasubs(value)
+    // Auth
+    if (auth) {
+      if (manager.serverInfo.authtype.lower() == "basic") {
+        hdrs["Authorization"] = gethttpbasicauth();
+      } else if (si.authtype.lower() == "digest") {
+        hdrs["Authorization"] = gethttpdigestauth();
+      }
+    }
 
-        # Content type
-        if data != null:
-            hdrs["Content-Type"] = data.content_type
+    return hdrs;
+  }
 
-        # Auth
-        if auth:
-            if si.authtype.lower() == "basic":
-                hdrs["Authorization"] = gethttpbasicauth(si)
-            } else if (si.authtype.lower() == "digest":
-                hdrs["Authorization"] = gethttpdigestauth(si)
+    public void gethttpbasicauth () {
+      basicauth = [user, manager.serverInfo.user][user == ""]
+      basicauth += ":"
+      basicauth += [pswd, manager.serverInfo.pswd][pswd == ""]
+      basicauth = "Basic " + base64.encodestring(basicauth)
+      basicauth = basicauth.replace("\n", "")
+      return basicauth;
+    }
 
-        return hdrs
+  public void gethttpdigestauth(wwwauthorize) {
+    var si = manager.serverInfo;
 
-    public void gethttpbasicauth (si) {
-        basicauth = [user, si.user][user == ""]
-        basicauth += ":"
-        basicauth += [pswd, si.pswd][pswd == ""]
-        basicauth = "Basic " + base64.encodestring(basicauth)
-        basicauth = basicauth.replace("\n", "")
-        return basicauth
+    // Check the nonce cache to see if we've used this user before, or if the nonce is more than 5 minutes old
+    user = [user, si.user][user == ""];
+    pswd = [pswd, si.pswd][pswd == ""];
+    details = null;
 
-    public void gethttpdigestauth (si, wwwauthorize=null) {
+    if ((manager.digestCache.get(user) != null) && (manager.digestCache[user]["max-nonce-time"] > time.time())) {
+      details = manager.digestCache[user];
+    } else {
+      // Redo digest auth from scratch to get a new nonce etc
+      http = SmartHTTPConnection(si.host, si.port, si.ssl, si.afunix);
+      try {
+        puri = list(urlparse.urlparse(getURI(si)));
+        puri[2] = urllib.quote(puri[2]);
+        quri = urlparse.urlunparse(puri);
+        http.request("OPTIONS", quri);
 
-        # Check the nonce cache to see if we've used this user before, or if the nonce is more than 5 minutes old
-        user = [user, si.user][user == ""]
-        pswd = [pswd, si.pswd][pswd == ""]
-        details = null
-        if user in manager.digestCache && manager.digestCache[user]["max-nonce-time"] > time.time() {
-            details = manager.digestCache[user]
-        } else {
-            # Redo digest auth from scratch to get a new nonce etc
-            http = SmartHTTPConnection(si.host, si.port, si.ssl, si.afunix)
-            try:
-                puri = list(urlparse.urlparse(getURI(si)))
-                puri[2] = urllib.quote(puri[2])
-                quri = urlparse.urlunparse(puri)
-                http.request("OPTIONS", quri)
+        response = http.getresponse();
 
-                response = http.getresponse()
+      } finally{
+        http.close()
+      }
 
-            finally:
-                http.close()
+      if (response.status == 401) {
 
-            if response.status == 401:
-
-                wwwauthorize = response.msg.getheaders("WWW-Authenticate")
-                for item in wwwauthorize:
-                    if !item.lower().startsWith("digest ") {
-                        continue
-                    wwwauthorize = item[7:]
-
-                    public void unq(s) {
-                        if s[0] == s[-1] == '"':
-                            return s[1:-1]
-                        return s
-                    parts = wwwauthorize.split(',')
-
-                    details = {}
-
-                    for (k, v) in [p.split('=', 1) for p in parts]:
-                        details[k.strip()] = unq(v.strip())
-
-                    details["max-nonce-time"] = time.time() + 600
-                    manager.digestCache[user] = details
-                    break
-
-        if details:
-            if details.get('qop') {
-                if nc.get(details.get('nonce')) == null:
-                    nc[details.get('nonce')] = 1
-                } else {
-                    nc[details.get('nonce')] += 1
-                details['nc'] = "%08x" % nc[details.get('nonce')]
-                if details.get('cnonce') == null:
-                    details['cnonce'] = "D4AAE4FF-ADA1-4149-BFE2-B506F9264318"
-
-            digest = calcResponse(
-                calcHA1(details.get('algorithm', 'md5'), user, details.get('realm'), pswd, details.get('nonce'), details.get('cnonce')),
-                details.get('algorithm', 'md5'), details.get('nonce'), details.get('nc'), details.get('cnonce'), details.get('qop'), method, getURI(si), null
-            )
-
-            if details.get('qop') {
-                response = (
-                    'Digest username="%s", realm="%s", '
-                    'nonce="%s", uri="%s", '
-                    'response=%s, algorithm=%s, cnonce="%s", qop=%s, nc=%s' %
-                    (user, details.get('realm'), details.get('nonce'), getURI(si), digest, details.get('algorithm', 'md5'), details.get('cnonce'), details.get('qop'), details.get('nc'),)
-                )
-            } else {
-                response = (
-                    'Digest username="%s", realm="%s", '
-                    'nonce="%s", uri="%s", '
-                    'response=%s, algorithm=%s' %
-                    (user, details.get('realm'), details.get('nonce'), getURI(si), digest, details.get('algorithm'),)
-                )
-
-            return response
-        } else {
-            return ""
-
-    public void getFilePath () {
-        if data != null:
-            return os.path.join(manager.data_dir, data.filepath) if manager.data_dir } else data.filepath
-        } else {
-            return ""
-
-    public String getData() {
-        String dataStr = null;
-        if (data == null) {
-          return null;
-        }
-
-            if (data.value != null) {
-                dataStr = data.value
-            } else if (data.filepath != null) {
-                // read in the file data
-              fd = open(data.nextpath if hasattr(data, "nextpath")  else getFilePath(), "r");
-              try {
-                data = fd.read();
-              } finally {
-                fd.close();
-              }
-            }
-            dataStr = String.valueOf(manager.serverInfo.subs(dataStr));
-            manager.serverInfo.addextrasubs("$request_count:", String.valueOf(count));
-            data = manager.serverInfo.extrasubs(data)
-            if data.substitutions:
-                data = manager.serverInfo.subs(data, data.substitutions)
-            if (data.generate) {
-                if data.content_type.startsWith("text/calendar") {
-                    data = generateCalendarData(data)
-            } else if (data.generator:
-                data = data.generator.doGenerate()
-        return data
-
-    public boolean getNextData() {
-        if (!hasattr("dataList")) {
-          dataList = sorted([path for path in
-          os.listdir(getFilePath()) if not path.
-          startsWith(".")]);
-        }
-        if (len(dataList)) {
-          data.nextpath = os.path
-                  .join(getFilePath(), dataList.pop(0));
-          return true;
-        }
-
-                  if (hasattr(data, "nextpath")) {
-                    delattr(data, "nextpath");
-                  }
-            if (hasattr ("dataList")) {
-              delattr("dataList");
-            }
-            return false
-
-    public boolean hasNextData() {
-                            dataList = sorted([path for path in
-                            os.listdir(getFilePath()) if not path.
-                            startsWith(".")]);
-                            return len(dataList) != 0;
-                          }
-
-    public String generateCalendarData(final String data) {
-        // FIXME: does not work for events with recurrence overrides.
-
-        // Change the following iCalendar data values:
-        // DTSTART, DTEND, RECURRENCE-ID, UID
-
-        data = re.sub(format("UID:.*", "UID:%s",
-                             uuid.uuid4()), data);
-        data = re.sub(format("SUMMARY:(.*)", "SUMMARY:\\1 #%s",
-                             (count), data);
-
-        now = datetime.date.today();
-        data = re.sub(format("(DTSTART;[^:]*) {[0-9]{8,8}", "\\1:%04d%02d%02d",
-                             now.year, now.month, now.day), data);
-        data = re.sub(format("(DTEND;[^:]*) {[0-9]{8,8}", "\\1:%04d%02d%02d",
-                             now.year, now.month, now.day), data);
-
-        return data;
-                          }
-
-    public void parseXML(final Element node) {
-        auth = node.get(XmlDefs.ATTR_AUTH, XmlDefs.ATTR_VALUE_YES) == XmlDefs.ATTR_VALUE_YES;
-        user = manager.serverInfo.subs(node.get(XmlDefs.ATTR_USER, "").encode("utf-8"));
-        pswd = manager.serverInfo.subs(node.get(XmlDefs.ATTR_PSWD, "").encode("utf-8"));
-        cert = manager.serverInfo.subs(node.get(XmlDefs.ATTR_CERT, "").encode("utf-8"));
-        end_delete = getYesNoAttributeValue(node, XmlDefs.ATTR_END_DELETE);
-        print_request = manager.print_request|| getYesNoAttributeValue(node, XmlDefs.ATTR_PRINT_REQUEST);
-        print_response = manager.print_response|| getYesNoAttributeValue(node, XmlDefs.ATTR_PRINT_RESPONSE);
-        iterate_data = getYesNoAttributeValue(node, XmlDefs.ATTR_ITERATE_DATA);
-        wait_for_success = getYesNoAttributeValue(node, XmlDefs.ATTR_WAIT_FOR_SUCCESS);
-
-        if node.get(XmlDefs.ATTR_HOST2, XmlDefs.ATTR_VALUE_NO) == XmlDefs.ATTR_VALUE_YES:
-            host = manager.serverInfo.host2;
-            port = manager.serverInfo.port2;
-            afunix = manager.serverInfo.afunix2;
-
-        for (var child: children(node)) {
-            if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-                parseFeatures(child, true);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-                parseFeatures(child, false);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_METHOD)) {
-                method = contentUtf8(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_HEADER)) {
-                parseHeader(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_RURI)) {
-                ruri_quote = child.get(XmlDefs.ATTR_QUOTE, XmlDefs.ATTR_VALUE_YES) == XmlDefs.ATTR_VALUE_YES
-                ruris.append(manager.serverInfo.subs(contentUtf8(child)))
-                if (len(ruris) == 1) {
-                  ruri = ruris[0];
-                }
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_DATA)) {
-                data = data(manager);
-                data.parseXML(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_VERIFY)) {
-                verifiers.append(verify(manager))
-                verifiers[-1].parseXML(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABURI)) {
-                graburi = contentUtf8(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABCOUNT)) {
-                grabcount = contentUtf8(child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABHEADER)) {
-                parseGrab(child, grabheader);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABPROPERTY)) {
-                parseGrab(child, grabproperty);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABELEMENT)) {
-                parseMultiGrab(child, grabelement);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABJSON)) {
-                parseMultiGrab(child, grabjson);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABCALPROP)) {
-                parseGrab(child, grabcalprop);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABCALPARAM)) {
-              parseGrab(child, grabcalparam);
-            }
-
-    public void parseHeader(final Element node) {
-        name = null
-        value = null
-        for (var child: children(node)) {
-            if (nodeMatches(child, XmlDefs.ELEMENT_NAME:
-                name = contentUtf8(child)
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE:
-                value = manager.serverInfo.subs(contentUtf8(child))
-
-        if ((name != null) && (value != null)) {
-          headers[name] = value;
-        }
-
-    public void parseList(manager, final Element node) {
-        requests = []
-        for (var child: children(node)) {
-            if (nodeMatches(child, XmlDefs.ELEMENT_REQUEST)) {
-                req = request(manager);
-                req.parseXML(child);
-                requests.append(req);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_PAUSE)) {
-                requests.append(pause());
-        return requests
-
-    parseList = staticmethod(parseList)
-
-    public void parseGrab (final Element node, appendto) {
-        String name = null;
-        String variable = null;
-        for (var child: children(node)) {
-            if (child.tag in (XmlDefs.ELEMENT_NAME, XmlDefs.ELEMENT_PROPERTY) {
-                name = manager.serverInfo.subs(contentUtf8(child))
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_VARIABLE)) {
-            variable = manager.serverInfo.subs(contentUtf8(child))
+        wwwauthorize = response.msg.getheaders("WWW-Authenticate")
+        for (item: wwwauthorize) {
+          if (!item.lower().startsWith("digest ") {
+            continue;
           }
+          wwwauthorize = item[7:]
+
+
+          parts = wwwauthorize.split(',')
+
+          details = {}
+
+          for ((k, v) in[p.split('=', 1) for p in parts]) {
+            details[k.strip()] = unq(v.strip())
+          }
+
+          details["max-nonce-time"] = time.time() + 600
+          manager.digestCache[user] = details;
+          break;
         }
+      }
+    }
 
-        if ((name != null) && (variable != null)) {
-                appendto.append((name, variable));
-              }
-            }
+    if (details == null) {
+      return null;
+    }
 
-    public void parseMultiGrab(final Element node, appendto){
-              String name = null;
-              parent = null;
-              String variable = null;
-              for (var child : children(node)) {
-                if child.tag in
-                (XmlDefs.ELEMENT_NAME, XmlDefs.ELEMENT_PROPERTY, XmlDefs.ELEMENT_POINTER)
-                {
-                  name = manager.serverInfo.subs(contentUtf8(child))
-                } else
-                if (nodeMatches(child, XmlDefs.ELEMENT_PARENT)) {
-                  parent = manager.serverInfo.subs(contentUtf8(child))
-                } else if (nodeMatches(child,
-                                       XmlDefs.ELEMENT_VARIABLE)) {
-                  if (variable == null) {
-                    variable = [];
-                  }
-                  variable.append(
-                          manager.serverInfo
-                                  .subs(contentUtf8(child)));
-                }
-              }
+    if (details.get('qop') {
+      if (nc.get(details.get('nonce')) == null) {
+        nc[details.get('nonce')] = 1;
+      } else {
+        nc[details.get('nonce')] += 1;
+      }
+      details['nc'] = "%08x" % nc[details.get('nonce')]
+      if (details.get('cnonce') == null) {
+        details['cnonce'] = "D4AAE4FF-ADA1-4149-BFE2-B506F9264318";
+      }
+    }
+    digest = calcResponse(
+            calcHA1(details.get('algorithm', 'md5'), user, details.get('realm'), pswd, details.get('nonce'), details.get('cnonce')),
+            details.get('algorithm', 'md5'), details.get('nonce'), details.get('nc'), details.get('cnonce'), details.get('qop'), method, getURI(si), null
+    );
 
-              if ((name != null) && (variable != null)) {
-                appendto.append((name, variable, ) if parent == null  else
-                (name, parent, variable,))
-              }
-            }
+    if (details.get('qop')) {
+      response = (
+              'Digest username="%s", realm="%s", '
+      'nonce="%s", uri="%s", '
+      'response=%s, algorithm=%s, cnonce="%s", qop=%s, nc=%s' %
+              (user, details.get('realm'), details.get('nonce'), getURI(si), digest, details.get('algorithm', 'md5'), details.get('cnonce'), details.get('qop'), details.get('nc'),)
+      );
+    } else{
+      response = (
+              'Digest username="%s", realm="%s", '
+      'nonce="%s", uri="%s", '
+      'response=%s, algorithm=%s' %
+              (user, details.get('realm'), details
+              .get('nonce'), getURI(si), digest, details
+              .get('algorithm'));
+      );
+    }
+
+    return response;
+  }
+
+  private void unq(s){
+    if s[0] == s[-1] == '"':
+    return s[1:-1]
+    return s
+  }
+
+  public String getFilePath() {
+    if (data == null) {
+      return null;
+    }
+
+    if (manager.dataDir == null) {
+      return data.filepath;
+    }
+
+    return Util.buildPath(false, manager.dataDir, "/", data.filepath);
+  }
+
+  public String getData() {
+    String dataStr = null;
+
+    if (data == null) {
+      return null;
+    }
+
+    if (data.value != null) {
+      dataStr = data.value;
+    } else if (data.filepath != null) {
+      // read in the file data
+      String fname;
+      if (data.nextpath != null) {
+        fname = data.nextpath;
+      } else {
+        fname = getFilePath();
+      }
+
+      dataStr = fileToString(fname);
+    }
+
+    dataStr = String.valueOf(manager.serverInfo.subs(dataStr));
+    manager.serverInfo.addextrasubs(new KeyVals("$request_count:",
+                                                String.valueOf(count)));
+    dataStr = manager.serverInfo.extrasubs(dataStr)
+
+    if (!data.substitutions.isEmpty()) {
+      dataStr = manager.serverInfo.subs(dataStr, data.substitutions);
+    }
+
+    if (data.generate) {
+      if (data.contentType.startsWith("text/calendar")) {
+        dataStr = generateCalendarData(dataStr);
+      }
+    } else if (data.generator != null) {
+      dataStr = data.generator.doGenerate();
+    }
+
+    return dataStr;
+  }
+
+  public boolean getNextData() {
+    if (dataList == null) {
+      dataList = sorted([path for path in
+      if (!path.startsWith(".")) {
+        os.listdir(getFilePath());
+      }
+    }
+
+    if (!Util.isEmpty(dataList)) {
+      data.nextpath = os.path.join(getFilePath(), dataList.pop(0));
+      return true;
+    }
+
+    data.nextpath == null;
+    data.dataList == null;
+
+    return false;
+  }
+
+  public boolean hasNextData() {
+    dataList = sorted([path for path in
+    os.listdir(getFilePath()) if not path.
+    startsWith(".")]);
+    return len(dataList) != 0;
+
+    File folder = new File("your/path");
+    File[] listOfFiles = folder.listFiles();
+
+    for (int i = 0; i < listOfFiles.length; i++) {
+      if (listOfFiles[i].isFile()) {
+        System.out.println("File " + listOfFiles[i].getName());
+      } else if (listOfFiles[i].isDirectory()) {
+        System.out.println("Directory " + listOfFiles[i].getName());
+      }
+    }
+  }
+
+  public String generateCalendarData(final String dataVal) {
+    // FIXME: does not work for events with recurrence overrides.
+
+    // Change the following iCalendar data values:
+    // DTSTART, DTEND, RECURRENCE-ID, UID
+
+    // This was re.sub(...
+    var data = dataVal.replaceAll("UID:.*", "UID:" + uuid());
+    data = data.replaceAll("SUMMARY:(.*)", "SUMMARY:\\1 #" + count);
+
+    var now = getDtParts(new Date());
+
+    data = data.replaceAll("(DTSTART;[^:]*) [0-9]{8,8}",
+                           format("\\1:%04d%02d%02d",
+                                  now.year, now.month, now.dayOfMonth));
+
+    data = data.replaceAll("(DTEND;[^:]*) [0-9]{8,8}",
+                           format("\\1:%04d%02d%02d",
+                                  now.year, now.month, now.dayOfMonth));
+
+    return data;
+  }
+
+  public void parseXML(final Element node) {
+    auth = getYesNoAttributeValue(node, XmlDefs.ATTR_AUTH, true);
+    user = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_USER));
+    pswd = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_PSWD));
+    cert = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_CERT));
+    endDelete = getYesNoAttributeValue(node,
+                                        XmlDefs.ATTR_END_DELETE);
+    printRequest = manager.printRequest || getYesNoAttributeValue(
+            node, XmlDefs.ATTR_PRINT_REQUEST);
+    printResponse = manager.printResponse || getYesNoAttributeValue(
+            node, XmlDefs.ATTR_PRINT_RESPONSE);
+    iterateData = getYesNoAttributeValue(node,
+                                         XmlDefs.ATTR_ITERATE_DATA);
+    waitForSuccess = getYesNoAttributeValue(node,
+                                            XmlDefs.ATTR_WAIT_FOR_SUCCESS);
+
+    if (getYesNoAttributeValue(node, XmlDefs.ATTR_HOST2, false)) {
+      host = manager.serverInfo.host2;
+      port = manager.serverInfo.port2;
+      afunix = manager.serverInfo.afunix2;
+    }
+
+    for (var child : children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
+        parseFeatures(child, true);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
+        parseFeatures(child, false);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_METHOD)) {
+        method = contentUtf8(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_HEADER)) {
+        parseHeader(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_RURI)) {
+        ruriQuote = getYesNoAttributeValue(child,
+                                           XmlDefs.ATTR_QUOTE,
+                                           true);
+        ruris.add(manager.serverInfo.subs(contentUtf8(child)));
+        if (ruris.size() == 1) {
+          ruri = ruris.get(0);
+        }
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_DATA)) {
+        data = new Data(manager);
+        data.parseXML(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_VERIFY)) {
+        var v = new Verify(manager);
+        verifiers.add(v);
+        v.parseXML(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABURI)) {
+        graburi = contentUtf8(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABCOUNT)) {
+        grabcount = contentUtf8(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABHEADER)) {
+        parseGrab(child, grabheader);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_GRABPROPERTY)) {
+        parseGrab(child, grabproperty);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_GRABELEMENT)) {
+        parseMultiGrab(child, grabelement);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABJSON)) {
+        parseMultiGrab(child, grabjson);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_GRABCALPROP)) {
+        parseGrab(child, grabcalprop);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_GRABCALPARAM)) {
+        parseGrab(child, grabcalparam);
+      }
+    }
+  }
+
+  public void parseHeader(final Element node) {
+    String name = null;
+    String value = null;
+
+    for (var child: children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
+        name = contentUtf8(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {
+        value = manager.serverInfo.subs(contentUtf8(child));
+      }
+    }
+
+    if ((name != null) && (value != null)) {
+      headers.add(new KeyVal(name, value));
+    }
+  }
+
+  public static List<Request> parseList(final Manager manager,
+                                        final Element node) {
+    final List<Request> requests = new ArrayList<>();
+
+    for (var child: children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_REQUEST)) {
+        var req = new Request(manager);
+        req.parseXML(child);
+        requests.add(req);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_PAUSE)) {
+        requests.add(pause);
+      }
+    }
+
+    return requests;
+  }
+
+//    parseList = staticmethod(parseList)
+
+  public void parseGrab (final Element node, final List<KeyVal>  appendto) {
+    String name = null;
+    String variable = null;
+
+    for (var child: children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_NAME) ||
+              nodeMatches(child, XmlDefs.ELEMENT_PROPERTY)) {
+        name = manager.serverInfo.subs(contentUtf8(child));
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_VARIABLE)) {
+        variable = manager.serverInfo.subs(contentUtf8(child));
+      }
+    }
+
+    if ((name != null) && (variable != null)) {
+      appendto.add(new KeyVal(name, variable));
+    }
+  }
+
+  public void parseMultiGrab(final Element node, final List<GrabElement> appendto) {
+    final GrabElement ge = new GrabElement();
+
+    for (var child : children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_NAME) ||
+              nodeMatches(child, XmlDefs.ELEMENT_PROPERTY) ||
+                       nodeMatches(child, XmlDefs.ELEMENT_POINTER)) {
+        ge.path = manager.serverInfo.subs(contentUtf8(child));
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_PARENT)) {
+        ge.parent = manager.serverInfo.subs(contentUtf8(child));
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_VARIABLE)) {
+        ge.variables.add(manager.serverInfo.subs(contentUtf8(child)));
+      }
+    }
+
+    if ((ge.path != null) && !Util.isEmpty(ge.variables)) {
+      appendto.add(ge);
+    }
+  }
+}

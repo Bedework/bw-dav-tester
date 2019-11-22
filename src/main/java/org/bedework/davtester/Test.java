@@ -15,16 +15,18 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.davtester.request.Request;
+
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.bedework.davtester.XmlUtils.attr;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getIntAttributeValue;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
-import static org.bedework.util.xml.XmlUtil.getAttrVal;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -39,14 +41,19 @@ class Test extends DavTesterBase {
   boolean ignore;
   int count = 1;
 
-  final List<String> requests = new ArrayList<>();
+  List<Request> requests = new ArrayList<>();
 
   public Test(final Manager manager) {
     super(manager);
   }
 
+  @Override
+  public String getKind() {
+    return "TEST";
+  }
+
   public void parseXML(final Element node) {
-    name = getAttrVal(node, XmlDefs.ATTR_NAME);
+    name = attr(node, XmlDefs.ATTR_NAME);
     details = getYesNoAttributeValue(node, XmlDefs.ATTR_DETAILS);
     count = getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
     stats = getYesNoAttributeValue(node, XmlDefs.ATTR_STATS);
@@ -65,14 +72,13 @@ class Test extends DavTesterBase {
     }
 
     // get request
-    requests = request.parseList(manager, node);
+    requests = Request.parseList(manager, node);
   }
 
+  @Override
   public void dump() {
-    print "\nTEST: %s" % name
-    print "    description: %s" % description
-    for (req:
-         requests) {
+    super.dump();
+    for (var req: requests) {
       req.dump();
     }
   }

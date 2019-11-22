@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -71,7 +72,7 @@ public class XmlUtils {
       return XmlUtil.getElements(nd);
     } catch (final Throwable t) {
       throwException(t);
-      return null; // fake
+      return Collections.EMPTY_LIST; // fake
     }
   }
 
@@ -80,13 +81,37 @@ public class XmlUtils {
       return XmlUtil.getElementContent(nd);
     } catch (final Throwable t) {
       throwException(t);
-      return null; // fake
+      return ""; // fake
     }
   }
 
   public static String contentUtf8(final Element nd) {
     try {
       var str = XmlUtil.getElementContent(nd);
+      if (str == null) {
+        return null;
+      }
+      return StandardCharsets.UTF_8.encode(str).toString();
+    } catch (final Throwable t) {
+      throwException(t);
+      return null; // fake
+    }
+  }
+
+  public static String attr(final Element nd,
+                            final String attr) {
+    try {
+      return getAttrVal(nd, attr);
+    } catch (final Throwable t) {
+      throwException(t);
+      return null; // fake
+    }
+  }
+
+  public static String attrUtf8(final Element nd,
+                                final String attr) {
+    try {
+      var str = getAttrVal(nd, attr);
       if (str == null) {
         return null;
       }

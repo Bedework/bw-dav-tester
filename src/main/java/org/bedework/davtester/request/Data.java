@@ -40,6 +40,8 @@ public class Data extends DavTesterBase {
   boolean substitute;
   boolean generate;
 
+  String nextpath;
+
   public Data(final Manager manager) {
     super(manager);
   }

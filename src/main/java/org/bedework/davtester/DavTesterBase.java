@@ -28,7 +28,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 /**
  * Base for many dav tester classes
  */
-public class DavTesterBase {
+public abstract class DavTesterBase {
   protected final Manager manager;
 
   protected Document doc;
@@ -44,6 +44,12 @@ public class DavTesterBase {
   public DavTesterBase(final Manager manager) {
     this.manager = manager;
   }
+
+  /**
+   *
+   * @return kind ffor labelling - e.g. TEST, REQUEST etc
+   */
+  public abstract String getKind();
 
   public TreeSet<String> missingFeatures() {
     var res = new TreeSet<>(requireFeatures);
@@ -61,7 +67,6 @@ public class DavTesterBase {
     return res;
   }
 
-
   protected void parseFeatures(final Element node, final boolean require) {
     for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
@@ -72,5 +77,14 @@ public class DavTesterBase {
         }
       }
     }
+  }
+
+  protected void print(String msg) {
+    System.out.println(msg);
+  }
+
+  public void dump() {
+    print("\n" + getKind() + ": " + name);
+    print("    description: " + description);
   }
 }

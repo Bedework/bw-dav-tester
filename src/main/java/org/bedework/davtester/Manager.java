@@ -57,7 +57,7 @@ public class Manager implements Logged {
 
   public Serverinfo serverInfo = new Serverinfo();
   private String baseDir = "";
-  private String dataDir;
+  public String dataDir;
   String pretestFile;
   private Caldavtest pretest;
   String posttestFile;
@@ -76,8 +76,8 @@ public class Manager implements Logged {
   private KeyVals results = new KeyVals();
   
   boolean stoponfail = false;
-  boolean printRequest = false;
-  boolean printResponse = false;
+  public boolean printRequest = false;
+  public boolean printResponse = false;
   boolean printRequestResponseOnError = false;
 
   public static class TestResult {
