@@ -18,7 +18,6 @@ package org.bedework.davtester;
 import org.bedework.davtester.Serverinfo.KeyVal;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 /**
  * Maintains a list of tests to run as part of a 'suite'.
  */
-class Testsuite extends TestBase {
+class Testsuite extends DavTesterBase {
   private boolean ignore;
   private boolean changeuid;
 

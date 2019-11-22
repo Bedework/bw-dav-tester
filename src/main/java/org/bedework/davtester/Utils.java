@@ -15,9 +15,11 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.misc.Util;
+
 public class Utils {
   public static String upperFirst(String val) {
-    if ((val == null) || (val).length() == 0)) {
+    if ((val == null) || (val.length() == 0)) {
       return val;
     }
 
@@ -28,6 +30,44 @@ public class Utils {
     }
 
     return first + val.substring(1);
+  }
+
+  /** This can log the message
+   *
+   * @param message to display
+   */
+  public static void throwException(final String message) {
+    throw new RuntimeException(message);
+  }
+
+  /** This can log the message
+   *
+   * @param t exception
+   */
+  public static void throwException(final Throwable t) {
+    throw new RuntimeException(t);
+  }
+
+  public static class KeyValsPropertyFetcher implements Util.PropertyFetcher {
+    private final KeyVals props;
+
+    public KeyValsPropertyFetcher(KeyVals props) {
+      this.props = props;
+    }
+
+    public String get(String name) {
+      var val = this.props.get(name);
+
+      if (Util.isEmpty(val)) {
+        return null;
+      }
+
+      var val0 = val.get(0);
+      if (val0 instanceof String) {
+        return (String)val0;
+      }
+      return null;
+    }
   }
 }
 

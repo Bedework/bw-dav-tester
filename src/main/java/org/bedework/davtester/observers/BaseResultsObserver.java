@@ -15,13 +15,13 @@
 */
 package org.bedework.davtester.observers;
 
+import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  A base class for an observer that gets passed results of tests.
@@ -46,7 +46,7 @@ public abstract class BaseResultsObserver implements Logged {
   BaseResultsObserver() {
   }
 
-  public abstract void process(final String message, final Properties args);
+  public abstract void process(final String message, final KeyVals args);
 
   /**
    * Called immediately after creation. Shoudlbe overridden.
@@ -64,7 +64,7 @@ public abstract class BaseResultsObserver implements Logged {
     calls.put(msg, bro);
   }
 
-  void message(final String message, final Properties args) {
+  void message(final String message, final KeyVals args) {
 
     var callit = calls.get(message);
 

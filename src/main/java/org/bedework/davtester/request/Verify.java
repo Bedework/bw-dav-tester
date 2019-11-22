@@ -16,7 +16,7 @@
 package org.bedework.davtester.request;
 
 import org.bedework.davtester.Manager;
-import org.bedework.davtester.TestBase;
+import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.davtester.verifiers.Verifier;
@@ -41,7 +41,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  specified in the test XML config file. The callback name is in the XML config
  file also and is dynamically loaded to do the verification.
  */
-class Verify extends TestBase {
+class Verify extends DavTesterBase {
   private String callback;
   private Properties args = new Properties();
   final static String verifierClassPrefix =
@@ -59,7 +59,7 @@ class Verify extends TestBase {
         var values = (List<String>)args.get((String)name);
         var newvalues = new ArrayList<String>();
         for (var value: values) {
-          newvalues.add(manager.serverInfo.extrasubs(value);
+          newvalues.add(manager.serverInfo.extrasubs(value));
         }
         args.put(name, newvalues);
       }

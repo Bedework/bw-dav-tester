@@ -24,7 +24,7 @@ from xml.parsers.expat import ExpatError
 import getopt
 import os
 import random
-import src.xmlDefs
+import XmlDefs
 import sys
 import time
 
@@ -35,7 +35,6 @@ EX_FAILED_REQUEST = "HTTP Request Failed"
  */
 
 import org.bedework.davtester.observers.BaseResultsObserver;
-import org.bedework.util.args.Args;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
 
@@ -43,7 +42,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.TreeSet;
 
 /**
     Main class that runs test suites defined in an XML config file.
@@ -75,7 +73,7 @@ public class Manager implements Logged {
   private Writer logFileWriter;
   
   private List<BaseResultsObserver> observers = new ArrayList<>();
-  private Properties results = new Properties();
+  private KeyVals results = new KeyVals();
   
   boolean stoponfail = false;
   boolean printRequest = false;
@@ -131,97 +129,105 @@ public class Manager implements Logged {
       throw new RuntimeException(t);
     }
   }
-    
-    public void loadObserver(final String observerName) {
-      var module = Util.getObject(observerName, BaseResultsObserver.class);
-      
+
+  public Object getResults() {
+    return results;
+  }
+
+  public void loadObserver(final String observerName) {
+    try {
+      var module = Util
+              .getObject(observerName, BaseResultsObserver.class);
+
       var observer = (BaseResultsObserver)module;
-      
+
       observer.init(this);
 
       observers.add(observer);
+    } catch (final Throwable t) {
+      Utils.throwException(t);
     }
+  }
 
-    public void message(final String message, final Properties args) {
-      for (final BaseResultsObserver obs: observers) {
-        obs.process(message, args);
-      }
+  public void message(final String message, final KeyVals args) {
+    for (final BaseResultsObserver obs: observers) {
+      obs.process(message, args);
     }
+  }
 
-    public void testProgress(final int count, final int total) {
-      final Properties results = new Properties();
-      results.put("count", count);
-      results.put("total", total);
+  public void testProgress(final int count, final int total) {
+    final KeyVals results = new KeyVals();
+    results.put("count", count);
+    results.put("total", total);
 
-      message("testProgress", results);
-    }
+    message("testProgress", results);
+  }
 
   public void trace(final String message) {
-    final Properties results = new Properties();
-    results.put("message", message);
-
-    message("trace", results);
+    message("trace", new KeyVals("message", message));
   }
     
-    public void testFile (final String name, 
-                          final String details, final Integer resultCode) {
-      final Properties results = new Properties();
+  public KeyVals testFile (final String name,
+                           final String details,
+                           final Integer resultCode) {
+    var res = new KeyVals();
 
-      results.put("name", name);
-      results.put("details", details);
-      results.put("result", result);
-      // results.put("tests", []);
+    results.put("name", name);
+    results.put("details", details);
+    results.put("result", resultCode);
+    results.put("tests", res);
 
-      if (resultCode != null) {
-        totals[resultCode]++;
-      }
-      message("testFile", results);
-      return results[-1]["tests"];
-    }
-
-    public void testSuite(final Properties testfile,
-                          final String name,
-                          final String details,
-                          final Integer resultCode) {
-      final Properties results = new Properties();
-
-      results.put("name", name);
-      results.put("details", details);
-      results.put("result", result);
-      // results.put("tests", []);
-
-      if (resultCode != null) {
-        totals[resultCode]++;
-      }
-
-      message("testSuite", testfile);
-      return testfile[-1]["tests"];
-    }
-
-    public void testResult(final Properties testsuite,
-                            final String name,
-                            final String details,
-                            final Integer resultCode, 
-                            final Object addons) {
-      final Properties results = new Properties();
-
-      results.put("name", name);
-      results.put("details", details);
-      results.put("result", result);
-
-      if (addons != null) {
-        resultDetails.update(addons);
-      }
-      testsuite.addAll(resultDetails);
+    if (resultCode != null) {
       totals[resultCode]++;
-      message("testResult", testsuite);
+    }
+    message("testFile", res);
+    return res;
+  }
+
+  public KeyVals testSuite(final KeyVals testfile,
+                           final String name,
+                           final String details,
+                           final Integer resultCode) {
+    var res = new KeyVals();
+
+    testfile.put("name", name);
+    testfile.put("details", details);
+    testfile.put("result", resultCode);
+    testfile.put("tests", res);
+
+    if (resultCode != null) {
+      totals[resultCode]++;
     }
 
-    public void readXML(final String serverfile,
-                        final String testfiles,
+    message("testSuite", testfile);
+    return res;
+  }
+
+  public void testResult(final KeyVals testsuite,
+                         final String name,
+                         final String details,
+                         final Integer resultCode,
+                         final KeyVals addons) {
+    final KeyVals resultDetails = new KeyVals();
+
+    resultDetails.put("name", name);
+    resultDetails.put("details", details);
+    resultDetails.put("result", resultCode);
+
+    if (addons != null) {
+      resultDetails.addAll(addons);
+    }
+
+    testsuite.addAll(resultDetails);
+    totals[resultCode]++;
+    message("testResult", (KeyVals)testsuite.get("details"));
+  }
+
+  public void readXML(final String serverfile,
+                      final String testfiles,
                         final boolean ssl,
                         final boolean all, 
-                        final Properties moresubs) {
+                        final KeyVals moresubs) {
       trace(String.format("Reading Server Info from \"%s\"",
                           serverfile));
 
@@ -235,7 +241,7 @@ public class Manager implements Logged {
 
       // Verify that top-level element is correct
       serverinfo_node = tree.getroot()
-      if (serverinfo_node.tag != src.xmlDefs.ELEMENT_SERVERINFO) {
+      if (serverinfo_node.tag != XmlDefs.ELEMENT_SERVERINFO) {
         raise EX_INVALID_CONFIG_FILE
       }
       if (not len (serverinfo_node)){
@@ -315,7 +321,7 @@ public class Manager implements Logged {
           posttest = new Caldavtest(this, posttestFile, false)
         }
 
-        message("load", None, ctr + 1, len(testfiles))
+        message("load", null, ctr + 1, len(testfiles))
     }
 
       public void runAll () {

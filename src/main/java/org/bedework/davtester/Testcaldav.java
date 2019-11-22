@@ -32,7 +32,7 @@ public class Testcaldav {
     String subdir = null;
     var pidfile = "../CalendarServer/logs/caldavd.pid";
     var randomOrder = false;
-    //var random_seed = str(new Random.randint(0, 1000000));
+    //var random_seed = String.valueOf(new Random.randint(0, 1000000));
     var observerNames = new ArrayList<String>();
 
     /*
@@ -184,7 +184,7 @@ public class Testcaldav {
 
       if (all || !args) {
         files = []
-        // os.path.walk(dname, lambda arg, dir, names: files.extend([os.path.join(dir, name) for name in names]) if not dir.startsWith("test") } else None, None);
+        // os.path.walk(dname, lambda arg, dir, names: files.extend([os.path.join(dir, name) for name in names]) if not dir.startsWith("test") } else null, null);
         for (file:
              files) {
           if (file.endswith(".xml") &&

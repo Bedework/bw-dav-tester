@@ -21,25 +21,25 @@ class Generator{
     """
 
     public Generator(manager) {
-        self.manager = manager
-        self.callback = None
-        self.args = {}
+        manager = manager
+        callback = null
+        args = {}
 
     public void doGenerate () {
 
         # Re-do substitutions from values generated during the current test run
-        if self.manager.server_info.hasextrasubs() {
-            for name, values in self.args.iteritems() {
-                newvalues = [self.manager.server_info.extrasubs(value) for value in values]
-                self.args[name] = newvalues
+        if manager.serverInfo.hasextrasubs() {
+            for name, values in args.iteritems() {
+                newvalues = [manager.serverInfo.extrasubs(value) for value in values]
+                args[name] = newvalues
 
-        generatorClass = self._importName(self.callback, "Generator")
+        generatorClass = _importName(callback, "Generator")
         gen = generatorClass()
 
         # Always clone the args as this verifier may be called multiple times
-        args = dict((k, list(v)) for k, v in self.args.items())
+        args = dict((k, list(v)) for k, v in args.items())
 
-        return gen.generate(self.manager, args)
+        return gen.generate(manager, args)
 
     public void _importName (modulename, name) {
         """
@@ -52,20 +52,20 @@ class Generator{
 
         for (var child: children(node)) {
             if (nodeMatches(child, XmlDefs.ELEMENT_CALLBACK:
-                self.callback = contentUtf8(child)
+                callback = contentUtf8(child)
             } else if (nodeMatches(child, XmlDefs.ELEMENT_ARG:
-                self.parseArgXML(child)
+                parseArgXML(child)
 
     public void parseArgXML (node) {
-        name = None
+        name = null
         values = []
         for (var child: children(node)) {
             if (nodeMatches(child, XmlDefs.ELEMENT_NAME:
                 name = contentUtf8(child)
             } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE:
                 if child.text != null:
-                    values.append(self.manager.server_info.subs(contentUtf8(child)))
+                    values.append(manager.serverInfo.subs(contentUtf8(child)))
                 } else {
                     values.append("")
         if name:
-            self.args[name] = values
+            args[name] = values

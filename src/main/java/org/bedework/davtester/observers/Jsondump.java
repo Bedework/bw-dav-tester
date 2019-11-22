@@ -15,13 +15,12 @@
 */
 package org.bedework.davtester.observers;
 
+import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -45,7 +44,7 @@ public class Jsondump extends BaseResultsObserver {
     addCall("testResult", this);
   }
 
-  public void process(final String message, final Properties args) {
+  public void process(final String message, final KeyVals args) {
     switch (message) {
       case "finish":
         finish();
@@ -60,8 +59,8 @@ public class Jsondump extends BaseResultsObserver {
     }
   }
 
-  public void protocol(final Properties args) {
-    currentProtocol = (String)args.get("protocol");
+  public void protocol(final KeyVals args) {
+    currentProtocol = args.getOnlyString("protocol");
   }
 
   public void testResult(final Properties args) {
@@ -72,11 +71,11 @@ public class Jsondump extends BaseResultsObserver {
     }
   }
 
-  public void testSuite(final Properties args) {
+  public void testSuite(final KeyVals args) {
     args.put("time", new Date());
   }
 
   public void finish() {
-    manager().print(om.writeValueAsString(manager().results));
+    manager().print(om.writeValueAsString(manager().getResults()));
   }
 }

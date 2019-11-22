@@ -22,6 +22,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -29,24 +31,38 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
 
 /**
 XML processing utilities.
 */
 public class XmlUtils {
+  public static Document parseXml(final String fileName) {
+    try {
+      final File f = new File(fileName);
+
+      final InputStream is = new FileInputStream(f);
+
+      return parseXml(is);
+    } catch (final Throwable t) {
+      throwException(t);
+      return null; // fake
+    }
+  }
 
   public static Document parseXml(final InputStream is) {
     try {
-      final DocumentBuilderFactory factory = DocumentBuilderFactory
-              .newInstance();
+      final DocumentBuilderFactory factory =
+              DocumentBuilderFactory.newInstance();
       factory.setNamespaceAware(true);
 
       final DocumentBuilder builder = factory.newDocumentBuilder();
 
       return builder.parse(new InputSource(is));
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return null; // fake
     }
   }
 
@@ -54,7 +70,8 @@ public class XmlUtils {
     try {
       return XmlUtil.getElements(nd);
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return null; // fake
     }
   }
 
@@ -62,7 +79,8 @@ public class XmlUtils {
     try {
       return XmlUtil.getElementContent(nd);
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return null; // fake
     }
   }
 
@@ -74,7 +92,8 @@ public class XmlUtils {
       }
       return StandardCharsets.UTF_8.encode(str).toString();
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return null; // fake
     }
   }
 
@@ -84,7 +103,24 @@ public class XmlUtils {
       return XmlDefs.ATTR_VALUE_YES
               .equals(getAttrVal(node, attr));
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return false; // fake
+    }
+  }
+
+  public static boolean getYesNoAttributeValue(final Element node,
+                                               final String attr,
+                                               final boolean def) {
+    try {
+      var val = getAttrVal(node, attr);
+      if (val == null) {
+        return def;
+      }
+
+      return XmlDefs.ATTR_VALUE_YES.equals(val);
+    } catch (final Throwable t) {
+      throwException(t);
+      return false; // fake
     }
   }
 
@@ -99,7 +135,8 @@ public class XmlUtils {
 
       return Integer.valueOf(val);
     } catch (final Throwable t) {
-      throw new RuntimeException(t);
+      throwException(t);
+      return 0; // fake
     }
   }
 }
@@ -135,7 +172,7 @@ public void nodeForPath(root, path) {
         actual_path, tests = path.split('[', 1)
     } else {
         actual_path = path
-        tests = None
+        tests = null
 
     # Handle absolute root element
     if actual_path[0] == '/':
@@ -143,15 +180,15 @@ public void nodeForPath(root, path) {
     if '/' in actual_path:
         root_path, child_path = actual_path.split('/', 1)
         if root.tag != root_path:
-            return None
+            return null
         nodes = root.findall(child_path)
     } else {
         root_path = actual_path
-        child_path = None
+        child_path = null
         nodes = (root,)
 
     if len(nodes) == 0:
-        return None
+        return null
 
     results = []
 
@@ -165,7 +202,7 @@ public void nodeForPath(root, path) {
                         value = value[1:-1]
                     } else {
                         attr = test[1:]
-                        value = None
+                        value = null
                     if attr in node.keys() && (value == null|| node.get(attr) == value) {
                         results.append(node)
                 } else if (test[0] == '=':
@@ -185,7 +222,7 @@ public void nodeForPath(root, path) {
                         element, value = test[1:].split("=", 1)
                     } else {
                         element = test[1:]
-                        value = None
+                        value = null
                     for (var child: children(node)) {
                         if child.tag == element && (value == null|| child.text == value) {
                             results.append(node)

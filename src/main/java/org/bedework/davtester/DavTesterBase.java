@@ -15,6 +15,7 @@
 */
 package org.bedework.davtester;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Set;
@@ -25,10 +26,12 @@ import static org.bedework.davtester.XmlUtils.contentUtf8;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
- * Base for test classes
+ * Base for many dav tester classes
  */
-public class TestBase {
+public class DavTesterBase {
   protected final Manager manager;
+
+  protected Document doc;
 
   String name;
   String description = "";
@@ -38,7 +41,7 @@ public class TestBase {
   private Set<String> requireFeatures = new TreeSet<>();
   private Set<String> excludeFeatures = new TreeSet<>();
 
-  public TestBase(final Manager manager) {
+  public DavTesterBase(final Manager manager) {
     this.manager = manager;
   }
 

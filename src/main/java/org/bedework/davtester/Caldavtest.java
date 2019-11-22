@@ -15,8 +15,6 @@
 */
 package org.bedework.davtester;
 
-import org.w3c.dom.Document;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -28,7 +26,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 
+import static java.lang.String.format;
 import static org.bedework.davtester.Manager.TestResult;
 import static org.bedework.util.xml.tagdefs.XcardTags.uid;
 
@@ -54,7 +54,7 @@ import json
 import os
 import rfc822
 import socket
-import src.xmlDefs
+import XmlDefs
 import sys
 import time
 import traceback
@@ -92,9 +92,7 @@ public void getVersionStringFromResponse(response) {
 /**
  * Class to encapsulate a single caldav test run.
  */
-class Caldavtest extends TestBase {
-  private final Document doc;
-
+class Caldavtest extends DavTesterBase {
   boolean ignoreAll;
   private boolean only;
 
@@ -121,31 +119,35 @@ class Caldavtest extends TestBase {
 
   public TestResult run() {
     if (missingFeatures().size() != 0) {
-      manager.testFile(name, "Missing features: %s" % (", ".join(
-              sorted(missingFeatures()), )),
+      manager.testFile(name,
+                       format("Missing features: %s",
+                                           ", ".join(
+              sorted(missingFeatures()))),
                        manager.RESULT_IGNORED);
       return TestResult.ignored();
     }
 
     if (excludedFeatures().size() != 0) {
-      manager.testFile(name, "Excluded features: %s" % (", ".join(
-              sorted(excludedFeatures()), )),
+      manager.testFile(name,
+                       format("Excluded features: %s",
+                              ", ".join(
+              sorted(excludedFeatures()))),
                        manager.RESULT_IGNORED);
       return TestResult.ignored();
     }
 
     // Always need a new set of UIDs for the entire test
     for (var kv : manager.serverInfo.newUIDs()) {
-      uidmaps.put(kv.key, String.format("%s - %s", kv.val, name));
+      uidmaps.put(kv.key, format("%s - %s", kv.val, name));
     }
 
     only = any([suite.only for suite in suites]);
 
     try {
       final TestResult res;
-      result = dorequests("Start Requests...", start_requests, False,
-                          True,
-                          String.format("%s | %s", fname,
+      result = doRequests("Start Requests...", start_requests, false,
+                          true,
+                          format("%s | %s", name,
                                         "START_REQUESTS"));
 
       if (!result) {
@@ -158,7 +160,7 @@ class Caldavtest extends TestBase {
       }
       doenddelete("Deleting Requests...", label = "%s | %s" % (name,
                   "END_DELETE"))
-      dorequests("End Requests...", end_requests, False,
+      dorequests("End Requests...", end_requests, false,
                  label = "%s | %s" % (name, "END_REQUESTS"))
       return res;
     } catch (final Throwable t) {
@@ -180,8 +182,9 @@ class Caldavtest extends TestBase {
       var testfile = manager.testFile(name, description);
       for (var suite : suites) {
         res.add(runTestSuite(testfile, suite,
-                                 label = "%s | %s" % (label,
-                                 suite.name)));
+                             format("%s | %s",
+                                           label,
+                                           suite.name)));
       }
 
       return res;
@@ -241,63 +244,81 @@ class Caldavtest extends TestBase {
     return res;
   }
 
-    public char runTest (testsuite, test, etags, only, label="") {
-        if test.ignore|| only && ! test.only:
-            manager.testResult(testsuite, test.name, "      Deliberately ignored", manager.RESULT_IGNORED);
-            return 'i';
-        }
+  public char runTest (final KeyVals testsuite,
+                       final Test test,
+                       final List<String> etags,
+                       final boolean only,
+                       final String label) {
+    if (test.ignore|| only && ! test.only) {
+      manager.testResult(testsuite, test.name,
+                         "      Deliberately ignored",
+                         manager.RESULT_IGNORED, null);
+      return 'i';
+    }
 
-        if (test.missingFeatures().size() != 0) {
-            manager.testResult(testsuite, test.name, "      Missing features: %s" % (", ".join(sorted(test.missingFeatures())),), manager.RESULT_IGNORED)
-            return 'i';
-        }
+    if (test.missingFeatures().size() != 0) {
+      manager.testResult(testsuite, test.name,
+                         format("      Missing features: %s",
+                                ", ".join(sorted(test.missingFeatures()))),
+                         manager.RESULT_IGNORED, null);
+      return 'i';
+    }
 
-        if (test.excludedFeatures().size() != 0) {
-            manager.testResult(testsuite, test.name, "      Excluded features: %s" % (", ".join(sorted(test.excludedFeatures())),), manager.RESULT_IGNORED)
-            return 'i';
-        }
-            result = True;
-            resulttxt = "";
-            postgresCount = postgresInit();
-            if (test.stats) {
-                reqstats = stats()
-            } else {
-                reqstats = null;
-            }
-            for (int ctr: range(test.count)) {
-                for (req_count, req in enumerate(test.requests)) {
-                    t = time.time() + (manager.serverInfo.waitsuccess if getattr(req, "wait_for_success", False) } else 100)
-                    while t > time.time() {
-                        failed = False;
-                        if (getattr(req, "iterate_data", false)) {
+    if (test.excludedFeatures().size() != 0) {
+      manager.testResult(testsuite,
+                         test.name,
+                         format("      Excluded features: %s",
+                                ", ".join(sorted(test.excludedFeatures()))),
+                         manager.RESULT_IGNORED, null);
+      return 'i';
+    }
+
+    var result = true;
+    var resulttxt = "";
+    // POSTGRES postgresCount = postgresInit();
+    if (test.stats) {
+      reqstats = stats();
+    } else {
+      reqstats = null;
+    }
+
+    IntStream.range(0, test.count).forEachOrdered(ctr -> {
+              var failed = false;
+              var reqCount = 1;
+                for (var req: test.requests) {
+                    t = time.time() + (manager.serverInfo.waitsuccess if req.waitForSuccess  else 100)
+                    while (t > time.time()) {
+                        failed = false;
+                        if (req.iterateData) {
                             if (!req.hasNextData()) {
                                 manager.testResult(testsuite, test.name, "      No iteration data - ignored", manager.RESULT_IGNORED)
                                 return 'i';
                             }
 
                             while (req.getNextData()){
-                              result,resulttxt,_ignore_response,_ignore_respdata=dorequest(req,test.details,True,False,reqstats,etags=etags,label="%s | #%s"%(label,req_count+1,),count=ctr+1)
-                            if (result==null) {
-                                failed=True;
+                              result,resulttxt,_ignore_response,_ignore_respdata=dorequest(req,test.details,true,false,reqstats,etags=etags,label="%s | #%s"%(label,req_count+1,),count=ctr+1)
+                            if (!result) {
+                                failed=true;
                                 break;
                               }
                             }
                         } else {
-                            result, resulttxt, _ignore_response, _ignore_respdata = dorequest(req, test.details, True, False, reqstats, etags=etags, label="%s | #%s" % (label, req_count + 1,), count=ctr + 1)
-                            if ! result {
-                                failed = True;
+                            result, resulttxt, _ignore_response, _ignore_respdata = doRequest(req, test.details, true, false, reqstats, etags=etags,
+                                format("%s | #%s", label, req_count + 1), ctr + 1);
+                            if (!result) {
+                                failed = true;
                             }
                         }
 
-                        if (! failed|| ! req.wait_for_success) {
-                            break
+                        if (!failed|| !req.wait_for_success) {
+                            break;
                         }
                     }
                     if (failed) {
                         break;
                     }
                 }
-            }
+            });
 
             var addons = new Properties();
             if (resulttxt != null){
@@ -305,24 +326,28 @@ class Caldavtest extends TestBase {
             }
 
             if ((result != null) && test.stats) {
-                manager.message("trace", "    Total Time: %.3f secs" % (reqstats.totaltime,), indent=8)
-                manager.message("trace", "    Average Time: %.3f secs" % (reqstats.totaltime / reqstats.count,), indent=8);
-                var timing = new Properties();
-                timing.put("total", reqstats.totaltime);
-                timing.put("average", reqstats.totaltime / reqstats.count);
-                addons.put("timing", timing);
-            postgresResult(postgresCount, indent=8)
-            manager.testResult(testsuite, test.name, resulttxt, manager.RESULT_OK if result } else manager.RESULT_FAILED, addons)
-            return ["f", "t"][result]
+                    manager.trace(format("    Total Time: %.3f secs",
+                    reqstats.totaltime,),indent=8)
+                    manager.trace(format("    Average Time: %.3f secs",
+                    reqstats.totaltime/reqstats.count,),indent=8);
+                    var timing=new Properties();
+                    timing.put("total",reqstats.totaltime);
+                    timing.put("average",reqstats.totaltime/reqstats.count);
+                    addons.put("timing",timing);
+                    }
 
-    public void dorequests (description, list, doverify=True, forceverify=False, label="", count=1) {
+            // postgresResult(postgresCount, indent=8)
+            manager.testResult(testsuite, test.name, resulttxt, manager.RESULT_OK if result } else manager.RESULT_FAILED, addons)
+          return ["f", "t"][result]
+
+    public void doRequests (final String description, list, doverify=true, forceverify=false, label="", count=1) {
         if len(list) == 0:
-            return True
+            return true
         manager.message("trace", "Start: " + description)
         for req_count, req in enumerate(list) {
-            result, resulttxt, _ignore_response, _ignore_respdata = dorequest(req, False, doverify, forceverify, label="%s | #%s" % (label, req_count + 1), count=count)
+            result, resulttxt, _ignore_response, _ignore_respdata = dorequest(req, false, doverify, forceverify, label="%s | #%s" % (label, req_count + 1), count=count)
             if ! result:
-                resulttxt += "\nFailure during multiple requests #%d out of %d, request=%s" % (req_count + 1, len(list), str(req))
+                resulttxt += "\nFailure during multiple requests #%d out of %d, request=%s" % (req_count + 1, len(list), String.valueOf(req))
                 break
         manager.message("trace", "{name:<60}{value:>10}".format(name="End: " + description, value=["[FAILED]", "[OK]"][result]))
         if len(resulttxt) > 0:
@@ -340,11 +365,11 @@ class Caldavtest extends TestBase {
             req.user = resource[1]
         if len(resource[2]) {
             req.pswd = resource[2]
-        _ignore_result, _ignore_resulttxt, response, respdata = dorequest(req, False, False, label=label)
+        _ignore_result, _ignore_resulttxt, response, respdata = dorequest(req, false, false, label=label)
         if response.status / 100 != 2:
-            return False, None
+            return false, null
 
-        return True, respdata
+        return true, respdata
 
     public void dofindall (original_request, collection, label="") {
         hrefs = []
@@ -368,7 +393,7 @@ class Caldavtest extends TestBase {
 </D:propfind>
 """
         req.data.content_type = "text/xml"
-        result, _ignore_resulttxt, response, respdata = dorequest(req, False, False, label=label)
+        result, _ignore_resulttxt, response, respdata = dorequest(req, false, false, label=label)
         if result && (response != null) && (response.status == 207) && (respdata != null) {
             try:
                 tree = ElementTree(file=StringIO(respdata))
@@ -381,7 +406,7 @@ class Caldavtest extends TestBase {
                 # Get href for this response
                 href = response.findall("{DAV:}href")
                 if len(href) != 1:
-                    return False, "           Wrong number of DAV:href elements\n"
+                    return false, "           Wrong number of DAV:href elements\n"
                 href = href[0].text
                 if href != request_uri:
                     hrefs.append((href, collection[1], collection[2]))
@@ -389,7 +414,7 @@ class Caldavtest extends TestBase {
 
     public void dodeleteall (original_request, deletes, label="") {
         if len(deletes) == 0:
-            return True
+            return true
         for deleter in deletes:
             req = request(manager)
             req.method = "DELETE"
@@ -401,13 +426,13 @@ class Caldavtest extends TestBase {
                 req.user = deleter[1]
             if len(deleter[2]) {
                 req.pswd = deleter[2]
-            _ignore_result, _ignore_resulttxt, response, _ignore_respdata = dorequest(req, False, False, label=label)
+            _ignore_result, _ignore_resulttxt, response, _ignore_respdata = dorequest(req, false, false, label=label)
             if response.status / 100 != 2:
-                return False
+                return false
 
-        return True
+        return true
 
-    public void dofindnew (original_request, collection, label="", other=False) {
+    public void dofindnew (original_request, collection, label="", other=false) {
         hresult = ""
 
         uri = collection[0]
@@ -416,7 +441,7 @@ class Caldavtest extends TestBase {
             skip = uri
             uri = "/".join(uri.split("/")[:-1]) + "/"
         } else {
-            skip = None
+            skip = null
         possible_matches = set()
         req = request(manager)
         req.method = "PROPFIND"
@@ -439,7 +464,7 @@ class Caldavtest extends TestBase {
 </D:propfind>
 """
         req.data.content_type = "text/xml"
-        result, _ignore_resulttxt, response, respdata = dorequest(req, False, False, label="%s | %s" % (label, "FINDNEW"))
+        result, _ignore_resulttxt, response, respdata = dorequest(req, false, false, label="%s | %s" % (label, "FINDNEW"))
         if result && (response != null) && (response.status == 207) && (respdata != null) {
             try:
                 tree = ElementTree(file=StringIO(respdata))
@@ -453,7 +478,7 @@ class Caldavtest extends TestBase {
                 # Get href for this response
                 href = response.findall("{DAV:}href")
                 if len(href) != 1:
-                    return False, "           Wrong number of DAV:href elements\n"
+                    return false, "           Wrong number of DAV:href elements\n"
                 href = href[0].text
                 if href != request_uri && (!other|| href != skip) {
 
@@ -464,11 +489,11 @@ class Caldavtest extends TestBase {
                         status = props.findall("{DAV:}status")
                         if len(status) == 1:
                             statustxt = status[0].text
-                            status = False
+                            status = false
                             if statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10) {
                                 status = (statustxt[9] == "2")
                         } else {
-                            status = False
+                            status = false
 
                         if status:
                             # Get properties for this propstat
@@ -525,7 +550,7 @@ class Caldavtest extends TestBase {
 </D:propfind>
 """
         req.data.content_type = "text/xml"
-        result, _ignore_resulttxt, response, respdata = dorequest(req, False, False, label="%s | %s" % (label, "FINDNEW"))
+        result, _ignore_resulttxt, response, respdata = dorequest(req, false, false, label="%s | %s" % (label, "FINDNEW"))
         if result && (response != null) && (response.status == 207) && (respdata != null) {
             try:
                 tree = ElementTree(file=StringIO(respdata))
@@ -538,7 +563,7 @@ class Caldavtest extends TestBase {
                 # Get href for this response
                 href = response.findall("{DAV:}href")
                 if len(href) != 1:
-                    return False, "           Wrong number of DAV:href elements\n"
+                    return false, "           Wrong number of DAV:href elements\n"
                 href = href[0].text
                 if href != request_uri:
 
@@ -546,7 +571,7 @@ class Caldavtest extends TestBase {
                     if respdata.find(match) != -1:
                         break
             } else {
-                href = None
+                href = null
 
         return href
 
@@ -574,7 +599,7 @@ class Caldavtest extends TestBase {
 </D:propfind>
 """
             req.data.content_type = "text/xml"
-            result, _ignore_resulttxt, response, respdata = dorequest(req, False, False, label="%s | %s %d" % (label, "WAITCOUNT", count))
+            result, _ignore_resulttxt, response, respdata = dorequest(req, false, false, label="%s | %s %d" % (label, "WAITCOUNT", count))
             hrefs = []
             if result && (response != null) && (response.status == 207) && (respdata != null) {
                 tree = ElementTree(file=StringIO(respdata))
@@ -585,7 +610,7 @@ class Caldavtest extends TestBase {
                         hrefs.append(href.text)
 
                 if len(hrefs) == count:
-                    return True, None
+                    return true, null
             delay = manager.serverInfo.waitdelay
             starttime = time.time()
             while (time.time() < starttime + delay) {
@@ -604,9 +629,9 @@ class Caldavtest extends TestBase {
                         test = uidmaps.get(uid, "unknown")
                 rdata += "\n\nhref: {h}\ntest: {t}\n\n{r}\n".format(h=href, t=test, r=respdata)
 
-            return False, rdata
+            return false, rdata
         } else {
-            return False, len(hrefs)
+            return false, len(hrefs)
 
     public void dowaitchanged (original_request, uri, etag, user, pswd, label="") {
 
@@ -621,7 +646,7 @@ class Caldavtest extends TestBase {
                 req.user = user
             if pswd:
                 req.pswd = pswd
-            result, _ignore_resulttxt, response, _ignore_respdata = dorequest(req, False, False, label="%s | %s" % (label, "WAITCHANGED"))
+            result, _ignore_resulttxt, response, _ignore_respdata = dorequest(req, false, false, label="%s | %s" % (label, "WAITCHANGED"))
             if result && (response != null) {
                 if response.status / 100 == 2:
                     hdrs = response.msg.getheaders("Etag")
@@ -630,19 +655,19 @@ class Caldavtest extends TestBase {
                         if newetag != etag:
                             break
                 } else {
-                    return False
+                    return false
             delay = manager.serverInfo.waitdelay
             starttime = time.time()
             while (time.time() < starttime + delay) {
                 pass
         } else {
-            return False
+            return false
 
-        return True
+        return true
 
     public void doenddelete (description, label="") {
         if len(end_deletes) == 0:
-            return True
+            return true
         manager.message("trace", "Start: " + description)
         for uri, delete_request in end_deletes:
             req = request(manager)
@@ -654,10 +679,10 @@ class Caldavtest extends TestBase {
             req.user = delete_request.user
             req.pswd = delete_request.pswd
             req.cert = delete_request.cert
-            dorequest(req, False, False, label=label)
+            dorequest(req, false, false, label=label)
         manager.message("trace", "{name:<60}{value:>10}".format(name="End: " + description, value="[DONE]"))
 
-    public void dorequest (req, details=False, doverify=True, forceverify=False, stats=None, etags=None, label="", count=1) {
+    public void dorequest (req, details=false, doverify=true, forceverify=false, stats=null, etags=null, label="", count=1) {
 
         req.count = count
 
@@ -665,12 +690,12 @@ class Caldavtest extends TestBase {
             # Useful for pausing at a particular point
             print "Paused"
             sys.stdin.readline()
-            return True, "", None, None
+            return true, "", null, null
 
         if len(req.missingFeatures()) != 0:
-            return True, "", None, None
+            return true, "", null, null
         if len(req.excludedFeatures()) != 0:
-            return True, "", None, None
+            return true, "", null, null
 
         # Special check for DELETEALL
         if req.method == "DELETEALL":
@@ -678,8 +703,8 @@ class Caldavtest extends TestBase {
                 collection = (ruri, req.user, req.pswd)
                 hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"))
                 if !dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL")) {
-                    return False, "DELETEALL failed for: {r}".format(r=ruri), None, None
-            return True, "", None, None
+                    return false, "DELETEALL failed for: {r}".format(r=ruri), null, null
+            return true, "", null, null
 
         # Special for delay
         } else if (req.method == "DELAY":
@@ -688,7 +713,7 @@ class Caldavtest extends TestBase {
             starttime = time.time()
             while (time.time() < starttime + delay) {
                 pass
-            return True, "", None, None
+            return true, "", null, null
 
         # Special for GETNEW
         } else if (req.method == "GETNEW":
@@ -705,12 +730,12 @@ class Caldavtest extends TestBase {
             grabbedlocation = dofindnew(req, collection, label=label)
             if req.graburi:
                 manager.serverInfo.addextrasubs({req.graburi: grabbedlocation})
-            return True, "", None, None
+            return true, "", null, null
 
         # Special for GETOTHER
         } else if (req.method == "GETOTHER":
             collection = (req.ruri, req.user, req.pswd)
-            grabbedlocation = dofindnew(req, collection, label=label, other=True)
+            grabbedlocation = dofindnew(req, collection, label=label, other=true)
             if req.graburi:
                 manager.serverInfo.addextrasubs({req.graburi: grabbedlocation})
             req.method = "GET"
@@ -722,7 +747,7 @@ class Caldavtest extends TestBase {
             collection = (req.ruri, req.user, req.pswd)
             grabbedlocation = dofindcontains(req, collection, match, label=label)
             if !grabbedlocation:
-                return False, "No matching resource", None, None
+                return false, "No matching resource", null, null
             if req.graburi:
                 manager.serverInfo.addextrasubs({req.graburi: grabbedlocation})
             req.method = "GET"
@@ -735,9 +760,9 @@ class Caldavtest extends TestBase {
                 collection = (ruri, req.user, req.pswd)
                 waitresult, waitdetails = dowaitcount(req, collection, count, label=label)
                 if !waitresult:
-                    return False, "Count did not change: {w}".format(w=waitdetails), None, None
+                    return false, "Count did not change: {w}".format(w=waitdetails), null, null
             } else {
-                return True, "", None, None
+                return true, "", null, null
 
         # Special check for WAITDELETEALL
         } else if (req.method.startsWith("WAITDELETEALL") {
@@ -749,14 +774,14 @@ class Caldavtest extends TestBase {
                     hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"))
                     dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL"))
                 } else {
-                    return False, "Count did not change: {w}".format(w=waitdetails), None, None
+                    return false, "Count did not change: {w}".format(w=waitdetails), null, null
             } else {
-                return True, "", None, None
+                return true, "", null, null
 
-        result = True
+        result = true
         resulttxt = ""
-        response = None
-        respdata = None
+        response = null
+        respdata = null
 
         method = req.method
         uri = req.getURI(manager.serverInfo)
@@ -779,7 +804,7 @@ class Caldavtest extends TestBase {
                 uri, etags[uri], req.user, req.pswd,
                 label=label
             ) {
-                return False, "Resource did not change", None, None
+                return false, "Resource did not change", null, null
             method = "GET"
 
         # Start request timer if required
@@ -792,7 +817,7 @@ class Caldavtest extends TestBase {
             req.port,
             manager.serverInfo.ssl,
             afunix=req.afunix,
-            cert=os.path.join(manager.serverInfo.certdir, req.cert) if req.cert } else None
+            cert=os.path.join(manager.serverInfo.certdir, req.cert) if req.cert } else null
         )
 
         if 'User-Agent' not in headers && (label != null:
@@ -808,7 +833,7 @@ class Caldavtest extends TestBase {
 
             response = http.getresponse()
 
-            respdata = None
+            respdata = null
             respdata = response.read()
 
         finally:
@@ -835,7 +860,7 @@ class Caldavtest extends TestBase {
         if req.print_response|| (manager.print_request_response_on_error && (!result && (!req.wait_for_success) {
             responsetxt = "\n-------BEGIN:RESPONSE-------\n"
             responsetxt += "%s %s %s\n" % (getVersionStringFromResponse(response), response.status, response.reason,)
-            responsetxt += str(response.msg) + "\n" + respdata
+            responsetxt += String.valueOf(response.msg) + "\n" + respdata
             responsetxt += "\n--------END:RESPONSE--------\n"
             manager.message("protocol", responsetxt)
 
@@ -848,16 +873,16 @@ class Caldavtest extends TestBase {
             manager.serverInfo.addextrasubs({req.graburi: grabbedlocation})
 
         if req.grabcount:
-            ctr = None
+            ctr = null
             if result && (response != null) && (response.status == 207) && (respdata != null) {
                 tree = ElementTree(file=StringIO(respdata))
                 ctr = len(tree.findall("{DAV:}response")) - 1
 
             if ctr == null|| ctr == -1:
-                result = False
+                result = false
                 resulttxt += "\nCould not count resources in response\n"
             } else {
-                manager.serverInfo.addextrasubs({req.grabcount: str(ctr)})
+                manager.serverInfo.addextrasubs({req.grabcount: String.valueOf(ctr)})
 
         if req.grabheader:
             for hdrname, variable in req.grabheader:
@@ -865,7 +890,7 @@ class Caldavtest extends TestBase {
                 if hdrs:
                     manager.serverInfo.addextrasubs({variable: hdrs[0].encode("utf-8")})
                 } else {
-                    result = False
+                    result = false
                     resulttxt += "\nHeader %s was not extracted from response\n" % (hdrname,)
 
         if req.grabproperty:
@@ -874,7 +899,7 @@ class Caldavtest extends TestBase {
                     # grab the property here
                     propvalue = extractProperty(propname, respdata)
                     if propvalue == null:
-                        result = False
+                        result = false
                         resulttxt += "\nProperty %s was not extracted from multistatus response\n" % (propname,)
                     } else {
                         manager.serverInfo.addextrasubs({variable: propvalue.encode("utf-8")})
@@ -883,17 +908,17 @@ class Caldavtest extends TestBase {
             for item in req.grabelement:
                 if len(item) == 2:
                     elementpath, variables = item
-                    parent = None
+                    parent = null
                 } else {
                     elementpath, parent, variables = item
                     parent = manager.serverInfo.extrasubs(parent)
                 # grab the property here
                 elementvalues = extractElements(elementpath, parent, respdata)
                 if elementvalues == null:
-                    result = False
+                    result = false
                     resulttxt += "\nElement %s was not extracted from response\n" % (elementpath,)
                 } else if (len(variables) != len(elementvalues) {
-                    result = False
+                    result = false
                     resulttxt += "\n%d found but expecting %d for element %s from response\n" % (len(elementvalues), len(variables), elementpath,)
                 } else {
                     for variable, elementvalue in zip(variables, elementvalues) {
@@ -904,10 +929,10 @@ class Caldavtest extends TestBase {
                 # grab the JSON value here
                 pointervalues = extractPointer(pointer, respdata)
                 if pointervalues == null:
-                    result = False
+                    result = false
                     resulttxt += "\Pointer %s was not extracted from response\n" % (pointer,)
                 } else if (len(variables) != len(pointervalues) {
-                    result = False
+                    result = false
                     resulttxt += "\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,)
                 } else {
                     for variable, pointervalue in zip(variables, pointervalues) {
@@ -920,7 +945,7 @@ class Caldavtest extends TestBase {
                 propname = manager.serverInfo.extrasubs(propname)
                 propvalue = extractCalProperty(propname, respdata)
                 if propvalue == null:
-                    result = False
+                    result = false
                     resulttxt += "\nCalendar property %s was not extracted from response\n" % (propname,)
                 } else {
                     manager.serverInfo.addextrasubs({variable: propvalue.encode("utf-8")})
@@ -932,7 +957,7 @@ class Caldavtest extends TestBase {
                 paramname = manager.serverInfo.extrasubs(paramname)
                 paramvalue = extractCalParameter(paramname, respdata)
                 if paramvalue == null:
-                    result = False
+                    result = false
                     resulttxt += "\nCalendar Parameter %s was not extracted from response\n" % (paramname,)
                 } else {
                     manager.serverInfo.addextrasubs({variable: paramvalue.encode("utf-8")})
@@ -941,14 +966,14 @@ class Caldavtest extends TestBase {
 
     public void verifyrequest (req, uri, response, respdata) {
 
-        result = True
+        result = true
         resulttxt = ""
 
         # check for response
         if len(req.verifiers) == 0:
             return result, resulttxt
         } else {
-            result = True
+            result = true
             resulttxt = ""
             for verifier in req.verifiers:
                 if len(verifier.missingFeatures()) != 0:
@@ -957,7 +982,7 @@ class Caldavtest extends TestBase {
                     continue
                 iresult, iresulttxt = verifier.doVerify(uri, response, respdata)
                 if !iresult:
-                    result = False
+                    result = false
                     if len(resulttxt) {
                         resulttxt += "\n"
                     resulttxt += "Failed Verifier: %s\n" % verifier.callback
@@ -972,15 +997,15 @@ class Caldavtest extends TestBase {
             return result, resulttxt
 
     public void parseXML (node) {
-        ignore_all = node.get(src.xmlDefs.ATTR_IGNORE_ALL, src.xmlDefs.ATTR_VALUE_NO) == src.xmlDefs.ATTR_VALUE_YES
+        ignore_all = node.get(XmlDefs.ATTR_IGNORE_ALL, XmlDefs.ATTR_VALUE_NO) == XmlDefs.ATTR_VALUE_YES
 
         for (var child: children(node)) {
             if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION:
                 description = child.text
             } else if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE:
-                parseFeatures(child, require=True)
+                parseFeatures(child, require=true)
             } else if (nodeMatches(child, XmlDefs.ELEMENT_EXCLUDE_FEATURE:
-                parseFeatures(child, require=False)
+                parseFeatures(child, require=false)
             } else if (nodeMatches(child, XmlDefs.ELEMENT_START:
                 start_requests = request.parseList(manager, child)
             } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE:
@@ -990,7 +1015,7 @@ class Caldavtest extends TestBase {
             } else if (nodeMatches(child, XmlDefs.ELEMENT_END:
                 end_requests = request.parseList(manager, child)
 
-    public void parseFeatures (node, require=True) {
+    public void parseFeatures (node, require=true) {
         for (var child: children(node)) {
             if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE:
                 (require_features if require } else exclude_features).add(contentUtf8(child))
@@ -1000,7 +1025,7 @@ class Caldavtest extends TestBase {
         try:
             tree = ElementTree(file=StringIO(respdata))
         except Exception:
-            return None
+            return null
 
         for response in tree.findall("{DAV:}response") {
             # Get all property status
@@ -1010,11 +1035,11 @@ class Caldavtest extends TestBase {
                 status = props.findall("{DAV:}status")
                 if len(status) == 1:
                     statustxt = status[0].text
-                    status = False
+                    status = false
                     if statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10) {
                         status = (statustxt[9] == "2")
                 } else {
-                    status = False
+                    status = false
 
                 if !status:
                     continue
@@ -1022,7 +1047,7 @@ class Caldavtest extends TestBase {
                 # Get properties for this propstat
                 prop = props.findall("{DAV:}prop")
                 if len(prop) != 1:
-                    return False, "           Wrong number of DAV:prop elements\n"
+                    return false, "           Wrong number of DAV:prop elements\n"
 
                 for child in prop[0].getchildren() {
                     fqname = child.tag
@@ -1039,7 +1064,7 @@ class Caldavtest extends TestBase {
                     if fqname == propertyname:
                         return value
 
-        return None
+        return null
 
     public void extractElement (elementpath, respdata) {
 
@@ -1047,7 +1072,7 @@ class Caldavtest extends TestBase {
             tree = ElementTree()
             tree.parse(StringIO(respdata))
         except:
-            return None
+            return null
 
         # Strip off the top-level item
         if elementpath[0] == '/':
@@ -1055,7 +1080,7 @@ class Caldavtest extends TestBase {
             splits = elementpath.split('/', 1)
             root = splits[0]
             if tree.getroot().tag != root:
-                return None
+                return null
             } else if (len(splits) == 1:
                 return tree.getroot().text
             } else {
@@ -1065,7 +1090,7 @@ class Caldavtest extends TestBase {
         if e != null:
             return e.text
         } else {
-            return None
+            return null
 
     public void extractElements (elementpath, parent, respdata) {
 
@@ -1073,12 +1098,12 @@ class Caldavtest extends TestBase {
             tree = ElementTree()
             tree.parse(StringIO(respdata))
         except:
-            return None
+            return null
 
         if parent:
             tree_root = nodeForPath(tree.getroot(), parent)
             if !tree_root:
-                return None
+                return null
             tree_root = tree_root[0]
 
             # Handle absolute root element
@@ -1087,7 +1112,7 @@ class Caldavtest extends TestBase {
             root_path, child_path = xmlPathSplit(elementpath)
             if child_path:
                 if tree_root.tag != root_path:
-                    return None
+                    return null
                 e = tree_root.findall(child_path)
             } else {
                 e = (tree_root,)
@@ -1099,7 +1124,7 @@ class Caldavtest extends TestBase {
                 splits = elementpath.split('/', 1)
                 root = splits[0]
                 if tree.getroot().tag != root:
-                    return None
+                    return null
                 } else if (len(splits) == 1:
                     return tree.getroot().text
                 } else {
@@ -1110,7 +1135,7 @@ class Caldavtest extends TestBase {
         if e != null:
             return [item.text for item in e]
         } else {
-            return None
+            return null
 
     public void extractPointer (pointer, respdata) {
 
@@ -1119,14 +1144,14 @@ class Caldavtest extends TestBase {
         try:
             j = json.loads(respdata)
         except:
-            return None
+            return null
 
         return jp.match(j)
 
     public void extractCalProperty (propertyname, respdata) {
 
         prop = _calProperty(propertyname, respdata)
-        return prop.getValue().getValue() if prop } else None
+        return prop.getValue().getValue() if prop } else null
 
     public void extractCalParameter (parametername, respdata) {
 
@@ -1143,16 +1168,16 @@ class Caldavtest extends TestBase {
         prop = _calProperty(propertyname, respdata)
 
         try:
-            return prop.getParameterValue(pname) if prop } else None
+            return prop.getParameterValue(pname) if prop } else null
         except KeyError:
-            return None
+            return null
 
     public void _calProperty (propertyname, respdata) {
 
         try:
             cal = Calendar.parseText(respdata)
         except Exception:
-            return None
+            return null
 
         # propname is a path consisting of component names and the last one a property name
         # e.g. VEVENT/ATTACH
@@ -1161,7 +1186,7 @@ class Caldavtest extends TestBase {
         prop = bits[-1]
         bits = prop.split("$")
         pname = bits[0]
-        pvalue = bits[1] if len(bits) > 1 } else None
+        pvalue = bits[1] if len(bits) > 1 } else null
 
         while components:
             for c in cal.getComponents() {
@@ -1173,7 +1198,7 @@ class Caldavtest extends TestBase {
                 break
 
         if components:
-            return None
+            return null
 
         props = cal.getProperties(pname)
         if pvalue:
@@ -1181,9 +1206,9 @@ class Caldavtest extends TestBase {
                 if prop.getValue().getValue() == pvalue:
                     return prop
             } else {
-                return None
+                return null
         } else {
-            return props[0] if props } else None
+            return props[0] if props } else null
 
     public void postgresInit () {
         """

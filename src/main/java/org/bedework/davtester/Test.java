@@ -33,7 +33,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  be run more than once, and timing information gathered and averaged across
  all runs.
  */
-class Test extends TestBase {
+class Test extends DavTesterBase {
   boolean details;
   boolean stats;
   boolean ignore;

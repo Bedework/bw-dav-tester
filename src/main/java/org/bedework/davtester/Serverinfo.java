@@ -16,7 +16,7 @@
 package org.bedework.davtester;
 
 //import datetime;
-//import src.xmlDefs;
+//import XmlDefs;
 //import urlparse;
 //import uuid4;
 
@@ -32,9 +32,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -52,10 +50,12 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Class that encapsulates the server information for a CalDAV test run.
  */
 public class Serverinfo {
-  String host;
+  public String host;
+  public int port;
+  public String afunix;
+
   int nonsslport = 80;
   int sslport = 443;
-  String afunix;
   String host2 = "";
   int nonsslport2 = 80;
   int sslport2 = 443;
@@ -64,7 +64,6 @@ public class Serverinfo {
   String certdir = "";
 
   boolean ssl;
-  int port;
   int port2;
 
   Set<String> features = new TreeSet<>();
@@ -73,7 +72,7 @@ public class Serverinfo {
   int waitcount = 120;
   double waitdelay = 0.25;
   int waitsuccess = 10;
-  final Properties subsdict = new Properties();
+  final KeyVals subsKvs = new KeyVals();
   final Properties extrasubsdict = new Properties();
   List<String> calendardatafilters = new ArrayList<String>();
   List<String> addressdatafilters = new ArrayList<String>();
@@ -92,7 +91,7 @@ public class Serverinfo {
   }
 
   private final PropertiesPropertyFetcher subsPfetcher =
-          new PropertiesPropertyFetcher(subsdict);
+          new PropertiesPropertyFetcher(subsKvs);
 
   private final PropertiesPropertyFetcher extrasubsPfetcher =
           new PropertiesPropertyFetcher(extrasubsdict);
@@ -151,7 +150,7 @@ public class Serverinfo {
       sub = sub.replace("$uidrandom:", UUID.randomUUID().toString());
     }
 
-    final PropertiesPropertyFetcher pfetcher;
+    final Utils.KeyValsPropertyFetcher pfetcher;
 
     if (db == null) {
       pfetcher = subsPfetcher;
@@ -162,12 +161,12 @@ public class Serverinfo {
     return propertyReplace(sub, pfetcher);
   }
 
-  void addsubs(final Map<String, String> items,
-               final Properties db) {
-    final Properties dbActual;
+  void addsubs(final KeyVals items,
+               final KeyVals db) {
+    final KeyVals dbActual;
 
     if (db == null) {
-      dbActual = subsdict;
+      dbActual = subsKvs;
     } else {
       dbActual = db;
     }
@@ -189,20 +188,17 @@ public class Serverinfo {
     return subs(str, extrasubsPfetcher);
   }
 
-  public void addextrasubs(final List<KeyVal> items) {
-    final Map<String, String> processed = new HashMap<>();
+  public void addextrasubs(final KeyVals items) {
+    final KeyVals processed = new KeyVals();
 
     // Various "functions" might be applied to a variable name to cause the value to
     // be changed in various ways
-    for (var keyval: items) {
-      var variable = keyval.key;
-      var value = keyval.val;
-
+    for (var variable: items.keySet()) {
       // basename() - extract just the URL last path segment from the value
       if (variable.startsWith("basename(")) {
         variable = variable.substring("basename(".length(),
                                       variable.length() - 1);
-        value = value.trim();
+        String value = items.getOnlyString(variable).trim();
         if (value.endsWith("/")) {
           value = value.substring(0, value.length() - 1);
         }
@@ -212,19 +208,22 @@ public class Serverinfo {
         value = els[els.length - 1];
 
         // urlpath() - extract just the URL path segment from the value
+        processed.put(variable, value);
       } else if (variable.startsWith("urlpath(")) {
         variable = variable.substring("urlpath(".length(),
                                       variable.length() - 1);
         URL url = null;
+        String value = items.getOnlyString(variable);
         try {
           url = new URL(value);
         } catch (MalformedURLException e) {
           throw new RuntimeException(e);
         }
         value = url.getPath();
+        processed.put(variable, value);
+      } else {
+        processed.put(variable, items.get(variable));
       }
-
-      processed.put(variable, value);
     }
 
     addsubs(processed, extrasubsdict);
@@ -236,7 +235,7 @@ public class Serverinfo {
     for (int i = 1; i <= 21; i++) {
       var key = String.format("$uid%d:", i);
       var val = UUID.randomUUID().toString();
-      subsdict.put(key, val);
+      subsKvs.put(key, val);
       extrasubsdict.put(key, val);
       res.add(new KeyVal(key, val));
     }
@@ -307,34 +306,34 @@ public class Serverinfo {
 
   public void updateParams () {
     // Expand substitutions fully at this point
-    for (var key: subsdict.keySet()) {
-      subsdict.put(key, propertyReplace(subsdict.getProperty((String)key), subsPfetcher));
+    for (var key: subsKvs.keySet()) {
+      subsKvs.put(key, propertyReplace(subsKvs.getProperty((String)key), subsPfetcher));
     }
 
     // Now cache some useful substitutions
     String user;
-    if (subsdict.contains("$userid1:")) {
+    if (subsKvs.contains("$userid1:")) {
       user = "$userid1:";
     } else {
       user = "$userid01:";
     }
 
     String pswd;
-    if (subsdict.contains("$pswd1:")) {
+    if (subsKvs.contains("$pswd1:")) {
       pswd = "$pswd1:";
     } else {
       pswd = "$pswd01:";
     }
 
-    if (!subsdict.contains(user)) {
+    if (!subsKvs.contains(user)) {
       throw new RuntimeException("Must have userid substitution");
     }
-    user = subsdict.getProperty(user);
+    user = subsKvs.getProperty(user);
 
-    if (!subsdict.contains(pswd)) {
+    if (!subsKvs.contains(pswd)) {
       throw new RuntimeException("Must have pswd substitution");
     }
-    pswd = subsdict.getProperty(pswd);
+    pswd = subsKvs.getProperty(pswd);
   }
 
   public void parseRepeatXML(final Node node){
@@ -382,7 +381,7 @@ public class Serverinfo {
     }
 
     if (repeat == 0) {
-      subsdict.put(key, value);
+      subsKvs.put(key, value);
       return;
     }
 
@@ -390,10 +389,10 @@ public class Serverinfo {
     // Value might be
     for (var count = 1; count <= repeat; count++) {
       if (value.contains("%")) {
-        subsdict.put(String.format(key, count),
-                     String.format(value, count));
+        subsKvs.put(String.format(key, count),
+                    String.format(value, count));
       } else {
-        subsdict.put(String.format(key, count), value);
+        subsKvs.put(String.format(key, count), value);
       }
     }
   }
