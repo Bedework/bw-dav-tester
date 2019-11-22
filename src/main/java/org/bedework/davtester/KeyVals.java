@@ -42,7 +42,7 @@ public class KeyVals extends HashMap<String, List<Object>> {
     put(key, val);
   }
 
-  public String getOnlyString(final String key) {
+  public Object getOnly(final String key) {
     var val = get(key);
     if (Util.isEmpty(val)) {
       return null;
@@ -52,7 +52,15 @@ public class KeyVals extends HashMap<String, List<Object>> {
       throwException("Expected a single value");
     }
 
-    return (String)val.get(0);
+    return val.get(0);
+  }
+
+  public String getOnlyString(final String key) {
+    return (String)getOnly(key);
+  }
+
+  public int getOnlyInt(final String key) {
+    return (Integer)getOnly(key);
   }
 
   public List<String> getStrings(final String key) {

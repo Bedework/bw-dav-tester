@@ -30,8 +30,7 @@ public class Jsondump extends BaseResultsObserver {
   private String currentProtocol;
   private ObjectMapper om = new ObjectMapper();
 
-  public Jsondump(final Manager manager) {
-    super(manager);
+  public Jsondump() {
   }
 
   @Override

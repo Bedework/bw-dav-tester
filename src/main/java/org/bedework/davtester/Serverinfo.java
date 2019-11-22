@@ -21,8 +21,6 @@ package org.bedework.davtester;
 //import uuid4;
 
 import org.bedework.davtester.Utils.DtParts;
-import org.bedework.util.misc.Util;
-import org.bedework.util.misc.Util.PropertiesPropertyFetcher;
 import org.bedework.util.xml.XmlUtil;
 
 import org.w3c.dom.Node;
@@ -30,11 +28,8 @@ import org.w3c.dom.Node;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -76,7 +71,7 @@ public class Serverinfo {
   double waitdelay = 0.25;
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
-  final Properties extrasubsdict = new Properties();
+  final KeyVals extrasubsKvs = new KeyVals();
   List<String> calendardatafilters = new ArrayList<>();
   List<String> addressdatafilters = new ArrayList<>();
   Date dtnow = new Date();
@@ -92,13 +87,6 @@ public class Serverinfo {
     }
   }
 
-  private final PropertiesPropertyFetcher subsPfetcher =
-          new PropertiesPropertyFetcher(subsKvs);
-
-  private final PropertiesPropertyFetcher extrasubsPfetcher =
-          new PropertiesPropertyFetcher(extrasubsdict);
-
-
   Serverinfo() {
   }
 
@@ -110,7 +98,7 @@ public class Serverinfo {
   }
 
   public String subs(final String subval,
-                     final PropertiesPropertyFetcher db) {
+                     final KeyVals db) {
     var sub = subval;
 
     // Special handling for relative date-times
@@ -145,7 +133,7 @@ public class Serverinfo {
         value = String.format("%d%02d%02d",
                               offDtp.year,
                               offDtp.month,
-                              offDtp.dayOfMonth));
+                              offDtp.dayOfMonth);
       }
 
       sub = String.format("%s%s%s", sub.substring(0, pos), value, sub.substring(endpos + 1));
@@ -156,15 +144,15 @@ public class Serverinfo {
       sub = sub.replace("$uidrandom:", UUID.randomUUID().toString());
     }
 
-    final Utils.KeyValsPropertyFetcher pfetcher;
+    final KeyVals kv;
 
     if (db == null) {
-      pfetcher = subsPfetcher;
+      kv = subsKvs;
     } else {
-      pfetcher = db;
+      kv = db;
     }
 
-    return propertyReplace(sub, pfetcher);
+    return propertyReplace(sub, kv);
   }
 
   void addsubs(final KeyVals items,
@@ -187,11 +175,11 @@ public class Serverinfo {
   }
 
   public boolean hasextrasubs () {
-    return extrasubsdict.size() > 0;
+    return extrasubsKvs.size() > 0;
   }
 
   public String extrasubs(final String str) {
-    return subs(str, extrasubsPfetcher);
+    return subs(str, extrasubsKvs);
   }
 
   public void addextrasubs(final KeyVals items) {
@@ -232,7 +220,7 @@ public class Serverinfo {
       }
     }
 
-    addsubs(processed, extrasubsdict);
+    addsubs(processed, extrasubsKvs);
   }
 
   public List<KeyVal> newUIDs () {
@@ -242,7 +230,7 @@ public class Serverinfo {
       var key = String.format("$uid%d:", i);
       var val = UUID.randomUUID().toString();
       subsKvs.put(key, val);
-      extrasubsdict.put(key, val);
+      extrasubsKvs.put(key, val);
       res.add(new KeyVal(key, val));
     }
 
@@ -313,7 +301,9 @@ public class Serverinfo {
   public void updateParams () {
     // Expand substitutions fully at this point
     for (var key: subsKvs.keySet()) {
-      subsKvs.put(key, propertyReplace(subsKvs.getOnlyString((String)key), subsPfetcher));
+      subsKvs.put(key,
+                  propertyReplace(subsKvs.getOnlyString((String)key),
+                                  subsKvs));
     }
 
     // Now cache some useful substitutions
@@ -404,7 +394,7 @@ public class Serverinfo {
   }
 
   public static String propertyReplace(final String val,
-                                       final Util.PropertyFetcher props) {
+                                       final KeyVals props) {
     if (val == null) {
       return null;
     }
@@ -431,7 +421,8 @@ public class Serverinfo {
         break;
       }
 
-      final String pval = props.get(val.substring(pos + 2, end).trim());
+      final String pval =
+              props.getOnlyString(val.substring(pos + 2, end).trim());
 
       if (pval != null) {
         sb.append(pval);

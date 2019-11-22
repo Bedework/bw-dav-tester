@@ -30,30 +30,37 @@ import time
 
 # Exceptions
 
-EX_INVALID_CONFIG_FILE = "Invalid Config File"
-EX_FAILED_REQUEST = "HTTP Request Failed"
  */
 
 import org.bedework.davtester.observers.BaseResultsObserver;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+
+import static java.lang.String.format;
+import static org.bedework.davtester.Utils.throwException;
+import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
     Main class that runs test suites defined in an XML config file.
  */
 public class Manager implements Logged {
-  public final int RESULT_OK = 0;
-  public final int RESULT_FAILED = 1;
-  public final int RESULT_ERROR = 2;
-  public final int RESULT_IGNORED = 3;
-  
+  public static final int RESULT_OK = 0;
+  public static final int RESULT_FAILED = 1;
+  public static final int RESULT_ERROR = 2;
+  public static final int RESULT_IGNORED = 3;
+
   // 1 for each of above
   private int[] totals = {0, 0, 0, 0};
+
+  public static final String EX_INVALID_CONFIG_FILE = "Invalid Config File";
+  public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
 
   public Serverinfo serverInfo = new Serverinfo();
   private String baseDir = "";
@@ -145,7 +152,7 @@ public class Manager implements Logged {
 
       observers.add(observer);
     } catch (final Throwable t) {
-      Utils.throwException(t);
+      throwException(t);
     }
   }
 
@@ -224,31 +231,32 @@ public class Manager implements Logged {
   }
 
   public void readXML(final String serverfile,
-                      final String testfiles,
-                        final boolean ssl,
-                        final boolean all, 
-                        final KeyVals moresubs) {
-      trace(String.format("Reading Server Info from \"%s\"",
-                          serverfile));
+                      final List<String> testfiles,
+                      final boolean ssl,
+                      final boolean all,
+                      final KeyVals moresubs) {
+      trace(format("Reading Server Info from \"%s\"",
+                   serverfile));
 
       // Open and parse the server config file
+    final Document doc;
       try {
-        tree = ElementTree(file = serverfile)
+        doc = XmlUtils.parseXml(serverfile);
       } catch (final Throwable t) {
-        raise RuntimeError
-        ("Unable to parse file '%s' because: %s" % (serverfile, e,))
+        error(format("Unable to parse file '%s' because: %s",
+              serverfile));
+
+        throwException(t);
       }
 
       // Verify that top-level element is correct
-      serverinfo_node = tree.getroot()
-      if (serverinfo_node.tag != XmlDefs.ELEMENT_SERVERINFO) {
-        raise EX_INVALID_CONFIG_FILE
-      }
-      if (not len (serverinfo_node)){
-        raise EX_INVALID_CONFIG_FILE;
+      Element serverinfoNode = doc.getDocumentElement();
+
+      if (!nodeMatches(serverinfoNode, XmlDefs.ELEMENT_SERVERINFO)) {
+        throwException(EX_INVALID_CONFIG_FILE);
       }
 
-      serverInfo.parseXML(serverinfo_node)
+      serverInfo.parseXML(serverinfoNode);
 
       // Setup ssl stuff
       serverInfo.ssl = ssl;
@@ -266,44 +274,48 @@ public class Manager implements Logged {
       }
 
       if (ssl) {
-        moresubs.put("$host:", String.format("https://%s", serverInfo.host);
-        moresubs.put("$host2:", String.format("https://%s", serverInfo.host2);
+        moresubs.put("$host:", format("https://%s", serverInfo.host);
+        moresubs.put("$host2:", format("https://%s", serverInfo.host2);
       } else {
-        moresubs.put("$host:", String.format("http://%s", serverInfo.host);
-        moresubs.put("$host2:", String.format("http://%s", serverInfo.host2);
+        moresubs.put("$host:", format("http://%s", serverInfo.host);
+        moresubs.put("$host2:", format("http://%s", serverInfo.host2);
       }
 
-        if ((ssl && (serverInfo.port != 443)) || (!ssl && (serverInfo.port != 80))) {
-          var val = moresubs.getProperty("$host:");
+        if ((ssl && (serverInfo.port != 443)) ||
+                (!ssl && (serverInfo.port != 80))) {
+          var val = moresubs.getOnlyString("$host:");
           moresubs.put("$host:",
-                       val + String.format(":%d", serverInfo.port));
+                       val + format(":%d", serverInfo.port));
         }
         moresubs.put("$hostssl:",
-                     String.format("https://%s", serverInfo.host));
+                     format("https://%s", serverInfo.host));
         if (serverInfo.sslport != 443) {
-          var val = moresubs.getProperty("$hostssl:");
+          var val = moresubs.getOnlyString("$hostssl:");
           moresubs.put("$hostssl:",
-                       val + String.format(":%d", serverInfo.sslport));
+                       val + format(":%d", serverInfo.sslport));
         }
 
         if ((ssl && (serverInfo.port2 != 443)) ||
                 (!ssl && (serverInfo.port2 != 80))) {
-          var val = moresubs.getProperty("$host2:");
+          var val = moresubs.getOnlyString("$host2:");
           moresubs.put("$host2:",
-                       val + String.format(":%d", serverInfo.port2));
+                       val + format(":%d", serverInfo.port2));
         }
         moresubs.put("$hostssl2:",
-                     String.format("https://%s", serverInfo.host2));
+                     format("https://%s", serverInfo.host2));
         if (serverInfo.sslport2 != 443) {
-          var val = moresubs.getProperty("$hostssl2:");
+          var val = moresubs.getOnlyString("$hostssl2:");
           moresubs.put("$hostssl2:",
-                       val + String.format(":%d", serverInfo.sslport2));
+                       val + format(":%d", serverInfo.sslport2));
         }
 
-        serverInfo.addsubs(moresubs)
+        serverInfo.addsubs(moresubs, null);
 
-        for (ctr, testfile in enumerate(testfiles)){
-        message("load", testfile, ctr + 1, len(testfiles));
+        var ctr = 1;
+        for (var testfile: testfiles) {
+          message("load", testfile, ctr, testfiles.size());
+          ctr++;
+        }
 
         // Open and parse the config file
         var test = new Caldavtest(this, testfile, false);

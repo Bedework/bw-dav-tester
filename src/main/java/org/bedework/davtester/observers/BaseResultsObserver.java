@@ -39,7 +39,7 @@ import java.util.Map;
  finish - tests completed
  */
 public abstract class BaseResultsObserver implements Logged {
-  private Manager manager;
+  protected Manager manager;
   private final Map<String, BaseResultsObserver> calls =
           new HashMap<>();
 
