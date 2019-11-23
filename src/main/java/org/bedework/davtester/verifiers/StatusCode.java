@@ -25,11 +25,12 @@ import static java.lang.String.format;
 /**
  Verifier that checks the response status code for a specific value.
 */
-class StatusCode extends Verifier {
+public class StatusCode extends Verifier {
   @Override
   public VerifyResult verify(final Manager manager,
                              final String uri,
                              final HttpResponse response,
+                             final String respdata,
                              final KeyVals args) {
     // If no status verification requested, then assume all 2xx codes are OK
     var teststatus = args.getStrings("status", "2xx");

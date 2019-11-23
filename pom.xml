@@ -18,6 +18,16 @@
     <bw-util-logging.version>4.0.4</bw-util-logging.version>
     <bw-util-network.version>4.1.0-SNAPSHOT</bw-util-network.version>
 
+    <ical4j.groupId>org.bedework.ical4j</ical4j.groupId>
+    <ical4j.artifactId>ical4j</ical4j.artifactId>
+    <ical4j.version>2.0.3</ical4j.version>
+    <!--
+    <ical4j.groupId>org.bedework.ical4j</ical4j.groupId>
+    <ical4j.artifactId>ical4j</ical4j.artifactId>
+    <ical4j.version>1.1.4</ical4j.version>
+    -->
+    <ical4j-vcard.version>1.0.4</ical4j-vcard.version>
+
 		<!-- Third Party Library Versions -->
     <http-client.version>4.5.3</http-client.version>
     <http-core.version>4.4.8</http-core.version>
@@ -108,6 +118,18 @@
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-misc</artifactId>
       <version>${bw-util.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${ical4j.groupId}</groupId>
+      <artifactId>${ical4j.artifactId}</artifactId>
+      <version>${ical4j.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.bedework</groupId>
+      <artifactId>bw-ical4j-vcard</artifactId>
+      <version>${ical4j-vcard.version}</version>
     </dependency>
 
 		<!-- Third Party Dependencies -->

@@ -15,10 +15,13 @@
 */
 package org.bedework.davtester.request;
 
-import org.bedework.davtester.Manager;
 import org.bedework.davtester.DavTesterBase;
+import org.bedework.davtester.KeyVals;
+import org.bedework.davtester.Manager;
 import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
+import org.bedework.davtester.verifiers.DataString;
+import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.util.misc.Util;
 
@@ -26,9 +29,11 @@ import org.apache.http.HttpResponse;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
+import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
@@ -41,22 +46,32 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  specified in the test XML config file. The callback name is in the XML config
  file also and is dynamically loaded to do the verification.
  */
-class Verify extends DavTesterBase {
+public class Verify extends DavTesterBase {
+  private static final Map<String, Verifier> verifiers = new HashMap<>();
+
+  static {
+    addVerifier("dataString", new DataString());
+    addVerifier("statusCode", new StatusCode());
+  }
+
   private String callback;
-  private Properties args = new Properties();
-  final static String verifierClassPrefix =
-          "org.bedework.davtester.verifiers.";
+  private KeyVals args = new KeyVals();
 
   public Verify(final Manager manager) {
     super(manager);
+
+    // Initialise the verifiers
+    for (var verifier: verifiers.values()) {
+      verifier.init(manager);
+    }
   }
 
   public void doVerify(final String uri, final HttpResponse response,
-                       Object respdata) {
+                       String respdata) {
     // Re-do substitutions from values generated during the current test run
     if (manager.serverInfo.hasextrasubs()) {
       for (var name: args.keySet()) {
-        var values = (List<String>)args.get((String)name);
+        var values = args.getStrings(name);
         var newvalues = new ArrayList<String>();
         for (var value: values) {
           newvalues.add(manager.serverInfo.extrasubs(value));
@@ -65,14 +80,22 @@ class Verify extends DavTesterBase {
       }
     }
 
-    var verifierClassName = verifierClassPrefix + Utils.upperFirst(callback);
+    var verifier = verifiers.get(callback);
 
-    var verifier = (Verifier)Util.getObject(verifierClassName, Verifier.class);
+    if (verifier == null) {
+      throwException("Unknown verifier: " + callback);
+      return; // fake
+    }
 
     // Always clone the args as this verifier may be called multiple times
-    var newargs = new Properties(args);
+    var newargs = new KeyVals(args);
 
-    return verifier.verify(manager, uri, response, respdata, newargs)
+    return verifier.verify(uri, response, respdata, newargs)
+  }
+
+  @Override
+  public String getKind() {
+    return "VERIFY";
   }
 
   public void parseXML(final Element node) {
@@ -111,4 +134,18 @@ class Verify extends DavTesterBase {
       args.put(name, values);
     }
   }
+
+  private static void addVerifier(final String name, final Verifier verifier) {
+    verifiers.put(name, verifier);
+  }
+
+  /* create a verifier from class name ...
+    final static String verifierClassPrefix =
+          "org.bedework.davtester.verifiers.";
+
+    var verifierClassName = verifierClassPrefix + Utils.upperFirst(callback);
+
+    var verifier = (Verifier)Util.getObject(verifierClassName, Verifier.class);
+
+   */
 }

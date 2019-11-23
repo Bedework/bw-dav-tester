@@ -19,7 +19,6 @@ import org.bedework.util.misc.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -64,12 +63,16 @@ public class KeyVals extends HashMap<String, List<Object>> {
     return (Integer)getOnly(key);
   }
 
+  public boolean getOnlyBool(final String key) {
+    return (Boolean)getOnly(key);
+  }
+
   public List<String> getStrings(final String key,
                                  final String... defaults) {
     var val = get(key);
     if (Util.isEmpty(val)) {
       if (defaults.length == 0) {
-        return Collections.EMPTY_LIST;
+        return new ArrayList<>();
       }
 
       return Arrays.asList(defaults);

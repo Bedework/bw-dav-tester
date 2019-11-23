@@ -47,8 +47,13 @@ public abstract class Verifier {
     }
   }
 
-  public abstract VerifyResult verify(final Manager manager,
-                                      final String uri,
+  protected Manager manager;
+
+  public void init(final Manager manager) {
+    this.manager = manager;
+  }
+  public abstract VerifyResult verify(final String uri,
                                       final HttpResponse response,
+                                      final String respdata,
                                       final KeyVals args);
 }
