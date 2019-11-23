@@ -33,12 +33,15 @@ import time
  */
 
 import org.bedework.davtester.observers.BaseResultsObserver;
+import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
+import org.bedework.util.misc.ToString;
 import org.bedework.util.misc.Util;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.FileWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +79,8 @@ public class Manager implements Logged {
   String randomSeed;
   private String digestCache;
   String postgresLog;
-  String logFile;
+  String logFileName;
+  FileWriter logFile;
   private Writer logFileWriter;
 
   private List<BaseResultsObserver> observers = new ArrayList<>();
@@ -120,6 +124,20 @@ public class Manager implements Logged {
     public static TestResult ignored() {
       return new TestResult(0, 0, 1);
     }
+
+    public String toString() {
+      final var ts = new ToString(this);
+
+      ts.append("ok", ok);
+      ts.append("failed", failed);
+      ts.append("ignored", ignored);
+
+      ts.newLine();
+
+      super.toStringSegment(ts);
+
+      return ts.toString();
+    }
   }
 
   public void Manager(final boolean textMode) {
@@ -131,7 +149,7 @@ public class Manager implements Logged {
       if (logFileWriter != null) {
         logFileWriter.write(str + "\n");
       }
-      print(str);
+      System.out.println(str);
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
@@ -337,10 +355,10 @@ public class Manager implements Logged {
     }
 
     if (pretestFile != null) {
-      pretest = new Caldavtest(this, pretestFile, false)
+      pretest = new Caldavtest(this, pretestFile, false);
     }
     if (posttestFile != null) {
-      posttest = new Caldavtest(this, posttestFile, false)
+      posttest = new Caldavtest(this, posttestFile, false);
     }
 
     load(null, ctr, testfiles.size());
@@ -395,10 +413,29 @@ public class Manager implements Logged {
     message("finish", null);
 
     if (logFile != null) {
-      logFile.close();
+      try {
+        logFile.close();
+      } catch (Throwable t) {
+        throwException(t);
+      }
     }
 
     return res;
+  }
+
+  /* ====================================================================
+   *                   Logged methods
+   * ==================================================================== */
+
+  private BwLogger logger = new BwLogger();
+
+  @Override
+  public BwLogger getLogger() {
+    if ((logger.getLoggedClass() == null) && (logger.getLoggedName() == null)) {
+      logger.setLoggedClass(getClass());
+    }
+
+    return logger;
   }
 }
 /*

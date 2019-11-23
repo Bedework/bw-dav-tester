@@ -15,6 +15,8 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.misc.ToString;
+
 /**
  * Maintains stats about the current test.
  */
@@ -30,5 +32,11 @@ public class RequestStats {
   public void endTimer() {
     count += 1;
     total += System.currentTimeMillis() - start;
+  }
+
+  public void toStringSegment(final ToString ts) {
+    ts.append("count", count);
+    ts.append("total", total);
+    ts.append("start", start);
   }
 }

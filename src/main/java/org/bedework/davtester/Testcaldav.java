@@ -16,8 +16,15 @@
 package org.bedework.davtester;
 
 import org.bedework.util.args.Args;
+import org.bedework.util.misc.Util;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.TreeSet;
 
 public class Testcaldav {
@@ -25,11 +32,12 @@ public class Testcaldav {
   public static void main(final String[] args) {
     var sname = "scripts/server/serverinfo.xml";
     var dname = "scripts/tests";
-    var fnames = new ArrayList<>();
+    var fnames = new ArrayList<String>();
     var ssl = false;
     var all = false;
     var excludes = new TreeSet<String>();
     String subdir = null;
+    String baseDir = null;
     var pidfile = "../CalendarServer/logs/caldavd.pid";
     var randomOrder = false;
     //var random_seed = String.valueOf(new Random.randint(0, 1000000));
@@ -72,7 +80,8 @@ public class Testcaldav {
         }
 
         if (pargs.ifMatch("-o")) {
-          manager.logFile = pargs.next();
+          manager.logFileName = pargs.next();
+          manager.logFile = new FileWriter(new File(manager.logFileName));
           continue;
         }
 
@@ -97,13 +106,11 @@ public class Testcaldav {
         }
 
         if (pargs.ifMatch("--basedir")) {
-          base_dir = value
-          sname = os.path.join(base_dir, "serverinfo.xml")
-          dname = os.path.join(base_dir, "tests")
-          data_dir = os.path.join(base_dir, "data")
+          baseDir = pargs.next();
+          sname = Util.buildPath(false, baseDir, "/serverinfo.xml");
+          dname = Util.buildPath(true, baseDir, "tests");
+          manager.dataDir = Util.buildPath(true, baseDir, "data");
 
-          // Also add parent to PYTHON path
-          sys.path.append(os.path.dirname(base_dir))
           continue;
         }
 
@@ -173,32 +180,25 @@ public class Testcaldav {
         }
 
         if (pargs.isMinusArg()) {
-          warn("Bad argument: " + pargs.current());
+          //warn("Bad argument: " + pargs.current());
           return;
         }
 
         // Treat as filename
 
-        fnames.add(normPath(f));
+        fnames.add(normPath(pargs.next()));
       }
 
-      if (all || !args) {
-        files = []
-        // os.path.walk(dname, lambda arg, dir, names: files.extend([os.path.join(dir, name) for name in names]) if not dir.startsWith("test") } else null, null);
-        for (file:
-             files) {
-          if (file.endswith(".xml") &&
-                  file[len(dname) + 1:]not in excludes){
-            if ((subdir == null) ||
-                    (file[len(dname) + 1:].startsWith(subdir))){
-              fnames.append(file)
-            }
-          }
-        }
+      if (sname == null) {
+        excludes.add("serverinfo.xml");
       }
 
-      // Remove any server info file from files enumerated by --all
-      fnames[:] = [x for x in fnames if (x != sname)]
+      if (all) {
+        File f = new File(dname);
+        Path stDir = Paths.get(f.getAbsolutePath());
+        FileLister fl = new FileLister(fnames, excludes, subdir);
+        Files.walkFileTree(stDir, fl);
+      }
 
       if (manager.pretestFile != null) {
         manager.pretestFile = normPath(manager.pretestFile);
@@ -209,44 +209,33 @@ public class Testcaldav {
 
       // Randomize file list
       if (randomOrder && fnames.size() > 1) {
-        random.seed(random_seed)
-        random.shuffle(fnames)
-        randomSeed = random_seed
+        Collections.shuffle(fnames);
       }
 
       // Load observers
       // DOTHIS map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
 
-      manager.readXML(sname, fnames, ssl, all);
+      manager.readXML(sname, fnames, ssl, all, null);
 
+      /* MEMUSAGE
       if (manager.memUsage) {
         fd = open(pidfile, "r");
         s = fd.read();
         pid = int(s);
       }
+       */
 
-      result, timing = manager.runAll();
-      sys.exit(result);
+      var result = manager.runAll();
+
+      System.out.println(result.toString());
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
   }
 
-  private String normPath(f) {
-    // paths starting with . or .. or /
-    if f[0] in('.', '/') {
-      f = os.path.abspath(f)
+  private static String normPath(final String path) {
+    File f = new File(path);
 
-      // remove unneeded leading path
-      fsplit = f.split(dname)
-      if 2 == len(fsplit) {
-        f = dname + fsplit[1]
-
-        // relative paths
-      }else{
-        f = os.path.join(dname, f)
-      }
-      return f
-    }
+    return f.getAbsolutePath();
   }
 }
