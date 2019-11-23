@@ -18,6 +18,7 @@ package org.bedework.davtester;
 import org.bedework.util.misc.Util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -63,10 +64,15 @@ public class KeyVals extends HashMap<String, List<Object>> {
     return (Integer)getOnly(key);
   }
 
-  public List<String> getStrings(final String key) {
+  public List<String> getStrings(final String key,
+                                 final String... defaults) {
     var val = get(key);
     if (Util.isEmpty(val)) {
-      return Collections.EMPTY_LIST;
+      if (defaults.length == 0) {
+        return Collections.EMPTY_LIST;
+      }
+
+      return Arrays.asList(defaults);
     }
 
     var len = val.size();

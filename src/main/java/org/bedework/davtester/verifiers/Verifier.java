@@ -15,11 +15,10 @@
 */
 package org.bedework.davtester.verifiers;
 
+import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
 import org.apache.http.HttpResponse;
-
-import java.util.Properties;
 
 /** Base class for verifiers
  *
@@ -27,8 +26,17 @@ import java.util.Properties;
  */
 public abstract class Verifier {
   public static class VerifyResult {
-    public boolean ok;
+    public boolean ok = true;
     public String text;
+
+    // An ok result
+    public VerifyResult() {
+    }
+
+    // A not ok
+    public VerifyResult(String text) {
+      this.text = text;
+    }
 
     void append(final String val) {
       if (text != null) {
@@ -42,5 +50,5 @@ public abstract class Verifier {
   public abstract VerifyResult verify(final Manager manager,
                                       final String uri,
                                       final HttpResponse response,
-                                      final Properties args);
+                                      final KeyVals args);
 }
