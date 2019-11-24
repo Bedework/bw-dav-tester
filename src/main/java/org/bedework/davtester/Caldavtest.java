@@ -102,14 +102,55 @@ public void getVersionStringFromResponse(response) {
  * Class to encapsulate a single caldav test run.
  */
 class Caldavtest extends DavTesterBase {
-  private Path testPath;
+  private class RequestPars {
+    final String host;
+    final int port;
+
+    final String uri;
+    final String user;
+    final String pswd;
+    final String cert;
+
+    RequestPars(final String host, final int port, final String uri,
+                final String user,
+                final String pswd, final String cert) {
+      this.host = host;
+      this.port = port;
+      this.uri = uri;
+      this.user = user;
+      this.pswd = pswd;
+      this.cert = cert;
+    }
+
+    Request makeRequest(final String method) {
+      var req = new Request(manager);
+
+      req.method = method;
+      req.host = host;
+      req.port = port;
+
+      req.ruris.add(uri);
+      req.ruri = uri;
+      if (user != null) {
+        req.user = user;
+      }
+      if (pswd != null) {
+        req.pswd = pswd;
+      }
+      req.cert = cert;
+
+      return req;
+    }
+  }
+
+    private Path testPath;
 
   boolean ignoreAll;
   private boolean only;
 
   private List<String> startRequests = new ArrayList<>();
   private List<String> endRequests = new ArrayList<>();
-  private List<String> endDeletes = new ArrayList<>();
+  private List<RequestPars> endDeletes = new ArrayList<>();
   private List<Testsuite> suites = new ArrayList<>();
 
   private String grabbedLocation;
@@ -172,9 +213,9 @@ class Caldavtest extends DavTesterBase {
       } else {
         res = runTests(name);
       }
-      doenddelete("Deleting Requests...", label = "%s | %s" % (name,
+      doEnddelete("Deleting Requests...", label = "%s | %s" % (name,
                   "END_DELETE"));
-      dorequests("End Requests...", end_requests, false, false,
+      doRequests("End Requests...", end_requests, false, false,
                  "%s | %s" % (name, "END_REQUESTS"), 1);
       return res;
     } catch (final Throwable t) {
@@ -339,10 +380,10 @@ class Caldavtest extends DavTesterBase {
               }
             }
           } else {
-            result, resulttxt, ignoreResponse, ignoreRespdata = doRequest(
+            var resreq = doRequest(
                     req, test.details, true, false, reqstats, etags,
                     format("%s | #%s", label, reqCount + 1), ctr + 1);
-            if (!result) {
+            if (!resreq.ok) {
               failed = true;
             }
           }
@@ -400,11 +441,11 @@ class Caldavtest extends DavTesterBase {
 
     var reqCount = 1;
     for (var req: list) {
-      result, resulttxt = dorequest(
+      var resreq = doRequest(
               req, false, doverify, forceverify,
-              label = "%s | #%s" % (label,
-              req_count + 1), count = count);
-      if (!result) {
+              format("%s | #%s", label, String.valueOf(req_count + 1)),
+              count);
+      if (!resreq.ok) {
         resulttxt += format(
                 "\nFailure during multiple requests " +
                         "#%d out of %d, request=%s",
@@ -422,42 +463,12 @@ class Caldavtest extends DavTesterBase {
     return result;
   }
 
-  private static class UriIdPw {
-    final String ruri;
-    final String user;
-    final String pswd;
-
-    UriIdPw(final String ruri,
-            final String user,
-            final String pswd) {
-      this.ruri = ruri;
-      this.user = user;
-      this.pswd = pswd;
-    }
-
-    void setRequest(final Request req) {
-      req.ruris.add(ruri);
-      req.ruri = ruri;
-      if (user != null) {
-        req.user = user;
-      }
-      if (pswd != null) {
-        req.pswd = pswd;
-      }
-    }
-  }
-
-  public void doget (Request originalRequest,
+  public void doGet (Request originalRequest,
                      final UriIdPw uip,
                      final String label) {
-    var req = new Request(manager);
-    req.method = "GET";
-    req.host = originalRequest.host;
-    req.port = originalRequest.port;
+    var req = uip.makeRequest(originalRequest, "GET");
 
-    uip.setRequest(req);
-
-    var reqres = dorequest(req, false, false, false, null, label, 1);
+    var reqres = doRequest(req, false, false, false, null, label, 1);
         if (reqres.status / 100 != 2) {
           return false,null
         }
@@ -465,18 +476,12 @@ class Caldavtest extends DavTesterBase {
     return true, respdata
   }
 
-  public List<UriIdPw> dofindall (final Request originalRequest,
+  public List<UriIdPw> doFindall (final Request originalRequest,
                                   final UriIdPw uip,
                                   final String label) {
     var hrefs = new ArrayList<UriIdPw>();
-    var req = new Request(manager);
 
-    req.method = "PROPFIND";
-    req.host = originalRequest.host;
-    req.port = originalRequest.port;
-    req.headers["Depth"] = "1";
-
-    uip.setRequest(req);
+    var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
     req.data = data(manager);
     req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -487,7 +492,7 @@ class Caldavtest extends DavTesterBase {
             "</D:propfind>";
         
     req.data.content_type = "text/xml"
-    var reqres = dorequest(req, false, false, false, null, label, 1);
+    var reqres = doRequest(req, false, false, false, null, label, 1);
     if (reqres.ok && (response != null) && (response.status == 207) && (respdata != null)
     {
       try {
@@ -515,18 +520,15 @@ class Caldavtest extends DavTesterBase {
     return hrefs;
   }
 
-  public boolean dodeleteall(final Request originalRequest,
+  public boolean doDeleteall(final Request originalRequest,
                              final List<UriIdPw> deletes,
                              final String label) {
     if (Util.isEmpty(deletes)) {
       return true;
     }
     for (var uip : deletes) {
-      req = request(manager);
-      req.method = "DELETE"
-      req.host = original_request.host;
-      req.port = original_request.port;
-      uip.setRequest(req);
+      var req = uip.makeRequest(originalRequest, "DELETE");
+
       var reqres = doRequest(req, false, false, false, null,
                              label, 1);
       if (reqres.status / 100 != 2) {
@@ -552,13 +554,8 @@ class Caldavtest extends DavTesterBase {
       skip = null;
     }
     possible_matches = set();
-    var req = new Request(manager);
-    req.method = "PROPFIND"
-    req.host = original_request.host;
-    req.port = original_request.port;
-    req.headers["Depth"] = "1";
 
-    uip.setRequest(req);
+    var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
     req.data = data(manager);
     req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -659,13 +656,8 @@ class Caldavtest extends DavTesterBase {
     hresult = "";
 
     uri = uip.ruri;
-    var req = new Request(manager);
-    req.method = "PROPFIND"
-    req.host = original_request.host
-    req.port = original_request.port
-    req.headers["Depth"] = "1"
 
-    uip.setRequest(req);
+    var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
     req.data = data(manager);
     req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -697,8 +689,8 @@ class Caldavtest extends DavTesterBase {
         href = href[0].text
         if (href != request_uri) {
 
-          respdata = doget(req, (href, collection[1],
-                           collection[2], ), label);
+          respdata = doGet(req,
+                           new UriIdPw(href, uip.user, uip.pswd), label);
           if (respdata.find(match) != -1) {
             break;
           }
@@ -717,13 +709,8 @@ class Caldavtest extends DavTesterBase {
                            final String label) {
     hrefs = []
     for (var ignore: range(manager.serverInfo.waitcount)) {
-      var req = new Request(manager);
-      req.method = "PROPFIND"
-      req.host = original_request.host;
-      req.port = original_request.port;
-      req.headers["Depth"] = "1";
+      var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
-      uip.setRequest(req);
       req.data = data(manager);
       req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
               "<D:propfind xmlns:D=\"DAV:\">" +
@@ -763,8 +750,8 @@ class Caldavtest extends DavTesterBase {
     // Get the content of each resource
     rdata = "";
     for (var href: hrefs) {
-      result, respdata = doget(req, (href, collection[1], collection[2],), label);
-      test = "unknown"
+      result, respdata = doGet(req, new UriIdPw(href, uip.user, uip.pswd), label);
+      test = "unknown";
       if (respdata.startsWith("BEGIN:VCALENDAR") {
         uid = respdata.find("UID:");
         if (uid != -1) {
@@ -784,12 +771,7 @@ class Caldavtest extends DavTesterBase {
                              final String etag,
                              final String label) {
     for (var ignore: range(manager.serverInfo.waitcount)) {
-      var req = new Request(manager);
-      req.method = "HEAD"
-      req.host = original_request.host
-      req.port = original_request.port
-
-      uip.setRequest(req);
+      var req = uip.makeRequest(originalRequest, "HEAD");
 
       var reqres = doRequest(req, false, false, false, null, label="%s | %s" % (label, "WAITCHANGED"), 1);
       if (reqres.ok && (response != null) {
@@ -815,164 +797,209 @@ class Caldavtest extends DavTesterBase {
     return true;
   }
 
-    public void doenddelete (description, label="") {
-        if (len(end_deletes) == 0) {
-            return true
-        manager.message("trace", "Start: " + description);
-        for (uri, delete_request: end_deletes) {
-            req = request(manager);
-            req.method = "DELETE"
-            req.host = delete_request.host
-            req.port = delete_request.port
-            req.ruris.append(uri);
-            req.ruri = uri
-            req.user = delete_request.user
-            req.pswd = delete_request.pswd
-            req.cert = delete_request.cert
-            dorequest(req, false, false, label=label);
-        manager.message("trace", "{name:<60}{value:>10}".format(name="End: " + description, value="[DONE]"));
-
-    private static class DoRequestResult {
-      boolean ok = true;
-      HttpResponse response;
-      int status;
-      String responseData;
+  public boolean doEnddelete(final String description,
+                             final String label) {
+    if (Util.isEmpty(endDeletes)) {
+      return true;
     }
-    private DoRequestResult doRequest(final Request req,
-            final boolean details,
-            final boolean doverify, final boolean forceverify,
-            final RequestStats stats,
-                    final List<String> etags,
-                            final String label, final int count) {
+    manager.message("trace", "Start: " + description);
+    for (var delReq: endDeletes) {
+      var req = delReq.makeRequest("DELETE");
+      doRequest(req, false, false, label);
+    }
+    manager.trace(format("%s60$s", "End: " + description, "[DONE]")));
+  }
+
+  private static class DoRequestResult {
+    boolean ok = true;
+    String message;
+    HttpResponse response;
+    int status;
+    String responseData;
+
+    DoRequestResult() {
+    }
+
+    static DoRequestResult ok() {
+      return new DoRequestResult();
+    }
+
+    static DoRequestResult fail(final String message) {
+      var res = new DoRequestResult();
+      res.ok = false;
+      res.message = message;
+
+      return res;
+    }
+  }
+
+  private DoRequestResult doRequest(final Request req,
+                                    final boolean details,
+                                    final boolean doverify,
+                                    final boolean forceverify,
+                                    final RequestStats stats,
+                                    final List<String> etags,
+                                    final String label,
+                                    final int count) {
         req.count = count
 
-        if (isinstance(req, pause) {
-            // Useful for pausing at a particular point
-            print "Paused"
-            sys.stdin.readline();
-            return true, "", null, null
+    if (isinstance(req, pause)) {
+      // Useful for pausing at a particular point
+      print "Paused"
+      sys.stdin.readline();
+      return DoRequestResult.ok();
+    }
 
-        if (len(req.missingFeatures()) != 0) {
-            return true, "", null, null
-        if (len(req.excludedFeatures()) != 0) {
-            return true, "", null, null
+    if (hasMissingFeatures()) {
+      return DoRequestResult.ok();
+    }
+    if (hasExcludedFeatures()) {
+      return DoRequestResult.ok();
+    }
 
-        // Special check for DELETEALL
-        if (req.method == "DELETEALL") {
-            for (ruri: req.ruris) {
-                collection = (ruri, req.user, req.pswd);
-                hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"));
-                if (!dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL")) {
-                    return false, "DELETEALL failed for: {r}".format(r=ruri), null, null
-            return true, "", null, null
+    // Handle special methods
 
-        // Special for delay
-        } else if (req.method == "DELAY") {
-            // ruri contains a numeric delay in seconds
-            delay = int(req.ruri);
-            starttime = time.time();
-            while (time.time() < starttime + delay) {
-                pass
-            return true, "", null, null
+    switch (req.method) {
+      case "DELETEALL":
+        for (var ruri: req.ruris) {
+          var hrefs = doFindall(req,
+                                new UriIdPw(ruri, req.user, req.pswd),
+                                format("%s | %s", label, "DELETEALL"));
+          if (!doDeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL")) {
+            return false,"DELETEALL failed for: {r}"
+                    .format(r = ruri), null, null
+          }
+        }
+        return DoRequestResult.ok();
 
-        // Special for GETNEW
-        } else if (req.method == "GETNEW") {
-            collection = (req.ruri, req.user, req.pswd);
-            grabbedlocation = dofindnew(req, collection, label=label);
-            if (req.graburi) {
-                manager.serverInfo.addextrasubs({req.graburi: grabbedlocation});
-            req.method = "GET"
-            req.ruri = "$"
+      case "DELAY":
+        // ruri contains a numeric delay in seconds
+        delay = int(req.ruri);
+        starttime = time.time();
+        while (time.time() < starttime + delay) {
+          pass
+        }
+        return DoRequestResult.ok();
 
-        // Special for FINDNEW
-        } else if (req.method == "FINDNEW") {
-            collection = (req.ruri, req.user, req.pswd);
-            grabbedlocation = dofindnew(req, collection, label=label);
-            if (req.graburi) {
-                manager.serverInfo.addextrasubs({req.graburi: grabbedlocation});
-            return true, "", null, null
+      case "GETNEW":
+        grabbedlocation = doFindnew(req,
+                                    UriIdPw.fromRequest(req),
+                                    label);
+        if (req.graburi) {
+          manager.serverInfo.addextrasubs({req.graburi:
+          grabbedlocation});
+        }
+        req.method = "GET"
+        req.ruri = "$";
+        break;
 
-        // Special for GETOTHER
-        } else if (req.method == "GETOTHER") {
-            collection = (req.ruri, req.user, req.pswd);
-            grabbedlocation = dofindnew(req, collection, label=label, other=true);
-            if (req.graburi) {
-                manager.serverInfo.addextrasubs({req.graburi: grabbedlocation});
-            req.method = "GET"
-            req.ruri = "$"
+      case "FINDNEW":
+        grabbedlocation = dofindnew(req, UriIdPw.fromRequest(req), label);
+        if (req.graburi) {
+          manager.serverInfo.addextrasubs({req.graburi:
+          grabbedlocation});
+        }
+        return DoRequestResult.ok();
 
-        // Special for GETCONTAINS
-        } else if (req.method.startsWith("GETCONTAINS") {
-            match = req.method[12:]
-            collection = (req.ruri, req.user, req.pswd);
-            grabbedlocation = dofindcontains(req, collection, match, label=label);
-            if (!grabbedlocation) {
-                return false, "No matching resource", null, null
-            if (req.graburi) {
-                manager.serverInfo.addextrasubs({req.graburi: grabbedlocation});
-            req.method = "GET"
-            req.ruri = "$"
+      case "GETOTHER":
+        collection = (req.ruri, req.user, req.pswd);
+        grabbedlocation = doFindnew(req, UriIdPw.fromRequest(req), label, true);
+        if (req.graburi) {
+          manager.serverInfo.addextrasubs({req.graburi:
+          grabbedlocation});
+        }
+        req.method = "GET"
+        req.ruri = "$";
+        break;
 
-        // Special check for WAITCOUNT
-        } else if (req.method.startsWith("WAITCOUNT") {
-            count = int(req.method[10:]);
-            for (ruri: req.ruris) {
-                collection = (ruri, req.user, req.pswd);
-                waitresult, waitdetails = dowaitcount(req, collection, count, label=label);
-                if (!waitresult) {
-                    return false, "Count did not change: {w}".format(w=waitdetails), null, null
+      case "GETCONTAINS":
+        match = req.method[12:]
+        grabbedlocation = dofindcontains(req, UriIdPw.fromRequest(req), match, label);
+        if (!grabbedlocation) {
+          return false,"No matching resource", null, null
+        }
+        if (req.graburi) {
+          manager.serverInfo.addextrasubs({req.graburi:
+          grabbedlocation});
+        }
+        req.method = "GET"
+        req.ruri = "$"
+        break;
+
+      default: {
+        if (req.method.startsWith("WAITCOUNT")) {
+          count = int(req.method[10:]);
+          for (ruri: req.ruris) {
+            waitresult, waitdetails = doWaitcount(req,
+                                                  new UriIdPw(ruri, req.user, req.pswd),
+                                                  count,
+                                                  label = label);
+            if (!waitresult) {
+              return false,"Count did not change: {w}"
+                      .format(w = waitdetails), null, null
             } else {
-                return true, "", null, null
-
-        // Special check for WAITDELETEALL
-        } else if (req.method.startsWith("WAITDELETEALL") {
-            count = int(req.method[len("WAITDELETEALL") {]);
-            for (ruri: req.ruris) {
-                collection = (ruri, req.user, req.pswd);
-                waitresult, waitdetails = dowaitcount(req, collection, count, label=label);
-                if (waitresult) {
-                    hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"));
-                    dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL"));
-                } else {
-                    return false, "Count did not change: {w}".format(w=waitdetails), null, null
+              return DoRequestResult.ok();
+            }
+          }
+        } else if (req.method.startsWith("WAITDELETEALL")) {
+          var count = Integer.parseInt(req.method.substring("WAITDELETEALL".length()));
+          for (var ruri: req.ruris) {
+            waitresult, waitdetails = dowaitcount(req,
+                                                  new UriIdPw(ruri, req.user, req.pswd),
+                                                  count, label);
+            if (waitresult) {
+              hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"));
+              dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL"));
             } else {
-                return true, "", null, null
+              return false,"Count did not change: {w}"
+                      .format(w = waitdetails), null, null
+            }
+          }
+        } else {
+          return DoRequestResult.fail("Unknown method " + req.method);
+        }
+      }
+    }
+    result = true
+    resulttxt = ""
+    response = null
+    respdata = null
 
-        result = true
-        resulttxt = ""
-        response = null
-        respdata = null
+    method = req.method
+    uri = req.getURI(manager.serverInfo);
+    if (uri == "$") {
+      uri = grabbedlocation;
+    }
+    headers = req.getHeaders(manager.serverInfo);
+    data = req.getData();
 
-        method = req.method
-        uri = req.getURI(manager.serverInfo);
-        if (uri == "$") {
-            uri = grabbedlocation
-        headers = req.getHeaders(manager.serverInfo);
-        data = req.getData();
+    // Cache delayed delete
+    if (req.end_delete) {
+      end_deletes.append((uri, req, ));
+    }
 
-        // Cache delayed delete
-        if (req.end_delete) {
-            end_deletes.append((uri, req,));
+    if (details) {
+      resulttxt += "        %s: %s\n" % (method, uri);
+    }
 
-        if (details) {
-            resulttxt += "        %s: %s\n" % (method, uri);
+    // Special for GETCHANGED
+    if (req.method == "GETCHANGED") {
+      if (!doWaitchanged(
+              req,
+              uri, etags[uri], req.user, req.pswd,
+              label)) {
+        return DoRequestResult.fail("Resource did not change");
+      }
+      method = "GET";
+    }
 
-        // Special for GETCHANGED
-        if (req.method == "GETCHANGED") {
-            if (!dowaitchanged(
-                req,
-                uri, etags[uri], req.user, req.pswd,
-                label=label
-            ) {
-                return false, "Resource did not change", null, null
-            method = "GET"
+    // Start request timer if required
+    if (stats) {
+      stats.startTimer();
+    }
 
-        // Start request timer if required
-        if (stats) {
-            stats.startTimer();
-
-        // Do the http request
-        http = SmartHTTPConnection(
+    // Do the http request
+    http = SmartHTTPConnection(
             req.host,
             req.port,
             manager.serverInfo.ssl,
@@ -980,149 +1007,206 @@ class Caldavtest extends DavTesterBase {
             cert=os.path.join(manager.serverInfo.certdir, req.cert) if req.cert  else null
         );
 
-        if ('User-Agent' not in headers && (label != null) {
-            headers['User-Agent'] = label.encode("utf-8");
+    if ('User-Agent' not in headers && (label != null)) {
+      headers['User-Agent'] = label.encode("utf-8");
+    }
 
-        try {
-            puri = list(urlparse.urlparse(uri));
-            if (req.ruri_quote) {
-                puri[2] = urllib.quote(puri[2]);
-            quri = urlparse.urlunparse(puri);
+    try {
+      puri = list(urlparse.urlparse(uri));
+      if (req.ruri_quote) {
+        puri[2] = urllib.quote(puri[2]);
+      }
+      quri = urlparse.urlunparse(puri);
 
-            http.request(method, quri, data, headers);
+      http.request(method, quri, data, headers);
 
-            response = http.getresponse();
+      response = http.getresponse();
 
-            respdata = null
-            respdata = response.read();
+      respdata = null
+      respdata = response.read();
 
-        finally:
-            http.close();
+    } finally {
+      http.close();
+    }
 
-            // Stop request timer before verification
-            if (stats) {
-                stats.endTimer();
+    // Stop request timer before verification
+    if (stats) {
+      stats.endTimer();
+    }
 
-        if (doverify && (respdata != null) {
-            result, txt = verifyrequest(req, uri, response, respdata);
-            resulttxt += txt
-        } else if (forceverify) {
-            result = (response.status / 100 == 2);
-            if (!result) {
-                resulttxt += "Status Code Error: %d" % response.status
+    if (doverify && (respdata != null)) {
+      result, txt = verifyrequest(req, uri, response, respdata);
+      resulttxt += txt
+    } else if (forceverify) {
+      result = (response.status / 100 == 2);
+      if (!result) {
+        resulttxt += "Status Code Error: %d" % response.status
+      }
+    }
 
-        if (req.print_request|| (manager.print_request_response_on_error && (!result && (not req.wait_for_success) {
-            requesttxt = "\n-------BEGIN:REQUEST-------\n"
-            requesttxt += http.requestData
-            requesttxt += "\n--------END:REQUEST--------\n"
-            manager.message("protocol", requesttxt);
+    if (req.printRequest ||
+            (manager.printRequestResponseOnError &&
+                     (!result && (not req.waitForSuccess)))) {
+      requesttxt = "\n-------BEGIN:REQUEST-------\n"
+      requesttxt += http.requestData
+      requesttxt += "\n--------END:REQUEST--------\n"
+      manager.message("protocol", requesttxt);
+    }
 
-        if (req.print_response|| (manager.print_request_response_on_error && (!result && (!req.wait_for_success) {
-            responsetxt = "\n-------BEGIN:RESPONSE-------\n"
-            responsetxt += "%s %s %s\n" % (getVersionStringFromResponse(response), response.status, response.reason,);
-            responsetxt += String.valueOf(response.msg) + "\n" + respdata
-            responsetxt += "\n--------END:RESPONSE--------\n"
-            manager.message("protocol", responsetxt);
+        if (req.printResponse||
+                (manager.printRequestResponseOnError &&
+                         (!result && (!req.wait_for_success)))) {
+      responsetxt = "\n-------BEGIN:RESPONSE-------\n"
+      responsetxt += "%s %s %s\n" % (getVersionStringFromResponse(
+              response), response.status, response.reason,);
+      responsetxt += String.valueOf(response.msg) + "\n" + respdata
+      responsetxt += "\n--------END:RESPONSE--------\n"
+      manager.message("protocol", responsetxt);
+    }
 
-        if (etags != null && (req.method == "GET")) {
-            hdrs = response.msg.getheaders("Etag");
-            if (hdrs) {
-                etags[uri] = hdrs[0].encode("utf-8");
+    if (etags != null && (req.method == "GET")) {
+      hdrs = response.msg.getheaders("Etag");
+      if (hdrs) {
+        etags[uri] = hdrs[0].encode("utf-8");
+      }
+    }
 
-        if (req.graburi) {
-            manager.serverInfo.addextrasubs({req.graburi: grabbedlocation});
+    if (req.graburi) {
+      manager.serverInfo.addextrasubs({req.graburi:grabbedlocation})
+      ;
+    }
 
-        if (req.grabcount) {
-            ctr = null
-            if (result && (response != null) && (response.status == 207) && (respdata != null) {
-                tree = ElementTree(file=StringIO(respdata));
-                ctr = len(tree.findall("{DAV:}response")) - 1
+    if (req.grabcount) {
+      ctr = null;
+      if (result && (response != null) && (response.status == 207) && (respdata != null)
+      {
+        tree = ElementTree(file = StringIO(respdata));
+        ctr = len(tree.findall("{DAV:}response")) - 1;
+      }
 
-            if (ctr == null|| ctr == -1) {
-                result = false
-                resulttxt += "\nCould not count resources in response\n"
-            } else {
-                manager.serverInfo.addextrasubs({req.grabcount: String.valueOf(ctr)});
+      if (ctr == null|| ctr == -1) {
+        result = false
+        resulttxt += "\nCould not count resources in response\n"
+      } else {
+        manager.serverInfo.addextrasubs({req.grabcount:
+        String.valueOf(ctr)});
+      }
+    }
 
-        if (req.grabheader) {
-            for (hdrname, variable: req.grabheader) {
-                hdrs = response.msg.getheaders(hdrname);
-                if (hdrs) {
-                    manager.serverInfo.addextrasubs({variable: hdrs[0].encode("utf-8")});
-                } else {
-                    result = false
-                    resulttxt += "\nHeader %s was not extracted from response\n" % (hdrname,);
+    if (req.grabheader) {
+      for (hdrname, variable:req.grabheader){
+        hdrs = response.msg.getheaders(hdrname);
+        if (hdrs) {
+          manager.serverInfo.addextrasubs({variable:
+          hdrs[0].encode("utf-8")});
+        } else {
+          result = false
+          resulttxt += "\nHeader %s was not extracted from response\n" % (hdrname,)
+          ;
+        }
+      }
+    }
 
-        if (req.grabproperty) {
-            if (response.status == 207) {
-                for (propname, variable: req.grabproperty) {
-                    // grab the property here
-                    propvalue = extractProperty(propname, respdata);
-                    if (propvalue == null) {
-                        result = false
-                        resulttxt += "\nProperty %s was not extracted from multistatus response\n" % (propname,);
-                    } else {
-                        manager.serverInfo.addextrasubs({variable: propvalue.encode("utf-8")});
+    if (req.grabproperty) {
+      if (response.status == 207) {
+        for (propname, variable:req.grabproperty){
+          // grab the property here
+          propvalue = extractProperty(propname, respdata);
+          if (propvalue == null) {
+            result = false
+            resulttxt += "\nProperty %s was not extracted from multistatus response\n" % (propname,)
+            ;
+          } else {
+            manager.serverInfo.addextrasubs({variable:
+            propvalue.encode("utf-8")});
+          }
+        }
+      }
+    }
 
-        if (req.grabelement) {
-            for (item: req.grabelement) {
-                if (len(item) == 2) {
-                    elementpath, variables = item
-                    parent = null
-                } else {
-                    elementpath, parent, variables = item
-                    parent = manager.serverInfo.extrasubs(parent);
-                // grab the property here
-                elementvalues = extractElements(elementpath, parent, respdata);
-                if (elementvalues == null) {
-                    result = false
-                    resulttxt += "\nElement %s was not extracted from response\n" % (elementpath,);
-                } else if (len(variables) != len(elementvalues) {
-                    result = false
-                    resulttxt += "\n%d found but expecting %d for element %s from response\n" % (len(elementvalues), len(variables), elementpath,);
-                } else {
-                    for (variable, elementvalue: zip(variables, elementvalues) {
-                        manager.serverInfo.addextrasubs({variable: elementvalue.encode("utf-8") if elementvalue else ""});
+    if (req.grabelement) {
+      for (item: req.grabelement) {
+        if (len(item) == 2) {
+          elementpath, variables = item;
+          parent = null;
+        } else {
+          elementpath, parent, variables = item;
+          parent = manager.serverInfo.extrasubs(parent);
+        }
+        // grab the property here
+        elementvalues = extractElements(elementpath, parent, respdata);
+        if (elementvalues == null) {
+          result = false;
+          resulttxt += "\nElement %s was not extracted from response\n" % (elementpath,);
+        } else if (len(variables) != len(elementvalues) {
+          result = false
+          resulttxt += "\n%d found but expecting %d for element %s from response\n" % (len(elementvalues), len(variables), elementpath,);
+        } else {
+          for (variable, elementvalue: zip(variables, elementvalues)
+          {
+            manager.serverInfo.addextrasubs({variable:
+            elementvalue.encode("utf-8") if elementvalue else""})
+            ;
+          }
+        }
+      }
+    }
 
-        if (req.grabjson) {
-            for (pointer, variables: req.grabjson) {
-                // grab the JSON value here
-                pointervalues = extractPointer(pointer, respdata);
-                if (pointervalues == null) {
-                    result = false
-                    resulttxt += "\Pointer %s was not extracted from response\n" % (pointer,);
-                } else if (len(variables) != len(pointervalues) {
-                    result = false
-                    resulttxt += "\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,);
-                } else {
-                    for (variable, pointervalue: zip(variables, pointervalues) {
-                        manager.serverInfo.addextrasubs({variable: pointervalue.encode("utf-8") if pointervalue else ""});
+    if (req.grabjson) {
+      for (pointer, variables: req.grabjson) {
+        // grab the JSON value here
+        pointervalues = extractPointer(pointer, respdata);
+        if (pointervalues == null) {
+          result = false
+          resulttxt += "\Pointer %s was not extracted from response\n" % (pointer,);
+        } else if (len(variables) != len(pointervalues) {
+          result = false
+          resulttxt += "\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,);
+        } else {
+          for (variable, pointervalue: zip(variables, pointervalues)
+          {
+            manager.serverInfo.addextrasubs({variable:
+            pointervalue.encode("utf-8") if pointervalue else""});
+          }
+        }
+      }
+    }
 
-        if (req.grabcalprop) {
-            for (propname, variable: req.grabcalprop) {
-                // grab the property here
-                propname = manager.serverInfo.subs(propname);
-                propname = manager.serverInfo.extrasubs(propname);
-                propvalue = extractCalProperty(propname, respdata);
-                if (propvalue == null) {
-                    result = false
-                    resulttxt += "\nCalendar property %s was not extracted from response\n" % (propname,);
-                } else {
-                    manager.serverInfo.addextrasubs({variable: propvalue.encode("utf-8")});
+    if (req.grabcalprop) {
+      for (propname, variable:req.grabcalprop){
+        // grab the property here
+        propname = manager.serverInfo.subs(propname);
+        propname = manager.serverInfo.extrasubs(propname);
+        propvalue = extractCalProperty(propname, respdata);
+        if (propvalue == null) {
+          result = false
+          resulttxt += "\nCalendar property %s was not extracted from response\n" % (propname,)
+          ;
+        } else {
+          manager.serverInfo.addextrasubs({variable:
+          propvalue.encode("utf-8")});
+        }
+      }
+    }
 
-        if (req.grabcalparam) {
-            for (paramname, variable: req.grabcalparam) {
-                // grab the property here
-                paramname = manager.serverInfo.subs(paramname);
-                paramname = manager.serverInfo.extrasubs(paramname);
-                paramvalue = extractCalParameter(paramname, respdata);
-                if (paramvalue == null) {
-                    result = false
-                    resulttxt += "\nCalendar Parameter %s was not extracted from response\n" % (paramname,);
-                } else {
-                    manager.serverInfo.addextrasubs({variable: paramvalue.encode("utf-8")});
+    if (req.grabcalparam) {
+      for (paramname, variable:req.grabcalparam) {
+        // grab the property here
+        paramname = manager.serverInfo.subs(paramname);
+        paramname = manager.serverInfo.extrasubs(paramname);
+        paramvalue = extractCalParameter(paramname, respdata);
+        if (paramvalue == null) {
+          result = false;
+          resulttxt += "\nCalendar Parameter %s was not extracted from response\n" % (paramname,)
+          ;
+        } else {
+          manager.serverInfo.addextrasubs({variable:paramvalue.encode("utf-8")});
+        }
+      }
+    }
 
-        return result, resulttxt, response, respdata
+    return new DoRequestResult(result, resulttxt, response, respdata);
+  }
 
     public void verifyrequest (req, uri, response, respdata) {
 

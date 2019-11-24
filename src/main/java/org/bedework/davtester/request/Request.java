@@ -145,7 +145,7 @@ public class Request extends DavTesterBase {
   private boolean auth = true;
   public String user;
   public String pswd;
-  private String cert;
+  public String cert;
   private boolean endDelete;
   private boolean printRequest;
   private boolean printResponse;
