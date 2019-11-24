@@ -18,12 +18,11 @@ package org.bedework.davtester.request;
 import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
-import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.davtester.verifiers.DataString;
 import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
-import org.bedework.util.misc.Util;
+import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 
 import org.apache.http.HttpResponse;
 import org.w3c.dom.Element;
@@ -66,8 +65,9 @@ public class Verify extends DavTesterBase {
     }
   }
 
-  public void doVerify(final String uri, final HttpResponse response,
-                       String respdata) {
+  public VerifyResult doVerify(final String uri, final HttpResponse response,
+                                        String respdata) {
+
     // Re-do substitutions from values generated during the current test run
     if (manager.serverInfo.hasextrasubs()) {
       for (var name: args.keySet()) {
@@ -84,13 +84,13 @@ public class Verify extends DavTesterBase {
 
     if (verifier == null) {
       throwException("Unknown verifier: " + callback);
-      return; // fake
+      return null; // fake
     }
 
     // Always clone the args as this verifier may be called multiple times
     var newargs = new KeyVals(args);
 
-    return verifier.verify(uri, response, respdata, newargs)
+    return verifier.verify(uri, response, respdata, newargs);
   }
 
   @Override

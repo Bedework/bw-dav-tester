@@ -8,6 +8,7 @@ import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.util.misc.Util;
 
+import org.apache.http.HttpResponse;
 import org.w3c.dom.Element;
 
 import java.io.File;
@@ -464,6 +465,48 @@ public class Request extends DavTesterBase {
                                   now.year, now.month, now.dayOfMonth));
 
     return data;
+  }
+
+  public void verifyRequest(final String uri,
+                            final HttpResponse response,
+                            final String respdata) {
+    var result = true;
+    var resulttxt = "";
+
+    // check for response
+    if (Util.isEmpty(verifiers)) {
+      return result,resulttxt;
+    }
+    result = true
+    resulttxt = ""
+    for (var verifier: verifiers) {
+      if (verifier.hasMissingFeatures()) {
+        continue
+      }
+      if (verifier.hasExcludedFeatures()) {
+        continue
+      }
+      iresult, iresulttxt = verifier.doVerify(uri, response, respdata);
+      if (!iresult) {
+        result = false;
+        if (len(resulttxt) {
+          resulttxt += "\n";
+        }
+        resulttxt += "Failed Verifier: %s\n" % verifier.callback;
+        resulttxt += iresulttxt;
+      } else {
+        if (len(resulttxt) {
+          resulttxt += "\n";
+        }
+        resulttxt += "Passed Verifier: %s\n" % verifier.callback;
+      }
+    }
+
+    if (result) {
+      resulttxt = "";
+    }
+
+    return result, resulttxt
   }
 
   public void parseXML(final Element node) {

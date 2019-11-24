@@ -19,6 +19,7 @@ import org.bedework.davtester.request.Request;
 import org.bedework.util.misc.Util;
 
 import org.apache.http.HttpResponse;
+import org.w3c.dom.Element;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -39,6 +40,9 @@ import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.Manager.RESULT_OK;
 import static org.bedework.davtester.Manager.TestResult;
 import static org.bedework.davtester.Utils.throwException;
+import static org.bedework.davtester.XmlUtils.children;
+import static org.bedework.davtester.XmlUtils.content;
+import static org.bedework.util.xml.XmlUtil.nodeMatches;
 import static org.bedework.util.xml.tagdefs.XcardTags.uid;
 
 /*
@@ -1208,267 +1212,283 @@ class Caldavtest extends DavTesterBase {
     return new DoRequestResult(result, resulttxt, response, respdata);
   }
 
-    public void verifyrequest (req, uri, response, respdata) {
+  public void parseXML (final Element node) {
+    ignore_all = node.get(XmlDefs.ATTR_IGNORE_ALL,
+                          XmlDefs.ATTR_VALUE_NO) == XmlDefs.ATTR_VALUE_YES
 
-        result = true
-        resulttxt = ""
+    for (var child : children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
+        description = content(child);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
+        parseFeatures(child, true);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
+        parseFeatures(child, false);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_START)) {
+        startRequests = request.parseList(manager, child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE)) {
+        var suite = new Testsuite(manager);
+        suite.parseXML(child);
+        suites.add(suite);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_END)) {
+        endRequests = request.parseList(manager, child);
+      }
+    }
+  }
 
-        // check for response
-        if (len(req.verifiers) == 0) {
-            return result, resulttxt
+  public void extractProperty (propertyname, respdata) {
+
+    try {
+      tree = ElementTree(file=StringIO(respdata));
+    } catch (final Throwable t) {
+      return null;
+    }
+
+    for (var response: tree.findall("{DAV:}response") {
+      // Get all property status
+      propstatus = response.findall("{DAV:}propstat");
+      for (var props: propstatus) {
+        // Determine status for this propstat
+        status = props.findall("{DAV:}status");
+        if (len(status) == 1) {
+          statustxt = status[0].text
+          status = false
+          if (statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10)
+          {
+            status = (statustxt[9] == "2");
+          }
         } else {
-            result = true
-            resulttxt = ""
-            for (verifier: req.verifiers) {
-                if (len(verifier.missingFeatures()) != 0) {
-                    continue
-                if (len(verifier.excludedFeatures()) != 0) {
-                    continue
-                iresult, iresulttxt = verifier.doVerify(uri, response, respdata);
-                if (!iresult) {
-                    result = false
-                    if (len(resulttxt) {
-                        resulttxt += "\n"
-                    resulttxt += "Failed Verifier: %s\n" % verifier.callback
-                    resulttxt += iresulttxt
-                } else {
-                    if (len(resulttxt) {
-                        resulttxt += "\n"
-                    resulttxt += "Passed Verifier: %s\n" % verifier.callback
+          status = false;
+        }
 
-            if (result) {
-                resulttxt = ""
-            return result, resulttxt
+        if (!status) {
+          continue;
+        }
 
-    public void parseXML (node) {
-        ignore_all = node.get(XmlDefs.ATTR_IGNORE_ALL, XmlDefs.ATTR_VALUE_NO) == XmlDefs.ATTR_VALUE_YES
+        // Get properties for this propstat
+        prop = props.findall("{DAV:}prop");
+        if (len(prop) != 1) {
+          return false,
+          "           Wrong number of DAV:prop elements\n";
+        }
 
-        for (var child: children(node)) {
-            if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION) {
-                description = child.text
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE) {
-                parseFeatures(child, require=true);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_EXCLUDE_FEATURE) {
-                parseFeatures(child, require=false);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_START) {
-                start_requests = request.parseList(manager, child);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE) {
-                suite = testsuite(manager);
-                suite.parseXML(child);
-                suites.append(suite);
-            } else if (nodeMatches(child, XmlDefs.ELEMENT_END) {
-                end_requests = request.parseList(manager, child);
+        for (var child: prop[0].getchildren()) {
+          fqname = child.tag
+          if (len(child)) {
+            // Copy sub-element data as text into one long string and strip leading/trailing space
+            value = ""
+            for (var p: child.getchildren() {
+              temp = tostring(p);
+              temp = temp.strip();
+              value += temp
+            }
+          } else{
+            value = child.text
+          }
 
-    public void parseFeatures (node, require=true) {
-        for (var child: children(node)) {
-            if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE) {
-                (require_features if require  else exclude_features).add(contentUtf8(child));
+          if (fqname == propertyname) {
+            return value;
+          }
+        }
+      }
+    }
 
-    public void extractProperty (propertyname, respdata) {
+    return null;
+  }
 
-        try {
-            tree = ElementTree(file=StringIO(respdata));
-        } catch (final Throwable t) {
-            return null
+  public void extractElement (elementpath, respdata) {
+    try {
+      tree = ElementTree();
+      tree.parse(StringIO(respdata));
+    } except {
+      return null;
+    }
 
-        for (response: tree.findall("{DAV:}response") {
-            // Get all property status
-            propstatus = response.findall("{DAV:}propstat");
-            for (props: propstatus) {
-                // Determine status for this propstat
-                status = props.findall("{DAV:}status");
-                if (len(status) == 1) {
-                    statustxt = status[0].text
-                    status = false
-                    if (statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10) {
-                        status = (statustxt[9] == "2");
-                } else {
-                    status = false
-
-                if (!status) {
-                    continue
-
-                // Get properties for this propstat
-                prop = props.findall("{DAV:}prop");
-                if (len(prop) != 1) {
-                    return false, "           Wrong number of DAV:prop elements\n"
-
-                for (child: prop[0].getchildren() {
-                    fqname = child.tag
-                    if (len(child) {
-                        // Copy sub-element data as text into one long string and strip leading/trailing space
-                        value = ""
-                        for (p: child.getchildren() {
-                            temp = tostring(p);
-                            temp = temp.strip();
-                            value += temp
-                    } else {
-                        value = child.text
-
-                    if (fqname == propertyname) {
-                        return value
-
+    // Strip off the top-level item
+    if (elementpath[0] == '/') {
+      elementpath = elementpath[1:]
+      splits = elementpath.split('/', 1);
+      root = splits[0]
+      if (tree.getroot().tag != root) {
         return null
+      }
+      if (len(splits) == 1) {
+        return tree.getroot().text;
+      }
+      elementpath = splits[1]
+    }
 
-    public void extractElement (elementpath, respdata) {
+    e = tree.find(elementpath);
+    if (e != null) {
+      return e.text
+    }
 
-        try {
-            tree = ElementTree();
-            tree.parse(StringIO(respdata));
-        except:
-            return null
+    return null;
+  }
 
-        // Strip off the top-level item
-        if (elementpath[0] == '/') {
-            elementpath = elementpath[1:]
-            splits = elementpath.split('/', 1);
-            root = splits[0]
-            if (tree.getroot().tag != root) {
-                return null
-            } else if (len(splits) == 1) {
-                return tree.getroot().text
-            } else {
-                elementpath = splits[1]
+  public void extractElements (elementpath, parent, respdata) {
+    try {
+      tree = ElementTree();
+      tree.parse(StringIO(respdata));
+    } except {
+      return null;
+    }
 
-        e = tree.find(elementpath);
-        if (e != null) {
-            return e.text
-        } else {
-            return null
+    if (parent) {
+      tree_root = nodeForPath(tree.getroot(), parent);
+      if (!tree_root) {
+        return null;
+      }
+      tree_root = tree_root[0];
 
-    public void extractElements (elementpath, parent, respdata) {
+      // Handle absolute root element
+      if (elementpath[0] == '/') {
+        elementpath = elementpath[1:]
+      }
+      root_path, child_path = xmlPathSplit(elementpath);
+      if (child_path) {
+        if (tree_root.tag != root_path) {
+          return null;
+        }
+        e = tree_root.findall(child_path);
+      } else {
+        e = (tree_root,);
+      }
+    } else {
+      // Strip off the top-level item
+      if (elementpath[0] == '/') {
+        elementpath = elementpath[1:]
+        splits = elementpath.split('/', 1);
+        root = splits[0]
+        if (tree.getroot().tag != root) {
+          return null;
+        }
 
-        try {
-            tree = ElementTree();
-            tree.parse(StringIO(respdata));
-        except:
-            return null
+        if (len(splits) == 1) {
+          return tree.getroot().text;
+        }
 
-        if (parent) {
-            tree_root = nodeForPath(tree.getroot(), parent);
-            if (!tree_root) {
-                return null
-            tree_root = tree_root[0]
+        elementpath = splits[1]
+      }
+      e = tree.findall(elementpath);
+    }
 
-            // Handle absolute root element
-            if (elementpath[0] == '/') {
-                elementpath = elementpath[1:]
-            root_path, child_path = xmlPathSplit(elementpath);
-            if (child_path) {
-                if (tree_root.tag != root_path) {
-                    return null
-                e = tree_root.findall(child_path);
-            } else {
-                e = (tree_root,);
+    if (e != null) {
+      return [item.text for item:
+      e];
+    }
 
-        } else {
-            // Strip off the top-level item
-            if (elementpath[0] == '/') {
-                elementpath = elementpath[1:]
-                splits = elementpath.split('/', 1);
-                root = splits[0]
-                if (tree.getroot().tag != root) {
-                    return null
-                } else if (len(splits) == 1) {
-                    return tree.getroot().text
-                } else {
-                    elementpath = splits[1]
+    return null;
+  }
 
-            e = tree.findall(elementpath);
+  public void extractPointer (pointer, respdata) {
+    jp = JSONMatcher(pointer);
 
-        if (e != null) {
-            return [item.text for item: e]
-        } else {
-            return null
+    try {
+      j = json.loads(respdata);
+    } except {
+      return null;
+    }
 
-    public void extractPointer (pointer, respdata) {
+    return jp.match(j);
+  }
 
-        jp = JSONMatcher(pointer);
+  public void extractCalProperty (propertyname, respdata) {
 
-        try {
-            j = json.loads(respdata);
-        except:
-            return null
+    prop = _calProperty(propertyname, respdata);
+    return prop.getValue().getValue() if prop  else null;
+  }
 
-        return jp.match(j);
+  public void extractCalParameter (parametername, respdata) {
+    // propname is a path consisting of component names and the last one a property name
+    // e.g. VEVENT/ATTACH
+    bits = parametername.split("/");
+    propertyname = "/".join(bits[:-1]);
+    param = bits[-1]
+    bits = param.split("$");
+    pname = bits[0]
+    if (len(bits) > 1) {
+      propertyname += "$%s" % (bits[1],);
+    }
 
-    public void extractCalProperty (propertyname, respdata) {
+    prop = _calProperty(propertyname, respdata);
 
-        prop = _calProperty(propertyname, respdata);
-        return prop.getValue().getValue() if prop  else null
+    try {
+      return prop.getParameterValue(pname) if prop  else null
+    } except KeyError {
+      return null
+    }
+  }
 
-    public void extractCalParameter (parametername, respdata) {
+  public void _calProperty (propertyname, respdata) {
 
-        // propname is a path consisting of component names and the last one a property name
-        // e.g. VEVENT/ATTACH
-        bits = parametername.split("/");
-        propertyname = "/".join(bits[:-1]);
-        param = bits[-1]
-        bits = param.split("$");
-        pname = bits[0]
-        if (len(bits) > 1) {
-            propertyname += "$%s" % (bits[1],);
+    try {
+      cal = Calendar.parseText(respdata);
+    } catch (final Throwable t) {
+      return null
+    }
 
-        prop = _calProperty(propertyname, respdata);
+    // propname is a path consisting of component names and the last one a property name
+    // e.g. VEVENT/ATTACH
+    bits = propertyname.split("/");
+    components = bits[:-1]
+    prop = bits[-1]
+    bits = prop.split("$");
+    pname = bits[0]
+    pvalue = bits[1] if len(bits) > 1  else null
 
-        try {
-            return prop.getParameterValue(pname) if prop  else null
-        except KeyError:
-            return null
+    while (components) {
 
-    public void _calProperty (propertyname, respdata) {
+      var found = false;
+      for (c: cal.getComponents()) {
+        if (c.getType() == components[0]) {
+          cal = c
+          components = components[1:]
+          found = true;
+          break
+        }
+      }
+      if (!found) {
+        break;
+      }
+    }
 
-        try {
-            cal = Calendar.parseText(respdata);
-        } catch (final Throwable t) {
-            return null
+    if (components) {
+      return null
+    }
 
-        // propname is a path consisting of component names and the last one a property name
-        // e.g. VEVENT/ATTACH
-        bits = propertyname.split("/");
-        components = bits[:-1]
-        prop = bits[-1]
-        bits = prop.split("$");
-        pname = bits[0]
-        pvalue = bits[1] if len(bits) > 1  else null
+    props = cal.getProperties(pname);
+    if (pvalue) {
+      for (prop: props) {
+        if (prop.getValue().getValue() == pvalue) {
+          return prop
+        }
+      }
+      return null
+    }
 
-        while (components) {
-            for (c: cal.getComponents() {
-                if (c.getType() == components[0]) {
-                    cal = c
-                    components = components[1:]
-                    break
-            } else {
-                break
+    return props[0] if props  else null
+  }
 
-        if (components) {
-            return null
-
-        props = cal.getProperties(pname);
-        if (pvalue) {
-            for (prop: props) {
-                if (prop.getValue().getValue() == pvalue) {
-                    return prop
-            } else {
-                return null
-        } else {
-            return props[0] if props  else null
-
-    public void postgresInit () {
-        """
+  /* POSTGRES
+  public void postgresInit () {
+    """
         Initialize postgres statement counter
         """
-        if (manager.postgresLog) {
-            if (os.path.exists(manager.postgresLog) {
-                return int(commands.getoutput("grep \"LOG:  statement:\" %s | wc -l" % (manager.postgresLog,)));
+      if (manager.postgresLog) {
+        if (os.path.exists(manager.postgresLog) {
+          return int(commands.getoutput("grep \"LOG:  statement:\" %s | wc -l" % (manager.postgresLog,)));
 
-        return 0
+          return 0
 
-    public void postgresResult (startCount, indent) {
+          public void postgresResult (startCount, indent) {
 
-        if (manager.postgresLog) {
-            if (os.path.exists(manager.postgresLog) {
+            if (manager.postgresLog) {
+              if (os.path.exists(manager.postgresLog) {
                 newCount = int(commands.getoutput("grep \"LOG:  statement:\" %s | wc -l" % (manager.postgresLog,)));
-            } else {
+              } else {
                 newCount = 0
             manager.trace(format("Postgres Statements: %d", newCount - startCount));
+*/
+}
