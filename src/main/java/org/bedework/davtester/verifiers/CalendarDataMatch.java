@@ -28,6 +28,7 @@ import java.util.Calendar;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static java.lang.String.format;
 import static org.bedework.util.xml.tagdefs.CaldavTags.calendar;
 
 /**
@@ -40,17 +41,16 @@ public class CalendarDataMatch extends Verifier {
                              final String respdata,
                              final KeyVals args) {
     // Get arguments
-    var files = args.get("filepath", []);
+    var files = args.getStrings("filepath");
     if (manager.data_dir) {
       files = map(lambda x:
       os.path.join(manager.data_dir, x), files)
     }
     var caldata = args.getStrings("data");
     var filters = args.getStrings("filter");
-    var statusCode = args.getStrings()"status", ["200", "201", "207"]);
-    var doTimezones = args.getOnlyBool("doTimezones");
+    var statusCode = args.getStrings("status", "200", "201", "207");
 
-    if (!manager.serverInfo.features.contains("EMAIL parameter")){
+    if (!featureSupported("EMAIL parameter")){
       filters.append("ATTENDEE:EMAIL");
       filters.append("ORGANIZER:EMAIL");
     }
@@ -63,15 +63,19 @@ public class CalendarDataMatch extends Verifier {
     }
     filters = filter(lambda x: x[0] != "!", filters);
 
-    if (doTimezones == null) {
-      doTimezones = "timezones-by-reference" not in manager.serverInfo.features;
+    final boolean doTimezones;
+
+    if (!args.containsKey("doTimezones")) {
+      doTimezones = !featureSupported("timezones-by-reference");
     } else {
-      doTimezones = doTimezones == "true";
+      doTimezones = args.getOnlyBool("doTimezones");
     }
 
     // status code must be 200, 201, 207 or explicitly specified code
-    if (String.valueOf(response.status) not in statusCode) {
-      new VerifyResult(format("        HTTP Status Code Wrong: %d", response.status);
+    var respScode = response.getStatusLine().getStatusCode();
+    if (!statusCode.contains(String.valueOf(respScode))) {
+      new VerifyResult(format("        HTTP Status Code Wrong: %d",
+                              respScode));
     }
 
     // look for response data
@@ -80,7 +84,7 @@ public class CalendarDataMatch extends Verifier {
     }
 
     // look for one file
-    if ((len(files) != 1) && (len(caldata) != 1)) {
+    if ((files.size() != 1) && (len(caldata) != 1)) {
       return new VerifyResult(
               "        No file to compare response to");
     }

@@ -31,10 +31,10 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Maintains a list of tests to run as part of a 'suite'.
  */
 class Testsuite extends DavTesterBase {
-  private boolean ignore;
+  public boolean ignore;
   private boolean changeuid;
 
-  private List<Test> tests = new ArrayList<>();
+  public List<Test> tests = new ArrayList<>();
 
   public Testsuite(final Manager manager) {
     super(manager);

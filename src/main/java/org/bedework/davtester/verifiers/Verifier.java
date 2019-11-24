@@ -52,6 +52,11 @@ public abstract class Verifier {
   public void init(final Manager manager) {
     this.manager = manager;
   }
+
+  public boolean featureSupported(final String feature) {
+    return manager.featureSupported(feature);
+  }
+
   public abstract VerifyResult verify(final String uri,
                                       final HttpResponse response,
                                       final String respdata,

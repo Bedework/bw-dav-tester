@@ -4,6 +4,7 @@ import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.Serverinfo.KeyVal;
+import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.util.misc.Util;
 
@@ -13,6 +14,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.fileToString;
@@ -136,25 +138,25 @@ public void calcResponse(
  * be used to determine a satisfactory output or not.
  */
 public class Request extends DavTesterBase {
-  private String host;
-  private int port;
+  public String host;
+  public int port;
   private String afunix;
 
   private boolean auth = true;
-  private String user;
-  private String pswd;
+  public String user;
+  public String pswd;
   private String cert;
   private boolean endDelete;
   private boolean printRequest;
   private boolean printResponse;
-  private boolean waitForSuccess;
+  public boolean waitForSuccess;
 
-  String method;
-  List<String> ruris = new ArrayList<>();
-  String ruri;
+  public String method;
+  public List<String> ruris = new ArrayList<>();
+  public String ruri;
   boolean ruriQuote = true
   private Data data = null
-  boolean iterateData;
+  public boolean iterateData;
   int count = 1;
   List<Verify> verifiers = new ArrayList<>();
   String graburi;

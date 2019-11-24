@@ -51,6 +51,10 @@ public abstract class DavTesterBase {
    */
   public abstract String getKind();
 
+  public boolean hasMissingFeatures() {
+    return missingFeatures().size() > 0;
+  }
+
   public TreeSet<String> missingFeatures() {
     var res = new TreeSet<>(requireFeatures);
 
@@ -59,7 +63,11 @@ public abstract class DavTesterBase {
     return res;
   }
 
-  public TreeSet<String> excludedFeatures () {
+  public boolean hasExcludedFeatures() {
+    return excludedFeatures().size() > 0;
+  }
+
+  public TreeSet<String> excludedFeatures() {
     var res = new TreeSet<>(excludeFeatures);
 
     res.retainAll(manager.serverInfo.features);

@@ -42,6 +42,8 @@ public class Testcaldav {
     var randomOrder = false;
     //var random_seed = String.valueOf(new Random.randint(0, 1000000));
     var observerNames = new ArrayList<String>();
+    String pretest = null;
+    String posttest = null;
 
     /*
         options, args = getopt.getopt(
@@ -108,8 +110,8 @@ public class Testcaldav {
         if (pargs.ifMatch("--basedir")) {
           baseDir = pargs.next();
           sname = Util.buildPath(false, baseDir, "/serverinfo.xml");
-          dname = Util.buildPath(true, baseDir, "tests");
-          manager.dataDir = Util.buildPath(true, baseDir, "data");
+          dname = Util.buildPath(true, baseDir, "/tests");
+          manager.setDataDir(Util.buildPath(true, baseDir, "/data"));
 
           continue;
         }
@@ -125,12 +127,12 @@ public class Testcaldav {
         }
 
         if (pargs.ifMatch("--pretest")) {
-          manager.pretestFile = pargs.next();
+          pretest = pargs.next();
           continue;
         }
 
         if (pargs.ifMatch("--posttest")) {
-          manager.posttestFile = pargs.next();
+          posttest = pargs.next();
           continue;
         }
 
@@ -186,7 +188,7 @@ public class Testcaldav {
 
         // Treat as filename
 
-        fnames.add(normPath(pargs.next()));
+        fnames.add(pargs.next());
       }
 
       if (sname == null) {
@@ -200,11 +202,12 @@ public class Testcaldav {
         Files.walkFileTree(stDir, fl);
       }
 
-      if (manager.pretestFile != null) {
-        manager.pretestFile = normPath(manager.pretestFile);
+      if (pretest != null) {
+        manager.setPretest(pretest);
       }
-      if (manager.posttestFile != null) {
-        manager.posttestFile = normPath(manager.posttestFile);
+
+      if (posttest != null) {
+        manager.setPosttest(posttest);
       }
 
       // Randomize file list
@@ -215,7 +218,7 @@ public class Testcaldav {
       // Load observers
       // DOTHIS map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
 
-      manager.readXML(sname, fnames, ssl, all, null);
+      manager.readXML(sname, manager.normDataPaths(fnames), ssl, all, null);
 
       /* MEMUSAGE
       if (manager.memUsage) {
@@ -231,11 +234,5 @@ public class Testcaldav {
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
-  }
-
-  private static String normPath(final String path) {
-    File f = new File(path);
-
-    return f.getAbsolutePath();
   }
 }

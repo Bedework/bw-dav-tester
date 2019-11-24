@@ -43,8 +43,11 @@ import org.w3c.dom.Element;
 
 import java.io.FileWriter;
 import java.io.Writer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.throwException;
@@ -67,10 +70,11 @@ public class Manager implements Logged {
 
   public Serverinfo serverInfo = new Serverinfo();
   private String baseDir = "";
-  public String dataDir;
-  String pretestFile;
+  private String dataDir;
+  private Path dataDirPath;
+  Path pretestFile;
   private Caldavtest pretest;
-  String posttestFile;
+  Path posttestFile;
   private Caldavtest posttest;
   private List<Caldavtest> tests = new ArrayList<>();
   private boolean textMode;
@@ -144,6 +148,31 @@ public class Manager implements Logged {
     this.textMode = textMode;
   }
 
+  public void setPretest(final String path) {
+    pretestFile = normDataPath(path);
+  }
+
+  public void setPosttest(final String path) {
+    posttestFile = normDataPath(path);
+  }
+
+  public void setDataDir(final String path) {
+    dataDir = path;
+    dataDirPath = Paths.get(path);
+  }
+
+  public Path normDataPath(final String path) {
+    return dataDirPath.resolve(Paths.get(path));
+  }
+
+  public List<Path> normDataPaths(final List<String> path) {
+    return path.stream().map(this::normDataPath).collect(Collectors.toList());
+  }
+
+  public boolean featureSupported(final String feature) {
+    return serverInfo.features.contains(feature);
+  }
+
   public void logit(final String str) {
     try {
       if (logFileWriter != null) {
@@ -188,11 +217,11 @@ public class Manager implements Logged {
     message("testProgress", results);
   }
 
-  public void load(final String file,
+  public void load(final Path file,
                    final int current,
                    final int total) {
     final var kvs = new KeyVals("total", total);
-    kvs.put("name", file);
+    kvs.put("name", file.toString());
     kvs.put("current", current);
 
     message("load", kvs);
@@ -259,7 +288,7 @@ public class Manager implements Logged {
   }
 
   public void readXML(final String serverfile,
-                      final List<String> testfiles,
+                      final List<Path> testfiles,
                       final boolean ssl,
                       final boolean all,
                       final KeyVals moresubs) {
