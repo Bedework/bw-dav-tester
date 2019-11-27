@@ -15,6 +15,7 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.davtester.ical.Icalendar;
 import org.bedework.davtester.request.Request;
 import org.bedework.util.dav.DavUtil;
 import org.bedework.util.dav.DavUtil.MultiStatusResponse;
@@ -22,6 +23,8 @@ import org.bedework.util.http.HttpUtil;
 import org.bedework.util.misc.Util;
 import org.bedework.util.xml.tagdefs.WebdavTags;
 
+import net.fortuna.ical4j.model.Component;
+import net.fortuna.ical4j.model.Property;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -31,7 +34,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHeader;
 import org.w3c.dom.Element;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -40,34 +42,29 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.xml.xpath.XPath;
-
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_FAILED;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.Manager.RESULT_OK;
 import static org.bedework.davtester.Manager.TestResult;
+import static org.bedework.davtester.Utils.encodeUtf8;
 import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.childrenMatching;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
 import static org.bedework.davtester.XmlUtils.findNodes;
+import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.davtester.XmlUtils.multiStatusResponse;
-import static org.bedework.davtester.XmlUtils.nodeForPath;
 import static org.bedework.davtester.XmlUtils.parseXmlString;
 import static org.bedework.davtester.XmlUtils.tagDavHref;
-import static org.bedework.davtester.XmlUtils.tagDavResponse;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
-import static org.bedework.util.xml.tagdefs.XcardTags.uid;
-
 
 /**
  * Class to encapsulate a single caldav test run.
@@ -112,8 +109,8 @@ class Caldavtest extends DavTesterBase {
   boolean ignoreAll;
   private boolean only;
 
-  private List<String> startRequests = new ArrayList<>();
-  private List<String> endRequests = new ArrayList<>();
+  private List<Request> startRequests = new ArrayList<>();
+  private List<Request> endRequests = new ArrayList<>();
   private List<RequestPars> endDeletes = new ArrayList<>();
   private List<Testsuite> suites = new ArrayList<>();
 
@@ -128,9 +125,7 @@ class Caldavtest extends DavTesterBase {
     this.testPath = testPath;
     this.name = testPath.getFileName().toString();
 
-    final InputStream is = new FileInputStream(testPath.toFile());
-
-    doc = XmlUtils.parseXml(is);
+    doc = XmlUtils.parseXml(testPath.toString());
   }
 
   public TestResult run() {
@@ -1168,17 +1163,18 @@ class Caldavtest extends DavTesterBase {
         var elements = extractElements(item.path, drr.responseData);
         if (Util.isEmpty(elements)) {
           drr.ok = false;
-          drr.append(format("\nElement %s was not extracted from response\n",
+          drr.append(format("Element %s was not extracted from response",
                             item.path));
         } else if (item.variables.size() != elements.size()) {
           drr.ok = false;
-          drr.append(format("\n%d found but expecting %d for element %s from response\n",
+          drr.append(format("%d found but expecting %d for element %s from response",
                             elements.size(), item.variables.size(),
                             item.path));
         } else {
           var i = 0;
           for (var v: item.variables) {
             var e = elements.get(i);
+            i++;
 
             manager.serverInfo.addextrasubs(
                     new KeyVals(v, contentUtf8(e)));
@@ -1187,39 +1183,52 @@ class Caldavtest extends DavTesterBase {
       }
     }
 
-    if (req.grabjson) {
-      for (pointer, variables: req.grabjson) {
+    if (!Util.isEmpty(req.grabjson)) {
+      throwException("Unimplemented");
+    }
+
+    /* UNUSED
+    if (!Util.isEmpty(req.grabjson)) {
+      for (var kv: req.grabjson) {
         // grab the JSON value here
-        pointervalues = extractPointer(pointer, drr.responseData);
+        var pointervalues = extractPointer(kv.path, drr.responseData);
         if (pointervalues == null) {
           drr.ok = false;
-          drr.append(format("\Pointer %s was not extracted from response\n" % (pointer,);
-        } else if (len(variables) != len(pointervalues) {
+          drr.append(format("Pointer %s was not extracted from response",
+                            kv.path));
+        } else if (kv.variables.size() != pointervalues.size()) {
           drr.ok = false;
-          drr.append(format("\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,);
+          drr.append(format("%d found but expecting %d for pointer %s from response",
+                            pointervalues.size(),
+                            kv.variables.size(),
+                            kv.path));
         } else {
-          for (variable, pointervalue: zip(variables, pointervalues)
-          {
-            manager.serverInfo.addextrasubs({variable:
-            pointervalue.encode("utf-8") if pointervalue else""});
+          var i = 0;
+          for (var v: kv.variables) {
+            var p = pointervalues.get(i);
+            i++;
+
+            manager.serverInfo.addextrasubs(new KeyVals(v,
+                                                        encodeUtf8(p)));
           }
         }
       }
     }
+     */
 
-    if (req.grabcalprop) {
-      for (propname, variable:req.grabcalprop){
+    if (!Util.isEmpty(req.grabcalprop)) {
+      for (var kv: req.grabcalprop) {
         // grab the property here
-        propname = manager.serverInfo.subs(propname);
+        var propname = manager.serverInfo.subs(kv.key);
         propname = manager.serverInfo.extrasubs(propname);
-        propvalue = extractCalProperty(propname, drr.responseData);
+        var propvalue = extractCalProperty(propname, drr.responseData);
         if (propvalue == null) {
           drr.ok = false;
-          drr.append(format("\nCalendar property %s was not extracted from response\n" % (propname,)
-          ;
+          drr.append(format("Calendar property %s was not extracted from response",
+                            propname));
         } else {
-          manager.serverInfo.addextrasubs({variable:
-          propvalue.encode("utf-8")});
+          manager.serverInfo.addextrasubs(new KeyVals(kv.val,
+                                                      encodeUtf8(propvalue));
         }
       }
     }
@@ -1227,15 +1236,17 @@ class Caldavtest extends DavTesterBase {
     if (!Util.isEmpty(req.grabcalparam)) {
       for (var kv: req.grabcalparam) {
         // grab the property here
-        var paramname = manager.serverInfo.subs(kv.key);
-        paramname = manager.serverInfo.extrasubs(paramname);
-        var paramvalue = extractCalParameter(paramname, drr.responseData);
+        var path = manager.serverInfo.subs(kv.key);
+        path = manager.serverInfo.extrasubs(path);
+        var paramvalue = extractCalParameter(path, drr.responseData);
         if (paramvalue == null) {
           drr.ok = false;
-          drr.append(format("\nCalendar Parameter %s was not extracted from response\n" % (paramname,)
+          drr.append(format("Calendar Parameter %s was not extracted from response",
+                            paramname));
           ;
         } else {
-          manager.serverInfo.addextrasubs({kv.val, paramvalue.encode("utf-8")});
+          manager.serverInfo.addextrasubs(new KeyVals(kv.val,
+                                                      encodeUtf8(paramvalue)));
         }
       }
     }
@@ -1244,8 +1255,9 @@ class Caldavtest extends DavTesterBase {
   }
 
   public void parseXML (final Element node) {
-    ignore_all = node.get(XmlDefs.ATTR_IGNORE_ALL,
-                          XmlDefs.ATTR_VALUE_NO) == XmlDefs.ATTR_VALUE_YES
+    ignoreAll = getYesNoAttributeValue(node,
+                                       XmlDefs.ATTR_IGNORE_ALL,
+                                       false);
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
@@ -1257,13 +1269,13 @@ class Caldavtest extends DavTesterBase {
                              XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
         parseFeatures(child, false);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_START)) {
-        startRequests = request.parseList(manager, child);
+        startRequests = Request.parseList(manager, child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE)) {
         var suite = new Testsuite(manager);
         suite.parseXML(child);
         suites.add(suite);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_END)) {
-        endRequests = request.parseList(manager, child);
+        endRequests = Request.parseList(manager, child);
       }
     }
   }
@@ -1330,7 +1342,9 @@ class Caldavtest extends DavTesterBase {
                      testPath);
   }
 
-  public void extractPointer (pointer, final String respdata) {
+  /* UNUSED
+  public void extractPointer (final String pointer,
+                              final String respdata) {
     jp = JSONMatcher(pointer);
 
     try {
@@ -1341,83 +1355,117 @@ class Caldavtest extends DavTesterBase {
 
     return jp.match(j);
   }
+  */
 
-  public void extractCalProperty(final String propertyname,
-                                 final String respdata) {
+  public String extractCalProperty(final String path,
+                                   final String respdata) {
+    /* If the path has a $... segment at the end, split it off
+       as the desired property value.
+     */
+    var pos = path.indexOf('$');
+    String pvalue = null;
+    String ppath = path;
+    if (pos > 0) {
+      ppath = path.substring(0, pos);
+      pvalue = path.substring(pos + 1);
+    }
+    var prop = calProperty(ppath, pvalue, respdata);
+    if (prop == null) {
+      return null;
+    }
 
-    prop = _calProperty(propertyname, respdata);
-    return prop.getValue().getValue() if prop  else null;
+    return prop.getValue();
   }
 
-  public void extractCalParameter(final String parametername,
-                                  final String respdata) {
-    // propname is a path consisting of component names and the last one a property name
-    // e.g. VEVENT/ATTACH
-    var bits = parametername.split("/");
-    var propertyname = "/".join(bits[:-1]);
-    var param = bits[-1]
-    bits = param.split("$");
-    pname = bits[0]
-    if (len(bits) > 1) {
-      propertyname += "$%s" % (bits[1],);
+  public String extractCalParameter(final String path,
+                                    final String respdata) {
+    /* If the path has a $... segment at the end, split it off
+       as the desired property value.
+     */
+    var pos = path.indexOf('$');
+    String pvalue = null;
+    String ppath = path;
+    if (pos > 0) {
+      ppath = path.substring(0, pos);
+      pvalue = path.substring(pos + 1);
     }
 
-    prop = calProperty(propertyname, respdata);
+    // path is a path consisting of component and property names
+    // followed by a parameter name
+    // e.g. VEVENT/ATTACH/MANAGED-ID
+    pos = ppath.lastIndexOf('/');
+    var paramName = ppath.substring(pos + 1);
+    ppath = ppath.substring(0, pos);
 
-    try {
-      return prop.getParameterValue(pname) if prop  else null
-    } except KeyError {
-      return null
+    var prop = calProperty(ppath, pvalue, respdata);
+
+    if (prop == null) {
+      return null;
     }
+
+    var param = prop.getParameter(paramName);
+
+    if (param == null) {
+      return null;
+    }
+
+    return param.getValue();
   }
 
-  private void calProperty(final String propertyname,
-                           final String respdata) {
-    try {
-      cal = Calendar.parseText(respdata);
-    } catch (final Throwable t) {
-      return null
-    }
+  private Property calProperty(final String propertyname,
+                               final String propertyValue,
+                               final String respdata) {
+    Component comp = Icalendar.parseText(respdata);
 
-    // propname is a path consisting of component names and the last one a property name
+    // propname is a path consisting of component and property names
     // e.g. VEVENT/ATTACH
-    bits = propertyname.split("/");
-    components = bits[:-1]
-    prop = bits[-1]
-    bits = prop.split("$");
-    pname = bits[0]
-    pvalue = bits[1] if len(bits) > 1  else null
+    var split = propertyname.split("/");
 
-    while (components) {
+    var spliti = 0;
+
+    while (spliti < split.length) {
+      var name = split[spliti];
+
       var found = false;
-      for (c: cal.getComponents()) {
-        if (c.getType() == components[0]) {
-          cal = c
-          components = components[1:]
+      for (var c: comp.getComponents()) {
+        if (c.getName().equals(name)) {
           found = true;
-          break
+          comp = c;
+          spliti++;
+          break;
         }
       }
+
       if (!found) {
         break;
       }
     }
 
-    if (components) {
-      return null
+    if (spliti == 0) {
+      // Didn't match top level component;
+      return null;
     }
 
-    props = cal.getProperties(pname);
-    if (pvalue) {
-      for (prop: props) {
-        if (prop.getValue().getValue() == pvalue) {
-          return prop
+    // Try properties
+
+    var name = split[spliti];
+    var props = comp.getProperties(name);
+
+    if (propertyValue != null) {
+      for (var prop: props) {
+        if (prop.getValue().equals(propertyValue)) {
+          return prop;
         }
       }
-      return null
+
+      return null;
     }
 
-    return props[0] if props  else null
+    if (Util.isEmpty(props)) {
+      return null;
+    }
+
+    return props.get(0);
   }
 
   String readContent(final InputStream in, final long expectedLen,

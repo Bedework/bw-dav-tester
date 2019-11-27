@@ -170,7 +170,7 @@ public class Request extends DavTesterBase {
   final List<KeyVal> headers = new ArrayList<>();
   public final List<KeyVal> grabheader = new ArrayList<>();
   public final List<KeyVal> grabproperty = new ArrayList<>();
-  final List<KeyVal> grabcalprop = new ArrayList<>();
+  public final List<KeyVal> grabcalprop = new ArrayList<>();
   public final List<KeyVal> grabcalparam = new ArrayList<>();
 
   public static class GrabElement {
@@ -178,7 +178,7 @@ public class Request extends DavTesterBase {
     public List<String> variables = new ArrayList<>();
   }
 
-  final List<GrabElement> grabjson = new ArrayList<>();
+  public final List<GrabElement> grabjson = new ArrayList<>();
   public final List<GrabElement> grabelement = new ArrayList<>();
 
   //nc = {}  // Keep track of nonce count

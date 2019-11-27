@@ -17,10 +17,11 @@
     <bw-util-conf.version>4.1.0-SNAPSHOT</bw-util-conf.version>
     <bw-util-logging.version>4.0.4</bw-util-logging.version>
     <bw-util-network.version>4.1.0-SNAPSHOT</bw-util-network.version>
+    <bw-util-tz.version>4.1.0-SNAPSHOT</bw-util-tz.version>
 
     <ical4j.groupId>org.bedework.ical4j</ical4j.groupId>
     <ical4j.artifactId>ical4j</ical4j.artifactId>
-    <ical4j.version>2.0.3</ical4j.version>
+    <ical4j.version>2.0.11</ical4j.version>
     <!--
     <ical4j.groupId>org.bedework.ical4j</ical4j.groupId>
     <ical4j.artifactId>ical4j</ical4j.artifactId>
@@ -118,6 +119,12 @@
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-misc</artifactId>
       <version>${bw-util.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.bedework</groupId>
+      <artifactId>bw-util-tz</artifactId>
+      <version>${bw-util-tz.version}</version>
     </dependency>
 
     <dependency>
