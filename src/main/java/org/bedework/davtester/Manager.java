@@ -38,6 +38,13 @@ import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.ToString;
 import org.bedework.util.misc.Util;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -86,6 +93,9 @@ public class Manager implements Logged {
   String logFileName;
   FileWriter logFile;
   private Writer logFileWriter;
+
+  private CloseableHttpClient httpClient;
+  final CredentialsProvider credsProvider = new BasicCredentialsProvider();
 
   private List<BaseResultsObserver> observers = new ArrayList<>();
   private KeyVals results = new KeyVals();
@@ -146,6 +156,30 @@ public class Manager implements Logged {
 
   public void Manager(final boolean textMode) {
     this.textMode = textMode;
+  }
+
+  public CloseableHttpClient getHttpClient() {
+    // Need credentials provider?
+    if (httpClient != null) {
+      return httpClient;
+    }
+
+    final HttpClientBuilder clb = HttpClients.custom();
+
+    credsProvider.setCredentials(
+            new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+            new UsernamePasswordCredentials(null,
+                                            null));
+
+    httpClient = clb.build();
+    return httpClient;
+  }
+
+  public void setCredentials(final String user, final String pw) {
+    credsProvider.setCredentials(
+            new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+            new UsernamePasswordCredentials(user,
+                                            pw));
   }
 
   public void setPretest(final String path) {
@@ -319,10 +353,10 @@ public class Manager implements Logged {
     serverInfo.ssl = ssl;
     if (ssl) {
       serverInfo.port = serverInfo.nonsslport;
-      serverInfo.port2 = serverInfo.nonsslport2;
+      // HOST2 serverInfo.port2 = serverInfo.nonsslport2;
     } else {
       serverInfo.port = serverInfo.sslport;
-      serverInfo.port2 = serverInfo.sslport2;
+      // HOST2 serverInfo.port2 = serverInfo.sslport2;
     }
 
     if (serverInfo.certdir != null) {
@@ -330,13 +364,8 @@ public class Manager implements Logged {
 //                .join(base_dir, serverInfo.certdir)
     }
 
-    if (ssl) {
-      moresubs.put("$host:", format("https://%s", serverInfo.host));
-      moresubs.put("$host2:", format("https://%s", serverInfo.host2));
-    } else {
-      moresubs.put("$host:", format("http://%s", serverInfo.host));
-      moresubs.put("$host2:", format("http://%s", serverInfo.host2));
-    }
+    moresubs.put("$host:", format("%s://%s", serverInfo.getScheme(), serverInfo.host));
+    //HOST2 moresubs.put("$host2:", format("https://%s", serverInfo.host2));
 
     if ((ssl && (serverInfo.port != 443)) ||
             (!ssl && (serverInfo.port != 80))) {
@@ -352,6 +381,7 @@ public class Manager implements Logged {
                    val + format(":%d", serverInfo.sslport));
     }
 
+    /*HOST2
     if ((ssl && (serverInfo.port2 != 443)) ||
             (!ssl && (serverInfo.port2 != 80))) {
       var val = moresubs.getOnlyString("$host2:");
@@ -365,6 +395,7 @@ public class Manager implements Logged {
       moresubs.put("$hostssl2:",
                    val + format(":%d", serverInfo.sslport2));
     }
+    */
 
     serverInfo.addsubs(moresubs, null);
 

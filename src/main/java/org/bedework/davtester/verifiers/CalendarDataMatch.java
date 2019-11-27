@@ -16,15 +16,16 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.property.RecurrenceId;
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -36,8 +37,9 @@ import static org.bedework.util.xml.tagdefs.CaldavTags.calendar;
  */
 public class CalendarDataMatch extends Verifier {
   @Override
-  public VerifyResult verify(final String uri,
-                             final HttpResponse response,
+  public VerifyResult verify(final URI uri,
+                             final List<Header> responseHeaders,
+                             final int status,
                              final String respdata,
                              final KeyVals args) {
     // Get arguments
@@ -72,10 +74,10 @@ public class CalendarDataMatch extends Verifier {
     }
 
     // status code must be 200, 201, 207 or explicitly specified code
-    var respScode = response.getStatusLine().getStatusCode();
-    if (!statusCode.contains(String.valueOf(respScode))) {
+
+    if (!statusCode.contains(String.valueOf(status))) {
       new VerifyResult(format("        HTTP Status Code Wrong: %d",
-                              respScode));
+                              status));
     }
 
     // look for response data

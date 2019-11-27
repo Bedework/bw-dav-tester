@@ -4,22 +4,25 @@ import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.Serverinfo.KeyVal;
-import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
+import org.bedework.davtester.verifiers.Verifier;
+import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 import org.bedework.util.misc.Util;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
 import org.w3c.dom.Element;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.fileToString;
 import static org.bedework.davtester.Utils.getDtParts;
+import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.Utils.uuid;
 import static org.bedework.davtester.XmlUtils.attrUtf8;
 import static org.bedework.davtester.XmlUtils.children;
@@ -139,6 +142,7 @@ public void calcResponse(
  * be used to determine a satisfactory output or not.
  */
 public class Request extends DavTesterBase {
+  public String scheme;
   public String host;
   public int port;
   private String afunix;
@@ -147,36 +151,35 @@ public class Request extends DavTesterBase {
   public String user;
   public String pswd;
   public String cert;
-  private boolean endDelete;
-  private boolean printRequest;
-  private boolean printResponse;
+  public boolean endDelete;
+  public boolean printRequest;
+  public boolean printResponse;
   public boolean waitForSuccess;
 
   public String method;
   public List<String> ruris = new ArrayList<>();
   public String ruri;
-  boolean ruriQuote = true
-  private Data data = null
+  boolean ruriQuote = true;
+  private Data data;
   public boolean iterateData;
   int count = 1;
   List<Verify> verifiers = new ArrayList<>();
-  String graburi;
-  String grabcount;
+  public String graburi;
+  public String grabcount;
 
   final List<KeyVal> headers = new ArrayList<>();
-  final List<KeyVal> grabheader = new ArrayList<>();
-  final List<KeyVal> grabproperty =  new ArrayList<>();
+  public final List<KeyVal> grabheader = new ArrayList<>();
+  public final List<KeyVal> grabproperty = new ArrayList<>();
   final List<KeyVal> grabcalprop = new ArrayList<>();
-  final List<KeyVal> grabcalparam = new ArrayList<>();
+  public final List<KeyVal> grabcalparam = new ArrayList<>();
 
   public static class GrabElement {
-    String path;
-    String parent;
-    List<String> variables = new ArrayList<>();
+    public String path;
+    public List<String> variables = new ArrayList<>();
   }
 
   final List<GrabElement> grabjson = new ArrayList<>();
-  final List<GrabElement> grabelement = new ArrayList<>();
+  public final List<GrabElement> grabelement = new ArrayList<>();
 
   //nc = {}  // Keep track of nonce count
 
@@ -193,9 +196,10 @@ public class Request extends DavTesterBase {
 
   public Request(final Manager manager) {
     super(manager);
-    host = manager.serverInfo.host
-    port = manager.serverInfo.port
-    afunix = manager.serverInfo.afunix
+    scheme = manager.serverInfo.getScheme();
+    host = manager.serverInfo.host;
+    port = manager.serverInfo.port;
+    afunix = manager.serverInfo.afunix;
   }
 
   @Override
@@ -203,27 +207,30 @@ public class Request extends DavTesterBase {
     return "REQUEST";
   }
 
-  public void __str__ () {
-    return "Method: %s; uris: %s" % (method,ruris if len(ruris) > 1  else
-    ruri,)
+  public Data getData() {
+    return data;
   }
 
-  public void getURI() {
-    uri = manager.serverInfo.extrasubs(ruri);
-    if ("**" in uri) {
-      if ("?" not in uri|| uri.find("?") > uri.find("**") {
-        uri = uri.replace("**", String.valueOf(uuid.uuid4()));
+  public String getURI() {
+    return getURI(ruri);
+  }
+
+  public String getURI(final String val) {
+    var uri = manager.serverInfo.extrasubs(val);
+    if (uri.contains("**")) {
+      if (!uri.contains("?") || (uri.indexOf("?") > uri.indexOf("**"))) {
+        uri = uri.replace("**", UUID.randomUUID().toString());
       }
-    } else (if ("##" in uri) {
-      if ("?" not in uri|| uri.find("?") > uri.find("##") {
-        uri = uri.replace("##", String.valueOf(count))
+    } else (if (uri.contains("##")) {
+      if (!uri.contains("?") || uri.indexOf("?") > uri.indexOf("##")) {
+        uri = uri.replace("##", String.valueOf(count));
       }
     }
 
     return uri;
   }
 
-  public void getHeaders () {
+  public List<Header> getHeaders () {
     var si = manager.serverInfo;
 
     hdrs = headers
@@ -236,122 +243,7 @@ public class Request extends DavTesterBase {
       hdrs["Content-Type"] = data.contentType;
     }
 
-    // Auth
-    if (auth) {
-      if (manager.serverInfo.authtype.lower() == "basic") {
-        hdrs["Authorization"] = gethttpbasicauth();
-      } else if (si.authtype.lower() == "digest") {
-        hdrs["Authorization"] = gethttpdigestauth();
-      }
-    }
-
     return hdrs;
-  }
-
-    public void gethttpbasicauth () {
-      basicauth = [user, manager.serverInfo.user][user == ""]
-      basicauth += ":"
-      basicauth += [pswd, manager.serverInfo.pswd][pswd == ""]
-      basicauth = "Basic " + base64.encodestring(basicauth)
-      basicauth = basicauth.replace("\n", "")
-      return basicauth;
-    }
-
-  public void gethttpdigestauth(wwwauthorize) {
-    var si = manager.serverInfo;
-
-    // Check the nonce cache to see if we've used this user before, or if the nonce is more than 5 minutes old
-    user = [user, si.user][user == ""];
-    pswd = [pswd, si.pswd][pswd == ""];
-    details = null;
-
-    if ((manager.digestCache.get(user) != null) && (manager.digestCache[user]["max-nonce-time"] > time.time())) {
-      details = manager.digestCache[user];
-    } else {
-      // Redo digest auth from scratch to get a new nonce etc
-      http = SmartHTTPConnection(si.host, si.port, si.ssl, si.afunix);
-      try {
-        puri = list(urlparse.urlparse(getURI(si)));
-        puri[2] = urllib.quote(puri[2]);
-        quri = urlparse.urlunparse(puri);
-        http.request("OPTIONS", quri);
-
-        response = http.getresponse();
-
-      } finally{
-        http.close()
-      }
-
-      if (response.status == 401) {
-
-        wwwauthorize = response.msg.getheaders("WWW-Authenticate")
-        for (item: wwwauthorize) {
-          if (!item.lower().startsWith("digest ") {
-            continue;
-          }
-          wwwauthorize = item[7:]
-
-
-          parts = wwwauthorize.split(',')
-
-          details = {}
-
-          for ((k, v) in[p.split('=', 1) for p in parts]) {
-            details[k.strip()] = unq(v.strip())
-          }
-
-          details["max-nonce-time"] = time.time() + 600
-          manager.digestCache[user] = details;
-          break;
-        }
-      }
-    }
-
-    if (details == null) {
-      return null;
-    }
-
-    if (details.get('qop') {
-      if (nc.get(details.get('nonce')) == null) {
-        nc[details.get('nonce')] = 1;
-      } else {
-        nc[details.get('nonce')] += 1;
-      }
-      details['nc'] = "%08x" % nc[details.get('nonce')]
-      if (details.get('cnonce') == null) {
-        details['cnonce'] = "D4AAE4FF-ADA1-4149-BFE2-B506F9264318";
-      }
-    }
-    digest = calcResponse(
-            calcHA1(details.get('algorithm', 'md5'), user, details.get('realm'), pswd, details.get('nonce'), details.get('cnonce')),
-            details.get('algorithm', 'md5'), details.get('nonce'), details.get('nc'), details.get('cnonce'), details.get('qop'), method, getURI(si), null
-    );
-
-    if (details.get('qop')) {
-      response = (
-              'Digest username="%s", realm="%s", '
-      'nonce="%s", uri="%s", '
-      'response=%s, algorithm=%s, cnonce="%s", qop=%s, nc=%s' %
-              (user, details.get('realm'), details.get('nonce'), getURI(si), digest, details.get('algorithm', 'md5'), details.get('cnonce'), details.get('qop'), details.get('nc'),)
-      );
-    } else{
-      response = (
-              'Digest username="%s", realm="%s", '
-      'nonce="%s", uri="%s", '
-      'response=%s, algorithm=%s' %
-              (user, details.get('realm'), details
-              .get('nonce'), getURI(si), digest, details
-              .get('algorithm'));
-      );
-    }
-
-    return response;
-  }
-
-  private void unq(s){
-    if s[0] == s[-1] == '"':
-    return s[1:-1]
-    return s
   }
 
   public String getFilePath() {
@@ -366,7 +258,17 @@ public class Request extends DavTesterBase {
     return Util.buildPath(false, manager.dataDir, "/", data.filepath);
   }
 
-  public String getData() {
+  public void setDataVal(final String val,
+                         final String contentType) {
+    if (data == null) {
+      data = new Data(manager);
+    }
+
+    data.value = val;
+    data.contentType = contentType;
+  }
+
+  public String getDataVal() {
     String dataStr = null;
 
     if (data == null) {
@@ -467,46 +369,38 @@ public class Request extends DavTesterBase {
     return data;
   }
 
-  public void verifyRequest(final String uri,
-                            final HttpResponse response,
-                            final String respdata) {
-    var result = true;
-    var resulttxt = "";
+  public VerifyResult verifyRequest(final URI uri,
+                                             final List<Header> responseHeaders,
+                                             final int status,
+                                             final String respdata) {
+    var res = new VerifyResult();
 
     // check for response
     if (Util.isEmpty(verifiers)) {
-      return result,resulttxt;
+      return res;
     }
-    result = true
-    resulttxt = ""
+
     for (var verifier: verifiers) {
       if (verifier.hasMissingFeatures()) {
-        continue
+        continue;
       }
       if (verifier.hasExcludedFeatures()) {
-        continue
+        continue;
       }
-      iresult, iresulttxt = verifier.doVerify(uri, response, respdata);
-      if (!iresult) {
-        result = false;
-        if (len(resulttxt) {
-          resulttxt += "\n";
-        }
-        resulttxt += "Failed Verifier: %s\n" % verifier.callback;
-        resulttxt += iresulttxt;
+
+      var ires = verifier.doVerify(uri, responseHeaders,
+                                              status, respdata);
+      if (!ires.ok) {
+        res.ok = false;
+
+        res.append(format("Failed Verifier: %s\n", verifier.name));
+        res.append(ires.text);
       } else {
-        if (len(resulttxt) {
-          resulttxt += "\n";
-        }
-        resulttxt += "Passed Verifier: %s\n" % verifier.callback;
+        res.append(format("Passed Verifier: %s\n", verifier.name));
       }
     }
 
-    if (result) {
-      resulttxt = "";
-    }
-
-    return result, resulttxt
+    return res;
   }
 
   public void parseXML(final Element node) {
@@ -525,11 +419,13 @@ public class Request extends DavTesterBase {
     waitForSuccess = getYesNoAttributeValue(node,
                                             XmlDefs.ATTR_WAIT_FOR_SUCCESS);
 
+    /* HOST2
     if (getYesNoAttributeValue(node, XmlDefs.ATTR_HOST2, false)) {
       host = manager.serverInfo.host2;
       port = manager.serverInfo.port2;
       afunix = manager.serverInfo.afunix2;
     }
+     */
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
@@ -616,7 +512,7 @@ public class Request extends DavTesterBase {
 
 //    parseList = staticmethod(parseList)
 
-  public void parseGrab (final Element node, final List<KeyVal>  appendto) {
+  public void parseGrab(final Element node, final List<KeyVal>  appendto) {
     String name = null;
     String variable = null;
 
@@ -642,10 +538,10 @@ public class Request extends DavTesterBase {
               nodeMatches(child, XmlDefs.ELEMENT_PROPERTY) ||
                        nodeMatches(child, XmlDefs.ELEMENT_POINTER)) {
         ge.path = manager.serverInfo.subs(contentUtf8(child));
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_PARENT)) {
-        ge.parent = manager.serverInfo.subs(contentUtf8(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VARIABLE)) {
         ge.variables.add(manager.serverInfo.subs(contentUtf8(child)));
+      } else {
+        throwException("Unknown grap element: " + child);
       }
     }
 
@@ -653,4 +549,10 @@ public class Request extends DavTesterBase {
       appendto.add(ge);
     }
   }
+
+  //public void __str__ () {
+  //  return "Method: %s; uris: %s" % (method,ruris if len(ruris) > 1  else
+  //  ruri,)
+  //}
+
 }

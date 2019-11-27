@@ -51,14 +51,16 @@ public class Serverinfo {
   public int port;
   public String afunix;
 
+  /* unused?
   public String host2 = "";
   public int port2;
   public String afunix2;
+  int nonsslport2 = 80;
+  int sslport2 = 443;
+   */
 
   int nonsslport = 80;
   int sslport = 443;
-  int nonsslport2 = 80;
-  int sslport2 = 443;
   String authtype = "basic";
   String certdir = "";
 
@@ -90,6 +92,13 @@ public class Serverinfo {
   Serverinfo() {
   }
 
+  public String getScheme() {
+    if (ssl) {
+      return "https";
+    }
+    return "http";
+  }
+
   // dtnow needs to be fixed to a single date at the start of the tests just in case the tests
   // run over a day boundary.
 
@@ -116,8 +125,8 @@ public class Serverinfo {
       } else if (subpos.startsWith("$now.month.")) {
         var monthoffset = ival(sub, pos + 11, endpos);
         var month = dtp.month + monthoffset;
-        var year = dtp.year + (int)(month - 1 / 12);
-        month = ((month - 1) % 12) + 1;
+        var year = dtp.year + (int)(month / 12);
+        month = month % 12;
         value = String.format("%d%02d", year, month);
       } else {
         final int dayOffset;
@@ -254,6 +263,7 @@ public class Serverinfo {
         sslport = Integer.valueOf(text);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
         afunix = text;
+        /*HOST2
       } else if (nodeMatches(child, XmlDefs.ELEMENT_HOST2)) {
         try {
           host2 = textUtf8;
@@ -266,6 +276,7 @@ public class Serverinfo {
         sslport2 = Integer.valueOf(text);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX2)) {
         afunix2 = text;
+         */
       } else if (nodeMatches(child, XmlDefs.ELEMENT_AUTHTYPE)) {
         authtype = textUtf8;
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {

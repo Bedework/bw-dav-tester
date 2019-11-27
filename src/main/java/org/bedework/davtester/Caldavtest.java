@@ -16,23 +16,38 @@
 package org.bedework.davtester;
 
 import org.bedework.davtester.request.Request;
+import org.bedework.util.dav.DavUtil;
+import org.bedework.util.dav.DavUtil.MultiStatusResponse;
+import org.bedework.util.http.HttpUtil;
 import org.bedework.util.misc.Util;
+import org.bedework.util.xml.tagdefs.WebdavTags;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.message.BasicHeader;
 import org.w3c.dom.Element;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.IntStream;
+
+import javax.xml.xpath.XPath;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_FAILED;
@@ -41,113 +56,58 @@ import static org.bedework.davtester.Manager.RESULT_OK;
 import static org.bedework.davtester.Manager.TestResult;
 import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.children;
+import static org.bedework.davtester.XmlUtils.childrenMatching;
 import static org.bedework.davtester.XmlUtils.content;
+import static org.bedework.davtester.XmlUtils.contentUtf8;
+import static org.bedework.davtester.XmlUtils.findNodes;
+import static org.bedework.davtester.XmlUtils.multiStatusResponse;
+import static org.bedework.davtester.XmlUtils.nodeForPath;
+import static org.bedework.davtester.XmlUtils.parseXmlString;
+import static org.bedework.davtester.XmlUtils.tagDavHref;
+import static org.bedework.davtester.XmlUtils.tagDavResponse;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 import static org.bedework.util.xml.tagdefs.XcardTags.uid;
 
-/*
-from cStringIO import StringIO
-try {
-    # Treat pycalendar as optional
-    from pycalendar.icalendar.calendar import Calendar
-except ImportError:
-    pass
-from src.httpshandler import SmartHTTPConnection
-from src.jsonPointer import JSONMatcher
-from src.manager import manager
-from src.request import data, pause
-from src.request import request
-from src.request import stats
-from src.testsuite import testsuite
-from src.xmlUtils import nodeForPath, xmlPathSplit
-from xml.etree.cElementTree import ElementTree, tostring
-import commands
-import httplib
-import json
-import os
-import rfc822
-import socket
-import XmlDefs
-import sys
-import time
-import traceback
-import urllib
-import urlparse
 
-"""
-Patch the HTTPConnection.send to record full request details
-"""
-
-httplib.HTTPConnection._send = httplib.HTTPConnection.send
-
-
-public void recordRequestHeaders (str) {
-    if ! hasattr ("requestData") {
-        requestData = ""
-    requestData += str
-    httplib.HTTPConnection._send (str)  # @UndefinedVariable
-
-httplib.HTTPConnection.send = recordRequestHeaders
-
-
-public void getVersionStringFromResponse(response) {
-
-    if response.version == 9:
-        return "HTTP/0.9"
-    } else if (response.version == 10:
-        return "HTTP/1.0"
-    } else if (response.version == 11:
-        return "HTTP/1.1"
-    } else {
-        return "HTTP/?.?"
-
-*/
 /**
  * Class to encapsulate a single caldav test run.
  */
 class Caldavtest extends DavTesterBase {
   private class RequestPars {
-    final String host;
-    final int port;
-
     final String uri;
-    final String user;
-    final String pswd;
-    final String cert;
+    final Request req;
 
-    RequestPars(final String host, final int port, final String uri,
-                final String user,
-                final String pswd, final String cert) {
-      this.host = host;
-      this.port = port;
+    RequestPars(final String uri,
+                final Request req) {
       this.uri = uri;
-      this.user = user;
-      this.pswd = pswd;
-      this.cert = cert;
+      this.req = req;
     }
 
     Request makeRequest(final String method) {
-      var req = new Request(manager);
+      var nreq = new Request(manager);
 
-      req.method = method;
-      req.host = host;
-      req.port = port;
+      nreq.method = method;
 
-      req.ruris.add(uri);
-      req.ruri = uri;
-      if (user != null) {
-        req.user = user;
+      nreq.scheme = req.scheme;
+      nreq.host = req.host;
+      nreq.port = req.port;
+
+      nreq.ruris.add(uri);
+      nreq.ruri = uri;
+      if (req.user != null) {
+        nreq.user = req.user;
       }
-      if (pswd != null) {
-        req.pswd = pswd;
+      if (req.pswd != null) {
+        nreq.pswd = req.pswd;
       }
-      req.cert = cert;
+      nreq.cert = req.cert;
 
-      return req;
+      return nreq;
     }
   }
 
-    private Path testPath;
+  final DavUtil dutil = new DavUtil();
+  private Path testPath;
 
   boolean ignoreAll;
   private boolean only;
@@ -217,10 +177,10 @@ class Caldavtest extends DavTesterBase {
       } else {
         res = runTests(name);
       }
-      doEnddelete("Deleting Requests...", label = "%s | %s" % (name,
+      doEnddelete("Deleting Requests...", format("%s | %s", name,
                   "END_DELETE"));
-      doRequests("End Requests...", end_requests, false, false,
-                 "%s | %s" % (name, "END_REQUESTS"), 1);
+      doRequests("End Requests...", endRequests, false, false,
+                 format("%s | %s", name, "END_REQUESTS"), 1);
       return res;
     } catch (final Throwable t) {
       manager.testFile(name,
@@ -348,22 +308,22 @@ class Caldavtest extends DavTesterBase {
     }
 
     var result = true;
-    var resulttxt = "";
+    String resulttxt = null;
     // POSTGRES postgresCount = postgresInit();
-    final RequestStats reqstats;
-    if (test.stats) {
-      reqstats = new RequestStats();
-    } else {
-      reqstats = null;
-    }
+    var reqstats = new RequestStats();
 
-    IntStream.range(0, test.count).forEachOrdered(ctr -> {
+    for (var ctr = 0; ctr <= test.count; ctr++) {
       var failed = false;
       var reqCount = 1;
       for (var req : test.requests) {
-        t = time.time() + (manager.serverInfo.waitsuccess if
-        req.waitForSuccess  else 100);
-        while (t > time.time()) {
+        var t = System.currentTimeMillis();
+        if (req.waitForSuccess) {
+          t += manager.serverInfo.waitsuccess;
+        } else {
+          t += 100;
+        }
+
+        while (t > System.currentTimeMillis()) {
           failed = false;
           if (req.iterateData) {
             if (!req.hasNextData()) {
@@ -374,22 +334,28 @@ class Caldavtest extends DavTesterBase {
             }
 
             while (req.getNextData()) {
-              var reqres = doRequest(req, test.details, true, false,
-                                     reqstats, etags,
+              var reqres = doRequest(
+                      req, test.details, true, false,
+                      reqstats, etags,
                       format("%s | #%s", label, reqCount + 1),
                       ctr + 1);
               if (!reqres.ok) {
                 failed = true;
                 break;
               }
+
+              resulttxt = reqres.message;
             }
           } else {
-            var resreq = doRequest(
-                    req, test.details, true, false, reqstats, etags,
+            var reqres = doRequest(
+                    req, test.details, true, false,
+                    reqstats, etags,
                     format("%s | #%s", label, reqCount + 1), ctr + 1);
-            if (!resreq.ok) {
+            if (!reqres.ok) {
               failed = true;
             }
+
+            resulttxt = reqres.message;
           }
 
           if (!failed || !req.waitForSuccess) {
@@ -397,131 +363,159 @@ class Caldavtest extends DavTesterBase {
           }
         }
         if (failed) {
+          result = false;
           break;
         }
       }
-    });
+    }
 
-    var addons = new Properties();
+    var addons = new KeyVals();
     if (resulttxt != null) {
       manager.trace(resulttxt);
     }
 
     if (test.stats) {
-      manager.trace(format("    Total Time: %.3f secs",
-                           reqstats.totaltime, ), indent = 8);
+      manager.trace(format("    Total Time: %.3e secs",
+                           ((float)reqstats.total / 1000)));
       manager.trace(format("    Average Time: %.3f secs",
-                           reqstats.totaltime / reqstats.count, ),
-                    indent = 8);
-      var timing = new Properties();
-      timing.put("total", reqstats.totaltime);
-      timing.put("average", reqstats.totaltime / reqstats.count);
+                           ((float)reqstats.total / reqstats.count)));
+      var timing = new KeyVals();
+      timing.put("total", reqstats.total);
+      timing.put("average", reqstats.total / reqstats.count);
       addons.put("timing", timing);
     }
 
     // postgresResult(postgresCount, indent=8);
     final int rcode;
+    final char res;
     if (result) {
       rcode = RESULT_OK;
+      res = 't';
     } else {
       rcode = RESULT_FAILED;
+      res = 'f';
     }
     manager.testResult(testsuite, test.name, resulttxt, rcode,
                        addons);
-    return ["f", "t"][result]
+    return res;
   }
 
   public boolean doRequests(final String description,
-                            final List<String> list,
+                            final List<Request> requests,
                             final boolean doverify,
                             final boolean forceverify,
                             final String label,
                             final int count) {
-    if (Util.isEmpty(list)) {
+    if (Util.isEmpty(requests)) {
       return true;
     }
+
+    var result = true;
 
     manager.trace("Start: " + description);
 
     var reqCount = 1;
-    for (var req: list) {
+    var resulttxt = "";
+
+    for (var req: requests) {
       var resreq = doRequest(
               req, false, doverify, forceverify,
-              format("%s | #%s", label, String.valueOf(req_count + 1)),
+              null, // stats
+              null, // etags
+              format("%s | #%s", label, String.valueOf(reqCount + 1)),
               count);
+      if (resreq.message != null) {
+        resulttxt += resreq.message;
+      }
+
       if (!resreq.ok) {
         resulttxt += format(
                 "\nFailure during multiple requests " +
                         "#%d out of %d, request=%s",
-                reqCount, list.size(),
+                reqCount, requests.size(),
                 String.valueOf(req));
+        result = false;
         break;
       }
     }
-    manager.trace(format("%d60 FAILED: %d5, OK: %d5",
+
+    final String s;
+    if (result) {
+      s = "[OK]";
+    } else {
+      s = "[FAILED]";
+    }
+
+    manager.trace(format("%s60%s5",
                          "End: " + description,
-                         result.ok, result.failed));
-    if (resulttxt != null) {
+                         s));
+    if (resulttxt.length() > 0) {
       manager.trace(resulttxt);
     }
     return result;
   }
 
-  public void doGet (Request originalRequest,
-                     final UriIdPw uip,
-                     final String label) {
+  public DoRequestResult doGet (Request originalRequest,
+                                final UriIdPw uip,
+                                final String label) {
     var req = uip.makeRequest(originalRequest, "GET");
 
-    var reqres = doRequest(req, false, false, false, null, label, 1);
-        if (reqres.status / 100 != 2) {
-          return false,null
-        }
+    var reqres = doRequest(req, false, false, false,
+                           null, // stats
+                           null, // etags
+                           label, 1);
+    if (reqres.status / 100 != 2) {
+      reqres.ok = false;
+    }
 
-    return true, respdata
+    return reqres;
   }
 
-  public List<UriIdPw> doFindall (final Request originalRequest,
-                                  final UriIdPw uip,
-                                  final String label) {
+  public Result<List<UriIdPw>> doFindall (final Request originalRequest,
+                                          final UriIdPw uip,
+                                          final String label) {
     var hrefs = new ArrayList<UriIdPw>();
 
     var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
-    req.data = data(manager);
-    req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<D:propfind xmlns:D=\"DAV:\">" +
-            "<D:prop>" +
-            "<D:getetag/>" +
-            "</D:prop>" +
-            "</D:propfind>";
-        
-    req.data.content_type = "text/xml"
-    var reqres = doRequest(req, false, false, false, null, label, 1);
-    if (reqres.ok && (response != null) && (response.status == 207) && (respdata != null)
-    {
-      try {
-        tree = ElementTree(file = StringIO(respdata));
-      } catch (final Throwable t) {
-        return ();
-      }
+    req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+                           "<D:propfind xmlns:D=\"DAV:\">" +
+                           "<D:prop>" +
+                           "<D:getetag/>" +
+                           "</D:prop>" +
+                           "</D:propfind>",
+                   "text/xml");
 
-      request_uri = req.getURI(manager.serverInfo);
-      for (var response : tree.findall("{DAV:}response")) {
+    var reqres = doRequest(req, false, false, false,
+                           null, // stats
+                           null, // etags
+                           label, 1);
+    if (reqres.ok &&
+            (reqres.status == 207) &&
+            (reqres.responseData != null)) {
+      final MultiStatusResponse msr =
+              multiStatusResponse(reqres.responseData);
 
+      var requestUri = req.getURI();
+      for (var response: msr.responses) {
         // Get href for this response
-        href = response.findall("{DAV:}href");
-        if (len(href) != 1) {
-          return false,
-          "           Wrong number of DAV:href elements\n"
-        }
-        href = href[0].text
-        if (href != request_uri) {
-          hrefs.add(new UriIdPw(href, uip.user, uip.pswd));
+        if (!response.href.equals(requestUri)) {
+          hrefs.add(new UriIdPw(response.href, uip.user, uip.pswd));
         }
       }
     }
 
-    return hrefs;
+    return new Result<>(hrefs);
+  }
+
+  private String getOneHref(final Element node) {
+    var href = childrenMatching(node, tagDavHref);
+
+    if (href.size() != 1) {
+      throwException("           Wrong number of DAV:href elements\n");
+    }
+
+    return content(href.get(0));
   }
 
   public boolean doDeleteall(final Request originalRequest,
@@ -533,7 +527,9 @@ class Caldavtest extends DavTesterBase {
     for (var uip : deletes) {
       var req = uip.makeRequest(originalRequest, "DELETE");
 
-      var reqres = doRequest(req, false, false, false, null,
+      var reqres = doRequest(req, false, false, false,
+                             null, // stats
+                             null, // etags
                              label, 1);
       if (reqres.status / 100 != 2) {
         return false;
@@ -543,13 +539,15 @@ class Caldavtest extends DavTesterBase {
     return true;
   }
 
-  public void doFindnew (final Request originalRequest,
-                         final UriIdPw uip,
-                         final String label,
-                         final boolean other) {
-    var hresult = "";
+  public String doFindnew(final Request originalRequest,
+                          final UriIdPw uip,
+                          final String label,
+                          final boolean other) {
+    String hresult = null;
 
-    uri = uip.ruri;
+    var uri = uip.ruri;
+    String skip;
+
     if (other) {
       uri = manager.serverInfo.extrasubs(uri);
       skip = uri
@@ -557,188 +555,170 @@ class Caldavtest extends DavTesterBase {
     } else {
       skip = null;
     }
-    possible_matches = set();
+
+    var possibleMatches = new ArrayList<String>();
 
     var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
-    req.data = data(manager);
-    req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<D:propfind xmlns:D=\"DAV:\">" +
-            "<D:prop>" +
-            "<D:getetag/>" +
-            "<D:getlastmodified/>" +
-            "</D:prop>" +
-            "</D:propfind>";
+    req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+                           "<D:propfind xmlns:D=\"DAV:\">" +
+                           "<D:prop>" +
+                           "<D:getetag/>" +
+                           "<D:getlastmodified/>" +
+                           "</D:prop>" +
+                           "</D:propfind>",
+                   "text/xml");
+    var reqres = doRequest(req, false, false, false,
+                           null, // stats
+                           null, // etags
+                           format("%s | %s", label, "FINDNEW"),
+                           1);
+    if (reqres.ok &&
+            (reqres.status == 207) &&
+            (reqres.responseData != null)) {
+      final MultiStatusResponse msr =
+              multiStatusResponse(reqres.responseData);
 
-    req.data.content_type = "text/xml"
-    var reqres = doRequest(req, false, false, false, null, label="%s | %s" % (label, "FINDNEW"), 1);
-    if (reqres.ok && (response != null) && (response.status == 207) && (respdata != null)) {
-      try {
-        tree = ElementTree(file=StringIO(respdata));
-      } catch (final Throwable t) {
-        throwException(t);
-        return hresult; // fake
-      }
+      var latest = 0;
+      var requestUri = req.getURI();
+      for (var response: msr.responses) {
+        if (!response.href.equals(requestUri) &&
+                (!other|| !(response.href.equals(skip)))) {
 
-      latest = 0;
-      request_uri = req.getURI(manager.serverInfo);
-      for (var response: tree.findall("{DAV:}response")) {
-
-        // Get href for this response
-        href = response.findall("{DAV:}href");
-        if (len(href) != 1) {
-          return false,
-          "           Wrong number of DAV:href elements\n";
-        }
-        href = href[0].text;
-        if (href != request_uri && (!other|| href != skip) {
-
-          // Get all property status
-          propstatus = response.findall("{DAV:}propstat");
-          for (props: propstatus) {
-            // Determine status for this propstat
-            status = props.findall("{DAV:}status");
-            if (len(status) == 1) {
-              statustxt = status[0].text
-              status = false
-              if (statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10)
-              {
-                status = (statustxt[9] == "2");
-              }
-            } else {
-              status = false;
-            }
+          for (var propstat: response.propstats) {
+            var status = (propstat.status / 100) == 2;
 
             if (status) {
               // Get properties for this propstat
-              prop = props.findall("{DAV:}prop");
-              for (el: prop) {
+
+              for (var prop: propstat.props) {
 
                 // Get properties for this propstat
-                glm = el.findall(
-                        "{DAV:}getlastmodified");
-                if (len(glm) != 1) {
+                var glm = childrenMatching(prop, WebdavTags.getlastmodified);
+                if (glm.size() != 1) {
                   continue;
                 }
-                value = glm[0].text
+
+                var value = content(glm.get(0));
                 value = rfc822.parsedate(value);
-                value = time.mktime(value);
-                if (value > latest) {
-                  possible_matches.clear();
-                  possible_matches.add(href);
-                  latest = value;
-                } else if (value == latest) {
-                  possible_matches.add(href);
+                int ival = time.mktime(value);
+                if (ival > latest) {
+                  possibleMatches.clear();
+                  possibleMatches.add(response.href);
+                  latest = ival;
+                } else if (ival == latest) {
+                  possibleMatches.add(response.href);
                 }
               }
-            } else if (!hresult) {
-              possible_matches.add(href);
+            } else if (hresult == null) {
+              possibleMatches.add(response.href);
             }
           }
         }
       }
     }
 
-    if (len(possible_matches) == 1) {
-      hresult = possible_matches.pop();
-    } else if (len(possible_matches) > 1) {
-      not_seen_before = possible_matches - previously_found
-      if (len(not_seen_before) == 1) {
-        hresult = not_seen_before.pop();
+    if (possibleMatches.size() == 1) {
+      hresult = possibleMatches.get(0);
+    } else if (possibleMatches.size() > 1) {
+      notSeenBefore = possibleMatches - previouslyFound;
+      if (len(notSeenBefore) == 1) {
+        hresult = notSeenBefore.get(0);
       }
     }
-    if (hresult) {
-      previously_found.add(hresult);
+    if (hresult != null) {
+      previouslyFound.add(hresult);
     }
+
     return hresult;
   }
 
-  public void doFindcontains (final Request originalRequest,
-                              final UriIdPw uip,
-                              final String match,
-                              final String label) {
-    hresult = "";
-
-    uri = uip.ruri;
-
+  public String doFindcontains(final Request originalRequest,
+                               final UriIdPw uip,
+                               final String match,
+                               final String label) {
     var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
-    req.data = data(manager);
-    req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-            "<D:propfind xmlns:D=\"DAV:\">" +
-            "<D:prop>" +
-            "<D:getetag/>" +
-            "</D:prop>" +
-            "</D:propfind>";
+    req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+                           "<D:propfind xmlns:D=\"DAV:\">" +
+                           "<D:prop>" +
+                           "<D:getetag/>" +
+                           "</D:prop>" +
+                           "</D:propfind>",
+                   "text/xml");
 
-    req.data.content_type = "text/xml"
-    var reqres = doRequest(req, false, false, false, null, label="%s | %s" % (label, "FINDNEW"), 1);
-    if (result && (response != null) && (response.status == 207) && (respdata != null) {
-      try {
-        tree = ElementTree(file=StringIO(respdata));
-      } catch (final Throwable t) {
-        throwException(t);
-        return hresult; // fake
-      }
+    var reqres = doRequest(req, false, false, false,
+                           null, // stats
+                           null, // etags
+                           format("%s | %s", label, "FINDNEW"), 1);
+    String href = null;
+    if (reqres.ok &&
+            (reqres.status == 207) &&
+            (reqres.responseData != null)) {
 
-      request_uri = req.getURI(manager.serverInfo);
-      for (var response: tree.findall("{DAV:}response")) {
+      var requestUri = req.getURI();
 
-        // Get href for this response
-        href = response.findall("{DAV:}href");
-        if (len(href) != 1) {
-          return false,
-          "           Wrong number of DAV:href elements\n";
-        }
-        href = href[0].text
-        if (href != request_uri) {
+      final MultiStatusResponse msr =
+              multiStatusResponse(reqres.responseData);
 
-          respdata = doGet(req,
-                           new UriIdPw(href, uip.user, uip.pswd), label);
-          if (respdata.find(match) != -1) {
+      for (var response : msr.responses) {
+        if (!response.href.equals(requestUri)) {
+          var respdata = doGet(req,
+                               new UriIdPw(response.href,
+                                           uip.user,
+                                           uip.pswd),
+                               label);
+          if (respdata.responseData.contains(match)) {
+            href = response.href;
             break;
           }
         }
       }
-    } else {
-      href = null;
     }
 
     return href;
   }
 
-  public void doWaitcount(final Request originalRequest,
-                           final UriIdPw uip,
-                           final int count,
-                           final String label) {
-    hrefs = []
+  public Result doWaitcount(final Request originalRequest,
+                            final UriIdPw uip,
+                            final int count,
+                            final String label) {
+    var hrefs = new ArrayList<String>();
+
     for (var ignore: range(manager.serverInfo.waitcount)) {
       var req = uip.makeRequest(originalRequest, "PROPFIND", "1");
 
-      req.data = data(manager);
-      req.data.value = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-              "<D:propfind xmlns:D=\"DAV:\">" +
-              "<D:prop>" +
-              "<D:getetag/>" +
-              "</D:prop>" +
-              "</D:propfind>";
-      req.data.content_type = "text/xml"
-      var reqres = doRequest(req, false, false, false, label="%s | %s %d" % (label, "WAITCOUNT", count));
-      hrefs = []
-      if (result && (response != null) && (response.status == 207) && (respdata != null)
-      {
-        tree = ElementTree(file = StringIO(respdata));
+      req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
+                             "<D:propfind xmlns:D=\"DAV:\">" +
+                             "<D:prop>" +
+                             "<D:getetag/>" +
+                             "</D:prop>" +
+                             "</D:propfind>",
+                     "text/xml");
 
-        for (var response : tree.findall("{DAV:}response")) {
-          href = response.findall("{DAV:}href")[0];
-          if (href.text.rstrip("/") != collection[0]
-                  .rstrip("/")) {
-            hrefs.append(href.text);
+      var reqres = doRequest(req, false, false, false,
+                             null, // stats
+                             null, // etags
+                             format("%s | %s %d", label, "WAITCOUNT"),
+                             count);
+      hrefs.clear();
+
+      if (reqres.ok &&
+              (reqres.status == 207) &&
+              (reqres.responseData != null)) {
+        final MultiStatusResponse msr =
+                multiStatusResponse(reqres.responseData);
+
+        for (var response : msr.responses) {
+          // Get href for this response
+          var href = response.href;
+          if (href.rstrip("/") != collection[0].rstrip("/")) {
+            hrefs.add(href);
           }
         }
 
-        if (len(hrefs) == count) {
-          return true,null;
+        if (hrefs.size() == count) {
+          return Result.ok();
         }
       }
       delay = manager.serverInfo.waitdelay
@@ -749,43 +729,44 @@ class Caldavtest extends DavTesterBase {
     }
 
     if (!manager.debug || Util.isEmpty(hrefs)) {
-      return false, len(hrefs);
+      return Result.fail(String.valueOf(hrefs.size()));
     }
     // Get the content of each resource
-    rdata = "";
+    var rdata = new StringBuilder();
+
     for (var href: hrefs) {
-      result, respdata = doGet(req, new UriIdPw(href, uip.user, uip.pswd), label);
-      test = "unknown";
-      if (respdata.startsWith("BEGIN:VCALENDAR") {
-        uid = respdata.find("UID:");
-        if (uid != -1) {
-          uid = respdata[uid + 4:uid + respdata[uid:].
-          find("\r\n")];
-          test = uidmaps.get(uid, "unknown");
+      var getDrr = doGet(originalRequest,
+                         new UriIdPw(href, uip.user, uip.pswd), label);
+      String test = "unknown";
+      if (getDrr.responseData.startsWith("BEGIN:VCALENDAR") {
+        var uidpos = getDrr.responseData.indexOf("UID:");
+        if (uidpos != -1) {
+          var uid = getDrr.responseData[uid + 4:uid + respdata[uid:].indexOf("\r\n")];
+          test = uidmaps.computeIfAbsent(uid, s -> "unknown");
         }
       }
-      rdata += "\n\nhref: {h}\ntest: {t}\n\n{r}\n".format(h=href, t=test, r=respdata);
+      rdata.append(format("\n\nhref: %s\ntest: %s\n\n%s\n",
+                          href, test, getDrr.responseData));
     }
 
-    return false, rdata;
+    return Result.fail(rdata.toString());
   }
 
-  public void doWaitchanged (final Request originalRequest,
-                             final UriIdPw uip,
-                             final String etag,
-                             final String label) {
+  public boolean doWaitchanged(final Request originalRequest,
+                               final UriIdPw uip,
+                               final String etag,
+                               final String label) {
     for (var ignore: range(manager.serverInfo.waitcount)) {
       var req = uip.makeRequest(originalRequest, "HEAD");
 
-      var reqres = doRequest(req, false, false, false, null, label="%s | %s" % (label, "WAITCHANGED"), 1);
-      if (reqres.ok && (response != null) {
-        if (response.status / 100 == 2) {
-          hdrs = response.msg.getheaders("Etag");
-          if (hdrs) {
-            newetag = hdrs[0].encode("utf-8");
-            if (newetag != etag) {
-              break;
-            }
+      var reqres = doRequest(req, false, false, false,
+                             null, // stats
+                             null, // etags
+                             format("%s | %s", label, "WAITCHANGED"), 1);
+      if (reqres.ok) {
+        if (reqres.status / 100 == 2) {
+          if (!etag.equals(reqres.etag)) {
+            break;
           }
         } else {
           return false;
@@ -806,20 +787,24 @@ class Caldavtest extends DavTesterBase {
     if (Util.isEmpty(endDeletes)) {
       return true;
     }
-    manager.message("trace", "Start: " + description);
+    manager.trace("Start: " + description);
     for (var delReq: endDeletes) {
       var req = delReq.makeRequest("DELETE");
-      doRequest(req, false, false, label);
+      doRequest(req, false, false, false, null, null, label, 0);
     }
-    manager.trace(format("%s60$s", "End: " + description, "[DONE]")));
+    manager.trace(format("%s60%s", "End: " + description, "[DONE]"));
   }
 
   private static class DoRequestResult {
     boolean ok = true;
     String message;
-    HttpResponse response;
+    //HttpResponse response;
     int status;
+    String etag;
+    String protocolVersion;
+    String reason;
     String responseData;
+    List<Header> responseHeaders;
 
     DoRequestResult() {
     }
@@ -835,6 +820,21 @@ class Caldavtest extends DavTesterBase {
 
       return res;
     }
+
+    public void append(final String val) {
+      if ((val == null) || (val.length() == 0)) {
+        return;
+      }
+
+      if (message == null) {
+        message = val;
+        return;
+      }
+
+      message += "\n";
+
+      message += val;
+    }
   }
 
   private DoRequestResult doRequest(final Request req,
@@ -845,12 +845,13 @@ class Caldavtest extends DavTesterBase {
                                     final List<String> etags,
                                     final String label,
                                     final int count) {
-        req.count = count
+    req.count = count;
 
-    if (isinstance(req, pause)) {
+    if (req instanceof Request.PauseRequest) {
       // Useful for pausing at a particular point
-      print "Paused"
-      sys.stdin.readline();
+      print("Paused");
+      System.console().readLine();
+
       return DoRequestResult.ok();
     }
 
@@ -862,16 +863,22 @@ class Caldavtest extends DavTesterBase {
     }
 
     // Handle special methods
+    String method = null;
+    String ruri = null;
 
     switch (req.method) {
       case "DELETEALL":
-        for (var ruri: req.ruris) {
+        for (var requri: req.ruris) {
           var hrefs = doFindall(req,
-                                new UriIdPw(ruri, req.user, req.pswd),
+                                new UriIdPw(requri, req.user, req.pswd),
                                 format("%s | %s", label, "DELETEALL"));
+          if (!hrefs.ok) {
+            return DoRequestResult.fail(hrefs.message);
+          }
+
           if (!doDeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL")) {
-            return false,"DELETEALL failed for: {r}"
-                    .format(r = ruri), null, null
+            return DoRequestResult.fail(format("DELETEALL failed for: %s",
+                    requri));
           }
         }
         return DoRequestResult.ok();
@@ -886,192 +893,216 @@ class Caldavtest extends DavTesterBase {
         return DoRequestResult.ok();
 
       case "GETNEW":
-        grabbedlocation = doFindnew(req,
-                                    UriIdPw.fromRequest(req),
-                                    label);
-        if (req.graburi) {
-          manager.serverInfo.addextrasubs({req.graburi:
-          grabbedlocation});
+        grabbedLocation = doFindnew(req, UriIdPw.fromRequest(req),
+                                    label, false);
+        if (req.graburi != null) {
+          manager.serverInfo.addextrasubs(new KeyVals(req.graburi,
+                                                      grabbedLocation));
         }
-        req.method = "GET"
-        req.ruri = "$";
+        method = "GET";
+        ruri = "$";
         break;
 
       case "FINDNEW":
-        grabbedlocation = dofindnew(req, UriIdPw.fromRequest(req), label);
-        if (req.graburi) {
-          manager.serverInfo.addextrasubs({req.graburi:
-          grabbedlocation});
+        grabbedLocation = dofindnew(req,
+                                    UriIdPw.fromRequest(req),
+                                    label, false);
+        if (req.graburi != null) {
+          manager.serverInfo.addextrasubs(new KeyVals(req.graburi,
+                                                      grabbedLocation));
         }
         return DoRequestResult.ok();
 
       case "GETOTHER":
-        collection = (req.ruri, req.user, req.pswd);
-        grabbedlocation = doFindnew(req, UriIdPw.fromRequest(req), label, true);
-        if (req.graburi) {
-          manager.serverInfo.addextrasubs({req.graburi:
-          grabbedlocation});
+        grabbedLocation = doFindnew(req,
+                                    UriIdPw.fromRequest(req),
+                                    label,
+                                    true);
+        if (req.graburi != null) {
+          manager.serverInfo.addextrasubs(new KeyVals(req.graburi,
+                                                      grabbedLocation));
         }
-        req.method = "GET"
-        req.ruri = "$";
+        method = "GET";
+        ruri = "$";
         break;
 
       case "GETCONTAINS":
-        match = req.method[12:]
-        grabbedlocation = dofindcontains(req, UriIdPw.fromRequest(req), match, label);
-        if (!grabbedlocation) {
-          return false,"No matching resource", null, null
+        var match = req.method.substring(12);
+        grabbedLocation = doFindContains(req, UriIdPw.fromRequest(req), match, label);
+        if (grabbedLocation == null) {
+          return DoRequestResult.fail("No matching resource");
         }
-        if (req.graburi) {
-          manager.serverInfo.addextrasubs({req.graburi:
-          grabbedlocation});
+        if (req.graburi != null) {
+          manager.serverInfo.addextrasubs(new KeyVals(req.graburi,
+                                                      grabbedLocation));
         }
-        req.method = "GET"
-        req.ruri = "$"
+        method = "GET"
+        ruri = "$"
         break;
 
       default: {
         if (req.method.startsWith("WAITCOUNT")) {
-          count = int(req.method[10:]);
+          var wcount = Integer.parseInt(req.method.substring(10));
           for (ruri: req.ruris) {
-            waitresult, waitdetails = doWaitcount(req,
-                                                  new UriIdPw(ruri, req.user, req.pswd),
-                                                  count,
-                                                  label = label);
-            if (!waitresult) {
-              return false,"Count did not change: {w}"
-                      .format(w = waitdetails), null, null
-            } else {
-              return DoRequestResult.ok();
+            var waitres = doWaitcount(req,
+                                      new UriIdPw(ruri, req.user, req.pswd),
+                                      wcount,
+                                      label);
+            if (!waitres.ok) {
+              return DoRequestResult.fail(format("Count did not change: %s",
+                                            waitres.val));
             }
           }
+
+          return DoRequestResult.ok();
         } else if (req.method.startsWith("WAITDELETEALL")) {
-          var count = Integer.parseInt(req.method.substring("WAITDELETEALL".length()));
-          for (var ruri: req.ruris) {
-            waitresult, waitdetails = dowaitcount(req,
-                                                  new UriIdPw(ruri, req.user, req.pswd),
-                                                  count, label);
-            if (waitresult) {
-              hrefs = dofindall(req, collection, label="%s | %s" % (label, "DELETEALL"));
-              dodeleteall(req, hrefs, label="%s | %s" % (label, "DELETEALL"));
-            } else {
-              return false,"Count did not change: {w}"
-                      .format(w = waitdetails), null, null
+          var wcount = Integer.parseInt(req.method.substring("WAITDELETEALL".length()));
+          for (var wdruri: req.ruris) {
+            var waitres = doWaitcount(req,
+                                      new UriIdPw(wdruri, req.user, req.pswd),
+                                      wcount, label);
+            if (!waitres.ok) {
+              return DoRequestResult.fail(
+                      format("Count did not change: %s",
+                             waitres.message));
             }
+
+              var hrefs = doFindall(req,
+                                    new UriIdPw(wdruri, req.user, req.pswd),
+                                    format("%s | %s", label, "DELETEALL"));
+              doDeleteAll(req, hrefs,
+                          format("%s | %s", label, "DELETEALL"));
           }
+
+          return DoRequestResult.ok();
         } else {
           return DoRequestResult.fail("Unknown method " + req.method);
         }
       }
     }
-    result = true
-    resulttxt = ""
-    response = null
-    respdata = null
 
-    method = req.method
-    uri = req.getURI(manager.serverInfo);
-    if (uri == "$") {
-      uri = grabbedlocation;
+    final DoRequestResult drr = new DoRequestResult();
+
+    ruri = req.getURI(ruri);
+    if (ruri.equals("$")) {
+      ruri = grabbedLocation;
     }
-    headers = req.getHeaders(manager.serverInfo);
-    data = req.getData();
+
+    var headers = req.getHeaders();
+    var data = req.getDataVal();
 
     // Cache delayed delete
-    if (req.end_delete) {
-      end_deletes.append((uri, req, ));
+    if (req.endDelete) {
+      endDeletes.add((ruri, req, ));
     }
 
     if (details) {
-      resulttxt += "        %s: %s\n" % (method, uri);
+      drr.append(format("        %s: %s\n", method, ruri));
     }
 
     // Special for GETCHANGED
-    if (req.method == "GETCHANGED") {
-      if (!doWaitchanged(
-              req,
-              uri, etags[uri], req.user, req.pswd,
-              label)) {
+    if (req.method.equals("GETCHANGED")) {
+      if (!doWaitchanged(req,
+                         ruri, etags.get(ruri), req.user, req.pswd,
+                         label)) {
         return DoRequestResult.fail("Resource did not change");
       }
       method = "GET";
     }
 
-    // Start request timer if required
-    if (stats) {
-      stats.startTimer();
+    stats.startTimer();
+
+    var uri = new URIBuilder(new URI(ruri))
+            .setScheme(manager.serverInfo.getScheme())
+            .setHost(req.host)
+            .setPort(req.port)
+            .build();
+
+    HttpRequestBase meth = HttpUtil.findMethod(method, uri);
+    if (meth == null) {
+      throwException("No method: " + method);
     }
 
-    // Do the http request
-    http = SmartHTTPConnection(
-            req.host,
-            req.port,
-            manager.serverInfo.ssl,
-            afunix=req.afunix,
-            cert=os.path.join(manager.serverInfo.certdir, req.cert) if req.cert  else null
-        );
+    var hasUserAgent = false;
 
-    if ('User-Agent' not in headers && (label != null)) {
-      headers['User-Agent'] = label.encode("utf-8");
-    }
-
-    try {
-      puri = list(urlparse.urlparse(uri));
-      if (req.ruri_quote) {
-        puri[2] = urllib.quote(puri[2]);
+    if (!Util.isEmpty(headers)) {
+      for (final Header hdr: headers) {
+        if (hdr.getName().equalsIgnoreCase("User-Agent")) {
+          hasUserAgent = true;
+        }
+        meth.addHeader(hdr);
       }
-      quri = urlparse.urlunparse(puri);
+    }
 
-      http.request(method, quri, data, headers);
+    if (!hasUserAgent && (label != null)) {
+      meth.addHeader(new BasicHeader("User-Agent",
+                                     StandardCharsets.UTF_8.encode(label).toString()));
+    }
 
-      response = http.getresponse();
+    try (CloseableHttpResponse resp = manager.getHttpClient().execute(meth)) {
+      final HttpEntity ent = resp.getEntity();
 
-      respdata = null
-      respdata = response.read();
+      if (ent != null) {
+        final InputStream in = ent.getContent();
 
-    } finally {
-      http.close();
+        if (in != null) {
+          drr.responseData = readContent(in, ent.getContentLength(),
+                                         ContentType.getOrDefault(ent)
+                                                    .getCharset()
+                                                    .toString());
+        }
+      }
+
+      drr.reason = resp.getStatusLine().getReasonPhrase();
+      drr.protocolVersion = resp.getStatusLine().getProtocolVersion().toString();
+      drr.etag = HttpUtil.getFirstHeaderValue(resp, "etag");
+      drr.responseHeaders = Arrays.asList(resp.getAllHeaders());
+      drr.status = HttpUtil.getStatus(resp);
+    } catch (final Throwable t) {
+      throwException(t);
     }
 
     // Stop request timer before verification
-    if (stats) {
-      stats.endTimer();
-    }
+    stats.endTimer();
 
-    if (doverify && (respdata != null)) {
-      result, txt = verifyrequest(req, uri, response, respdata);
-      resulttxt += txt
+    if (doverify && (drr.responseData != null)) {
+      var vres = req.verifyRequest(uri,
+                                   drr.responseHeaders,
+                                   drr.status,
+                                   drr.responseData);
+      drr.append(vres.text);
     } else if (forceverify) {
-      result = (response.status / 100 == 2);
-      if (!result) {
-        resulttxt += "Status Code Error: %d" % response.status
+      drr.ok = (drr.status / 100 == 2);
+      if (!drr.ok) {
+        drr.append(format("Status Code Error: %d", drr.status));
       }
     }
 
     if (req.printRequest ||
             (manager.printRequestResponseOnError &&
-                     (!result && (not req.waitForSuccess)))) {
-      requesttxt = "\n-------BEGIN:REQUEST-------\n"
-      requesttxt += http.requestData
-      requesttxt += "\n--------END:REQUEST--------\n"
+                     (!drr.ok && !req.waitForSuccess))) {
+      var requesttxt = "\n-------BEGIN:REQUEST-------\n" +
+              data +
+              "\n--------END:REQUEST--------\n";
       manager.message("protocol", requesttxt);
     }
 
-        if (req.printResponse||
-                (manager.printRequestResponseOnError &&
-                         (!result && (!req.wait_for_success)))) {
-      responsetxt = "\n-------BEGIN:RESPONSE-------\n"
-      responsetxt += "%s %s %s\n" % (getVersionStringFromResponse(
-              response), response.status, response.reason,);
-      responsetxt += String.valueOf(response.msg) + "\n" + respdata
-      responsetxt += "\n--------END:RESPONSE--------\n"
+    if (req.printResponse ||
+            (manager.printRequestResponseOnError &&
+                     (!drr.ok && (!req.wait_for_success)))) {
+      var responsetxt = "\n-------BEGIN:RESPONSE-------\n" +
+              format("%s %s %s\n",
+                     drr.protocolVersion,
+                     drr.status, drr.reason) +
+//              String.valueOf(drr.response.message) +
+              drr.responseData +
+              "\n--------END:RESPONSE--------\n";
       manager.message("protocol", responsetxt);
     }
 
     if (etags != null && (req.method == "GET")) {
-      hdrs = response.msg.getheaders("Etag");
-      if (hdrs) {
-        etags[uri] = hdrs[0].encode("utf-8");
+      if (drr.etag != null) {
+        etags.put(uri, etag);
       }
     }
 
@@ -1080,77 +1111,77 @@ class Caldavtest extends DavTesterBase {
       ;
     }
 
-    if (req.grabcount) {
-      ctr = null;
-      if (result && (response != null) && (response.status == 207) && (respdata != null)
-      {
-        tree = ElementTree(file = StringIO(respdata));
-        ctr = len(tree.findall("{DAV:}response")) - 1;
+    if (req.grabcount != null) {
+      var ctr = -1;
+      if (drr.ok &&
+              (drr.status == 207) &&
+              (drr.responseData != null)) {
+        final MultiStatusResponse msr =
+                multiStatusResponse(drr.responseData);
+
+        ctr = msr.responses.size();
       }
 
-      if (ctr == null|| ctr == -1) {
-        result = false
-        resulttxt += "\nCould not count resources in response\n"
+      if (ctr == 0) {
+        drr.ok = false;
+        drr.append("Could not count resources in response");
       } else {
-        manager.serverInfo.addextrasubs({req.grabcount:
-        String.valueOf(ctr)});
+        manager.serverInfo.addextrasubs(new KeyVals(req.grabcount,
+                                                    String.valueOf(ctr)));
       }
     }
 
-    if (req.grabheader) {
-      for (hdrname, variable:req.grabheader){
-        hdrs = response.msg.getheaders(hdrname);
-        if (hdrs) {
-          manager.serverInfo.addextrasubs({variable:
-          hdrs[0].encode("utf-8")});
+    if (!req.grabheader.isEmpty()) {
+      for (var prop: req.grabheader) {
+        if (!Util.isEmpty(drr.responseHeaders)) {
+          manager.serverInfo.addextrasubs(
+                  new KeyVals(prop.val,
+                              Utils.encodeUtf8(drr.responseHeaders.get(0).getValue())));
         } else {
-          result = false
-          resulttxt += "\nHeader %s was not extracted from response\n" % (hdrname,)
-          ;
+          drr.ok = false;
+          drr.append(format("Header %s was not extracted from response\n",
+                            prop.key);
         }
       }
     }
 
-    if (req.grabproperty) {
-      if (response.status == 207) {
-        for (propname, variable:req.grabproperty){
+    if (!req.grabproperty.isEmpty()) {
+      if (drr.status == 207) {
+        for (var prop: req.grabproperty){
           // grab the property here
-          propvalue = extractProperty(propname, respdata);
-          if (propvalue == null) {
-            result = false
-            resulttxt += "\nProperty %s was not extracted from multistatus response\n" % (propname,)
-            ;
+          var epres = extractProperty(prop.key, drr.responseData);
+          if (!epres.ok) {
+            drr.ok = false;
+            drr.append(format("Property %s was not extracted " +
+                                      "from multistatus response",
+                              prop.key));
           } else {
-            manager.serverInfo.addextrasubs({variable:
-            propvalue.encode("utf-8")});
+            manager.serverInfo.addextrasubs(new KeyVals(prop.val,
+                                                        Utils.encodeUtf8(epres.val)));
           }
         }
       }
     }
 
-    if (req.grabelement) {
-      for (item: req.grabelement) {
-        if (len(item) == 2) {
-          elementpath, variables = item;
-          parent = null;
+    if (!Util.isEmpty(req.grabelement)) {
+      for (var item: req.grabelement) {
+        var elements = extractElements(item.path, drr.responseData);
+        if (Util.isEmpty(elements)) {
+          drr.ok = false;
+          drr.append(format("\nElement %s was not extracted from response\n",
+                            item.path));
+        } else if (item.variables.size() != elements.size()) {
+          drr.ok = false;
+          drr.append(format("\n%d found but expecting %d for element %s from response\n",
+                            elements.size(), item.variables.size(),
+                            item.path));
         } else {
-          elementpath, parent, variables = item;
-          parent = manager.serverInfo.extrasubs(parent);
-        }
-        // grab the property here
-        elementvalues = extractElements(elementpath, parent, respdata);
-        if (elementvalues == null) {
-          result = false;
-          resulttxt += "\nElement %s was not extracted from response\n" % (elementpath,);
-        } else if (len(variables) != len(elementvalues) {
-          result = false
-          resulttxt += "\n%d found but expecting %d for element %s from response\n" % (len(elementvalues), len(variables), elementpath,);
-        } else {
-          for (variable, elementvalue: zip(variables, elementvalues)
-          {
-            manager.serverInfo.addextrasubs({variable:
-            elementvalue.encode("utf-8") if elementvalue else""})
-            ;
+          var i = 0;
+          for (var v: item.variables) {
+            var e = elements.get(i);
+
+            manager.serverInfo.addextrasubs(
+                    new KeyVals(v, contentUtf8(e)));
           }
         }
       }
@@ -1159,13 +1190,13 @@ class Caldavtest extends DavTesterBase {
     if (req.grabjson) {
       for (pointer, variables: req.grabjson) {
         // grab the JSON value here
-        pointervalues = extractPointer(pointer, respdata);
+        pointervalues = extractPointer(pointer, drr.responseData);
         if (pointervalues == null) {
-          result = false
-          resulttxt += "\Pointer %s was not extracted from response\n" % (pointer,);
+          drr.ok = false;
+          drr.append(format("\Pointer %s was not extracted from response\n" % (pointer,);
         } else if (len(variables) != len(pointervalues) {
-          result = false
-          resulttxt += "\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,);
+          drr.ok = false;
+          drr.append(format("\n%d found but expecting %d for pointer %s from response\n" % (len(pointervalues), len(variables), pointer,);
         } else {
           for (variable, pointervalue: zip(variables, pointervalues)
           {
@@ -1181,10 +1212,10 @@ class Caldavtest extends DavTesterBase {
         // grab the property here
         propname = manager.serverInfo.subs(propname);
         propname = manager.serverInfo.extrasubs(propname);
-        propvalue = extractCalProperty(propname, respdata);
+        propvalue = extractCalProperty(propname, drr.responseData);
         if (propvalue == null) {
-          result = false
-          resulttxt += "\nCalendar property %s was not extracted from response\n" % (propname,)
+          drr.ok = false;
+          drr.append(format("\nCalendar property %s was not extracted from response\n" % (propname,)
           ;
         } else {
           manager.serverInfo.addextrasubs({variable:
@@ -1193,23 +1224,23 @@ class Caldavtest extends DavTesterBase {
       }
     }
 
-    if (req.grabcalparam) {
-      for (paramname, variable:req.grabcalparam) {
+    if (!Util.isEmpty(req.grabcalparam)) {
+      for (var kv: req.grabcalparam) {
         // grab the property here
-        paramname = manager.serverInfo.subs(paramname);
+        var paramname = manager.serverInfo.subs(kv.key);
         paramname = manager.serverInfo.extrasubs(paramname);
-        paramvalue = extractCalParameter(paramname, respdata);
+        var paramvalue = extractCalParameter(paramname, drr.responseData);
         if (paramvalue == null) {
-          result = false;
-          resulttxt += "\nCalendar Parameter %s was not extracted from response\n" % (paramname,)
+          drr.ok = false;
+          drr.append(format("\nCalendar Parameter %s was not extracted from response\n" % (paramname,)
           ;
         } else {
-          manager.serverInfo.addextrasubs({variable:paramvalue.encode("utf-8")});
+          manager.serverInfo.addextrasubs({kv.val, paramvalue.encode("utf-8")});
         }
       }
     }
 
-    return new DoRequestResult(result, resulttxt, response, respdata);
+    return drr;
   }
 
   public void parseXML (final Element node) {
@@ -1237,152 +1268,69 @@ class Caldavtest extends DavTesterBase {
     }
   }
 
-  public void extractProperty (propertyname, respdata) {
+  public Result<String> extractProperty(final String propertyname,
+                                        final String respdata) {
+    final MultiStatusResponse msr =
+            multiStatusResponse(respdata);
 
-    try {
-      tree = ElementTree(file=StringIO(respdata));
-    } catch (final Throwable t) {
-      return null;
-    }
-
-    for (var response: tree.findall("{DAV:}response") {
-      // Get all property status
-      propstatus = response.findall("{DAV:}propstat");
-      for (var props: propstatus) {
-        // Determine status for this propstat
-        status = props.findall("{DAV:}status");
-        if (len(status) == 1) {
-          statustxt = status[0].text
-          status = false
-          if (statustxt.startsWith("HTTP/1.1 ") && (len(statustxt) >= 10)
-          {
-            status = (statustxt[9] == "2");
-          }
-        } else {
-          status = false;
-        }
-
-        if (!status) {
+    for (var response: msr.responses) {
+      for (var propstat: response.propstats) {
+        if ((propstat.status / 100) != 2) {
           continue;
         }
 
         // Get properties for this propstat
-        prop = props.findall("{DAV:}prop");
-        if (len(prop) != 1) {
-          return false,
-          "           Wrong number of DAV:prop elements\n";
+        if (propstat.props.size() != 1) {
+          return Result.fail("           Wrong number of DAV:prop elements");
         }
 
-        for (var child: prop[0].getchildren()) {
-          fqname = child.tag
-          if (len(child)) {
-            // Copy sub-element data as text into one long string and strip leading/trailing space
-            value = ""
-            for (var p: child.getchildren() {
-              temp = tostring(p);
-              temp = temp.strip();
-              value += temp
-            }
-          } else{
-            value = child.text
+        for (var child: children(propstat.props.get(0))) {
+          var tag = child.getTagName();
+          if (!tag.equals(propertyname)) {
+            continue;
           }
 
-          if (fqname == propertyname) {
-            return value;
+          var subch = children(child);
+
+          if (subch.size() == 0) {
+            return new Result<>(content(child));
           }
+
+          // Copy sub-element data as text into one long string and strip leading/trailing space
+          var value = new StringBuilder();
+          for (var p: subch) {
+            value.append(content(p).strip());
+          }
+
+          return new Result<>(value.toString());
         }
       }
     }
 
-    return null;
+    return Result.fail(null);
   }
 
-  public void extractElement (elementpath, respdata) {
-    try {
-      tree = ElementTree();
-      tree.parse(StringIO(respdata));
-    } except {
-      return null;
-    }
+  public List<Element> extractElements (final String elementpath,
+                                        final String respdata) {
+    final Element rootEl = parseXmlString(respdata).getDocumentElement();
 
-    // Strip off the top-level item
-    if (elementpath[0] == '/') {
-      elementpath = elementpath[1:]
-      splits = elementpath.split('/', 1);
-      root = splits[0]
-      if (tree.getroot().tag != root) {
-        return null
-      }
-      if (len(splits) == 1) {
-        return tree.getroot().text;
-      }
-      elementpath = splits[1]
-    }
+    final String testPath;
+    final boolean atRoot;
 
-    e = tree.find(elementpath);
-    if (e != null) {
-      return e.text
-    }
-
-    return null;
-  }
-
-  public void extractElements (elementpath, parent, respdata) {
-    try {
-      tree = ElementTree();
-      tree.parse(StringIO(respdata));
-    } except {
-      return null;
-    }
-
-    if (parent) {
-      tree_root = nodeForPath(tree.getroot(), parent);
-      if (!tree_root) {
-        return null;
-      }
-      tree_root = tree_root[0];
-
-      // Handle absolute root element
-      if (elementpath[0] == '/') {
-        elementpath = elementpath[1:]
-      }
-      root_path, child_path = xmlPathSplit(elementpath);
-      if (child_path) {
-        if (tree_root.tag != root_path) {
-          return null;
-        }
-        e = tree_root.findall(child_path);
-      } else {
-        e = (tree_root,);
-      }
+    if (elementpath.startsWith("/")) {
+      testPath = elementpath.substring(1);
+      atRoot = true;
     } else {
-      // Strip off the top-level item
-      if (elementpath[0] == '/') {
-        elementpath = elementpath[1:]
-        splits = elementpath.split('/', 1);
-        root = splits[0]
-        if (tree.getroot().tag != root) {
-          return null;
-        }
-
-        if (len(splits) == 1) {
-          return tree.getroot().text;
-        }
-
-        elementpath = splits[1]
-      }
-      e = tree.findall(elementpath);
+      testPath = elementpath;
+      atRoot = false;
     }
 
-    if (e != null) {
-      return [item.text for item:
-      e];
-    }
-
-    return null;
+    return findNodes(parseXmlString(respdata),
+                     atRoot,
+                     testPath);
   }
 
-  public void extractPointer (pointer, respdata) {
+  public void extractPointer (pointer, final String respdata) {
     jp = JSONMatcher(pointer);
 
     try {
@@ -1394,25 +1342,27 @@ class Caldavtest extends DavTesterBase {
     return jp.match(j);
   }
 
-  public void extractCalProperty (propertyname, respdata) {
+  public void extractCalProperty(final String propertyname,
+                                 final String respdata) {
 
     prop = _calProperty(propertyname, respdata);
     return prop.getValue().getValue() if prop  else null;
   }
 
-  public void extractCalParameter (parametername, respdata) {
+  public void extractCalParameter(final String parametername,
+                                  final String respdata) {
     // propname is a path consisting of component names and the last one a property name
     // e.g. VEVENT/ATTACH
-    bits = parametername.split("/");
-    propertyname = "/".join(bits[:-1]);
-    param = bits[-1]
+    var bits = parametername.split("/");
+    var propertyname = "/".join(bits[:-1]);
+    var param = bits[-1]
     bits = param.split("$");
     pname = bits[0]
     if (len(bits) > 1) {
       propertyname += "$%s" % (bits[1],);
     }
 
-    prop = _calProperty(propertyname, respdata);
+    prop = calProperty(propertyname, respdata);
 
     try {
       return prop.getParameterValue(pname) if prop  else null
@@ -1421,8 +1371,8 @@ class Caldavtest extends DavTesterBase {
     }
   }
 
-  public void _calProperty (propertyname, respdata) {
-
+  private void calProperty(final String propertyname,
+                           final String respdata) {
     try {
       cal = Calendar.parseText(respdata);
     } catch (final Throwable t) {
@@ -1439,7 +1389,6 @@ class Caldavtest extends DavTesterBase {
     pvalue = bits[1] if len(bits) > 1  else null
 
     while (components) {
-
       var found = false;
       for (c: cal.getComponents()) {
         if (c.getType() == components[0]) {
@@ -1469,6 +1418,104 @@ class Caldavtest extends DavTesterBase {
     }
 
     return props[0] if props  else null
+  }
+
+  String readContent(final InputStream in, final long expectedLen,
+                     final String charset) throws Throwable {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    int len = 0;
+
+    //if (logger.debug()) {
+    //  System.out.println("Read content - expected=" + expectedLen);
+    //}
+
+    boolean hadLf = false;
+    boolean hadCr = false;
+
+    while ((expectedLen < 0) || (len < expectedLen)) {
+      int ich = in.read();
+      if (ich < 0) {
+        break;
+      }
+
+      len++;
+
+      if (ich == '\n') {
+        if (hadLf) {
+          System.out.println("");
+          hadLf = false;
+          hadCr = false;
+        } else {
+          hadLf = true;
+        }
+      } else if (ich == '\r') {
+        if (hadCr) {
+          System.out.println("");
+          hadLf = false;
+          hadCr = false;
+        } else {
+          hadCr = true;
+        }
+      } else if (hadCr || hadLf) {
+        hadLf = false;
+        hadCr = false;
+
+        if (baos.size() > 0) {
+          String ln = new String(baos.toByteArray(), charset);
+          System.out.println(ln);
+        }
+
+        baos.reset();
+        baos.write(ich);
+      } else {
+        baos.write(ich);
+      }
+    }
+
+    if (baos.size() > 0) {
+      return new String(baos.toByteArray(), charset);
+    }
+
+    return null;
+  }
+
+  /*
+  private static class CaldavAuthenticator extends Authenticator {
+    private String user;
+    private char[] pw;
+
+    CaldavAuthenticator(String user, String pw) {
+      this.user = user;
+      this.pw = pw.toCharArray();
+    }
+
+    protected PasswordAuthentication getPasswordAuthentication() {
+      return new PasswordAuthentication(user, pw);
+    }
+  }
+
+  private static void calInfo(Calendar cal) throws Throwable {
+    ComponentList clist = cal.getComponents();
+
+    Iterator it = clist.iterator();
+
+    while (it.hasNext()) {
+      Object o = it.next();
+
+      msg("Got component " + o.getClass().getName());
+
+      if (o instanceof VEvent) {
+        VEvent ev = (VEvent)o;
+
+        eventInfo(ev);
+        / *
+      } else if (o instanceof VTimeZone) {
+        VTimeZone vtz = (VTimeZone)o;
+
+        debugMsg("Got timezone: \n" + vtz.toString());
+        * /
+      }
+    }
   }
 
   /* POSTGRES

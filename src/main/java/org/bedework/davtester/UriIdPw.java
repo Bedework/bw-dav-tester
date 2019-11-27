@@ -59,6 +59,7 @@ public class UriIdPw {
                       final String depth) {
     var req = new Request(originalRequest.manager);
     req.method = method;
+    req.scheme = originalRequest.scheme;
     req.host = originalRequest.host;
     req.port = originalRequest.port;
 

@@ -33,7 +33,7 @@ public abstract class DavTesterBase {
 
   protected Document doc;
 
-  String name;
+  public String name;
   String description = "";
 
   protected boolean only;

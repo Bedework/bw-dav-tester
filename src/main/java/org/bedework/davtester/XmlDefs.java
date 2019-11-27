@@ -48,7 +48,7 @@ public interface XmlDefs {
   QName ELEMENT_GRABURI = new QName("graburi");
   QName ELEMENT_HEADER = new QName("header");
   QName ELEMENT_HOST = new QName("host");
-  QName ELEMENT_HOST2 = new QName("host2");
+  //QName ELEMENT_HOST2 = new QName("host2");
   QName ELEMENT_KEY = new QName("key");
   QName ELEMENT_LOGGING = new QName("logging");
   QName ELEMENT_MAILFROM = new QName("mailfrom");
@@ -93,7 +93,7 @@ public interface XmlDefs {
   QName ELEMENT_WAITSUCCESS = new QName("waitsuccess");
   QName ELEMENT_WARNINGTIME = new QName("warningtime");
 
-  String ATTR_HOST2 = "host2";
+  //String ATTR_HOST2 = "host2";
   String ATTR_AUTH = "auth";
   String ATTR_CERT = "cert";
   String ATTR_CHANGE_UID = "change-uid";

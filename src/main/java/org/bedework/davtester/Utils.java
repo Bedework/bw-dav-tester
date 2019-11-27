@@ -19,12 +19,17 @@ import org.bedework.util.misc.Util;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.UUID;
 
 public class Utils {
+  public static String encodeUtf8(final String val) {
+    return StandardCharsets.UTF_8.encode(val).toString();
+  }
+
   public static String upperFirst(String val) {
     if ((val == null) || (val.length() == 0)) {
       return val;

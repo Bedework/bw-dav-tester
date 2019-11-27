@@ -17,7 +17,10 @@ package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
+
+import java.net.URI;
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -26,8 +29,9 @@ import static java.lang.String.format;
  */
 public class DataString extends Verifier {
   @Override
-  public VerifyResult verify(final String uri,
-                             final HttpResponse response,
+  public VerifyResult verify(final URI uri,
+                             final List<Header> responseHeaders,
+                             final int status,
                              final String respdata,
                              final KeyVals args) {
     // Get arguments

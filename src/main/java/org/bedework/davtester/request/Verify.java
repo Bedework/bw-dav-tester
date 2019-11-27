@@ -24,9 +24,11 @@ import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.w3c.dom.Element;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,8 +67,10 @@ public class Verify extends DavTesterBase {
     }
   }
 
-  public VerifyResult doVerify(final String uri, final HttpResponse response,
-                                        String respdata) {
+  public VerifyResult doVerify(final URI uri,
+                               final List<Header> responseHeaders,
+                               final int status,
+                               String respdata) {
 
     // Re-do substitutions from values generated during the current test run
     if (manager.serverInfo.hasextrasubs()) {
@@ -90,7 +94,7 @@ public class Verify extends DavTesterBase {
     // Always clone the args as this verifier may be called multiple times
     var newargs = new KeyVals(args);
 
-    return verifier.verify(uri, response, respdata, newargs);
+    return verifier.verify(uri, responseHeaders, status, respdata, newargs);
   }
 
   @Override

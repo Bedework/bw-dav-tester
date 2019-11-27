@@ -18,7 +18,10 @@ package org.bedework.davtester.verifiers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
+
+import java.net.URI;
+import java.util.List;
 
 /** Base class for verifiers
  *
@@ -38,11 +41,17 @@ public abstract class Verifier {
       this.text = text;
     }
 
-    void append(final String val) {
-      if (text != null) {
-        text += "\n";
+    public void append(final String val) {
+      if ((val == null) || (val.length() == 0)) {
+        return;
       }
 
+      if (text == null) {
+        text = val;
+        return;
+      }
+
+      text += "\n";
       text += val;
     }
   }
@@ -57,8 +66,9 @@ public abstract class Verifier {
     return manager.featureSupported(feature);
   }
 
-  public abstract VerifyResult verify(final String uri,
-                                      final HttpResponse response,
+  public abstract VerifyResult verify(final URI uri,
+                                      final List<Header> responseHeaders,
+                                      final int status,
                                       final String respdata,
                                       final KeyVals args);
 }

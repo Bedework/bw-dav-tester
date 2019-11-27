@@ -15,35 +15,58 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.dav.DavUtil;
+import org.bedework.util.dav.DavUtil.MultiStatusResponse;
 import org.bedework.util.xml.XmlUtil;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
 
 import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
+import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
-XML processing utilities.
-*/
+ XML processing utilities.
+ */
 public class XmlUtils {
   public static Document parseXml(final String fileName) {
     try {
       final File f = new File(fileName);
 
       final InputStream is = new FileInputStream(f);
+
+      return parseXml(is);
+    } catch (final Throwable t) {
+      throwException(t);
+      return null; // fake
+    }
+  }
+
+  public static Document parseXmlString(final String val) {
+    try {
+      final InputStream is = new ByteArrayInputStream(val.getBytes(
+              StandardCharsets.UTF_8));
 
       return parseXml(is);
     } catch (final Throwable t) {
@@ -64,6 +87,39 @@ public class XmlUtils {
     } catch (final Throwable t) {
       throwException(t);
       return null; // fake
+    }
+  }
+
+  public static Namespaces namespaces = new Namespaces();
+
+  private static DavUtil davUtil = new DavUtil();
+
+  public static MultiStatusResponse multiStatusResponse(
+          final String val) {
+    try {
+      return davUtil.getMultiStatusResponse(val);
+    } catch (final Throwable t) {
+      throwException(t);
+      return new MultiStatusResponse(); // fake
+    }
+  }
+
+  public static List<Element> childrenMatching(final Node nd,
+                                               final QName tag) {
+    try {
+      var children = XmlUtil.getElements(nd);
+      var matched = new ArrayList<Element>();
+
+      for (var ch : children) {
+        if (nodeMatches(ch, tag)) {
+          matched.add(ch);
+        }
+      }
+
+      return matched;
+    } catch (final Throwable t) {
+      throwException(t);
+      return Collections.EMPTY_LIST; // fake
     }
   }
 
@@ -123,7 +179,7 @@ public class XmlUtils {
   }
 
   public static boolean getYesNoAttributeValue(final Element node,
-                                        final String attr) {
+                                               final String attr) {
     try {
       return XmlDefs.ATTR_VALUE_YES
               .equals(getAttrVal(node, attr));
@@ -164,7 +220,7 @@ public class XmlUtils {
       return 0; // fake
     }
   }
-}
+
 /*
 public void readStringElementList(node, ename) {
 
@@ -191,80 +247,190 @@ public void readOneStringElement(node, ename) {
             return child.text.decode("utf-8")
     return ""
 
+  public static List<Element> nodeForPath(final Element root,
+                                          final String path) {
+    String actualPath;
+    String tests;
 
-public void nodeForPath(root, path) {
-    if '[' in path:
-        actual_path, tests = path.split('[', 1)
+    if (path.contains("[")) {
+      var split = path.split("\\[", 2);
+      actualPath = split[0];
+      tests = split[1];
     } else {
-        actual_path = path
-        tests = null
+      actualPath = path;
+      tests = null;
+    }
 
-    # Handle absolute root element
-    if actual_path[0] == '/':
-        actual_path = actual_path[1:]
-    if '/' in actual_path:
-        root_path, child_path = actual_path.split('/', 1)
-        if root.tag != root_path:
-            return null
-        nodes = root.findall(child_path)
+    // Handle absolute root element
+    if (actualPath.startsWith("/")) {
+      actualPath = actualPath.substring(1);
+    }
+
+    String rootPath;
+    String childPath;
+    List<Element> nodes;
+
+    if (actualPath.contains("/")) {
+      var split = path.split("/", 2);
+      rootPath = split[0];
+      childPath = split[1];
+      if (!root.getTagName().equals(rootPath)) {
+        return null;
+      }
+      nodes = root.findall(child_path);
     } else {
-        root_path = actual_path
-        child_path = null
-        nodes = (root,)
+      rootPath = actualPath;
+      childPath = null;
+      nodes = Collections.singletonList(root);
+    }
 
-    if len(nodes) == 0:
-        return null
+    if (nodes.size() == 0) {
+      return null;
+    }
 
-    results = []
+    results = [];
 
-    if tests:
-        tests = [item[:-1] for item in tests.split('[')]
-        for test in tests:
-            for node in nodes:
-                if test[0] == '@':
-                    if '=' in test:
-                        attr, value = test[1:].split('=')
-                        value = value[1:-1]
-                    } else {
-                        attr = test[1:]
-                        value = null
-                    if attr in node.keys() && (value == null|| node.get(attr) == value) {
-                        results.append(node)
-                } else if (test[0] == '=':
-                    if node.text == test[1:]:
-                        results.append(node)
-                } else if (test[0] == '!':
-                    if node.text != test[1:]:
-                        results.append(node)
-                } else if (test[0] == '*':
-                    if node.text != null && node.text.find(test[1:]) != -1:
-                        results.append(node)
-                } else if (test[0] == '+':
-                    if node.text != null && node.text.startsWith(test[1:]) {
-                        results.append(node)
-                } else if (test[0] == '^':
-                    if "=" in test:
-                        element, value = test[1:].split("=", 1)
-                    } else {
-                        element = test[1:]
-                        value = null
-                    for (var child: children(node)) {
-                        if child.tag == element && (value == null|| child.text == value) {
-                            results.append(node)
-    } else {
-        results = nodes
+    if (tests == null) {
+      return nodes;
+    }
 
-    return results
+    tests = [item[:-1] for item in tests.split("[")];
 
+    for (var test: tests) {
+      for (var node in nodes) {
+        if (test[0] == "@") {
+          if ("=" in test) {
+            attr, value = test[1:].split("=")
+            value = value[1:-1]
+          } else {
+            attr = test[1:]
+            value = null
+          }
+          if attr in node.keys() && (value == null|| node.get(attr) == value) {
+            results.append(node)
+          }
+        } else if (test[0] == "=") {
+          if (node.text == test[1:]) {
+            results.append(node)
+          }
+        } else if (test[0] == "!") {
+          if (node.text != test[1:]) {
+            results.append(node)
+          }
+        } else if (test[0] == "*") {
+          if (node.text != null && node.text.find(test[1:]) != -1) {
+            results.append(node)
+          }
+        } else if (test[0] == "+") {
+          if (node.text != null && node.text.startsWith(test[1:]) {
+            results.append(node)
+          }
+        } else if (test[0] == "^") {
+          if ("=" in test){
+            element, value = test[1:].
+            split("=", 1);
+          } else{
+            element = test[1:];
+            value = null;
+          }
+        }
+        for (var child: children(node)) {
+          if (child.tag == element && (value == null|| child.text == value)
+          {
+            results.append(node);
+          }
+        }
+      }
+    }
 
-public void xmlPathSplit(xpath) {
+    return results;
+  }
 
-    pos = xpath.find("}")
-    if pos == -1:
-        return xpath, ""
-    pos = xpath[pos:].find("/") + pos
-    if pos == -1:
-        return xpath, ""
-    } else {
-        return xpath[:pos], xpath[pos + 1:]
 */
+
+
+  public static class XmlSplit {
+    public String rootPath;
+    public String childPath;
+
+    XmlSplit(final String rootPath,
+             final String childPath) {
+      this.rootPath = rootPath;
+      this.childPath = childPath;
+    }
+  }
+
+  public static XmlSplit xmlPathSplit(final String xpath) {
+    var pos = xpath.indexOf("}");
+    if (pos == -1) {
+      return new XmlSplit(xpath, null);
+    }
+
+    var npos = xpath.indexOf("/", pos);
+    if (npos == -1) {
+      return new XmlSplit(xpath, null);
+    }
+
+    return new XmlSplit(xpath.substring(0, pos),
+                        xpath.substring(pos + 1));
+  }
+
+  public static String testPathToXpath(final String testPath) {
+    var split = xmlPathSplit(testPath);
+
+    // convert rootPath to xpath format
+
+    var rp = split.rootPath;
+
+    if (rp.startsWith("{")) {
+      var pos = rp.indexOf("}");
+
+      if (pos > 0) {
+        var abbrev = namespaces.getOrAdd(rp.substring(1, pos));
+
+        split.rootPath = abbrev + ":" + rp.substring(pos + 1);
+      }
+    }
+
+    if (split.childPath == null) {
+      return split.rootPath;
+    }
+
+    return split.rootPath + "/" + testPathToXpath(split.childPath);
+  }
+
+  public static List<Element> findNodes(final Document doc,
+                                        final boolean atRoot,
+                                        final String testPath) {
+    var xp = testPathToXpath(testPath);
+
+    if (!atRoot) {
+      xp = "//" + xp;
+    } else {
+      xp = "/" + xp;
+    }
+
+    XPathFactory xpathfactory = XPathFactory.newInstance();
+    XPath xpath = xpathfactory.newXPath();
+    xpath.setNamespaceContext(namespaces.getResolver());
+
+    try {
+      XPathExpression expr = xpath.compile(xp);
+
+      //Search XPath expression
+      Object result = expr.evaluate(doc, XPathConstants.NODESET);
+
+      var nodes = (NodeList)result;
+      var res = new ArrayList<Element>(nodes.getLength());
+
+      for (int i = 0; i < nodes.getLength(); i++) {
+        res.add((Element)nodes.item(i));
+      }
+
+      return res;
+    } catch (final Throwable t) {
+      throwException(t);
+      return null; // fake
+    }
+  }
+}
