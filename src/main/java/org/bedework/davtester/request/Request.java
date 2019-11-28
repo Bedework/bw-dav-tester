@@ -10,6 +10,7 @@ import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 import org.bedework.util.misc.Util;
 
 import org.apache.http.Header;
+import org.apache.http.message.BasicHeader;
 import org.w3c.dom.Element;
 
 import java.io.File;
@@ -162,12 +163,12 @@ public class Request extends DavTesterBase {
   boolean ruriQuote = true;
   private Data data;
   public boolean iterateData;
-  int count = 1;
+  public int count = 1;
   List<Verify> verifiers = new ArrayList<>();
   public String graburi;
   public String grabcount;
 
-  final List<KeyVal> headers = new ArrayList<>();
+  public final List<Header> headers = new ArrayList<>();
   public final List<KeyVal> grabheader = new ArrayList<>();
   public final List<KeyVal> grabproperty = new ArrayList<>();
   public final List<KeyVal> grabcalprop = new ArrayList<>();
@@ -232,18 +233,19 @@ public class Request extends DavTesterBase {
 
   public List<Header> getHeaders () {
     var si = manager.serverInfo;
+    var res = new ArrayList<Header>();
 
-    hdrs = headers
-    for key, value in hdrs.items() {
-      hdrs[key] = si.extrasubs(value);
+    for (var hdr: headers) {
+      res.add(new BasicHeader(hdr.getName(),
+                              si.extrasubs(hdr.getValue()));
     }
 
     // Content type
     if (data != null) {
-      hdrs["Content-Type"] = data.contentType;
+      res.add(new BasicHeader("Content-Type", data.contentType);
     }
 
-    return hdrs;
+    return res;
   }
 
   public String getFilePath() {
@@ -489,7 +491,7 @@ public class Request extends DavTesterBase {
     }
 
     if ((name != null) && (value != null)) {
-      headers.add(new KeyVal(name, value));
+      headers.add(new BasicHeader(name, value));
     }
   }
 

@@ -17,6 +17,8 @@ package org.bedework.davtester;
 
 import org.bedework.davtester.request.Request;
 
+import org.apache.http.message.BasicHeader;
+
 /**
  * User: mike Date: 11/24/19 Time: 16:27
  */
@@ -64,7 +66,7 @@ public class UriIdPw {
     req.port = originalRequest.port;
 
     if (depth != null) {
-      req.headers["Depth"] = depth;
+      req.headers.add(new BasicHeader("Depth", depth));
     }
 
     setRequest(req);

@@ -30,6 +30,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -70,7 +71,7 @@ public class Serverinfo {
   public String user = "";
   public String pswd = "";
   int waitcount = 120;
-  double waitdelay = 0.25;
+  long waitdelay = 250; // .25 second
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
   final KeyVals extrasubsKvs = new KeyVals();
@@ -125,7 +126,7 @@ public class Serverinfo {
       } else if (subpos.startsWith("$now.month.")) {
         var monthoffset = ival(sub, pos + 11, endpos);
         var month = dtp.month + monthoffset;
-        var year = dtp.year + (int)(month / 12);
+        var year = dtp.year + (month / 12);
         month = month % 12;
         value = String.format("%d%02d", year, month);
       } else {
@@ -168,11 +169,7 @@ public class Serverinfo {
                final KeyVals db) {
     final KeyVals dbActual;
 
-    if (db == null) {
-      dbActual = subsKvs;
-    } else {
-      dbActual = db;
-    }
+    dbActual = Objects.requireNonNullElse(db, subsKvs);
 
     for (var key: items.keySet()){
       dbActual.put(key, items.get(key));
@@ -215,7 +212,7 @@ public class Serverinfo {
       } else if (variable.startsWith("urlpath(")) {
         variable = variable.substring("urlpath(".length(),
                                       variable.length() - 1);
-        URL url = null;
+        URL url;
         String value = items.getOnlyString(variable);
         try {
           url = new URL(value);
@@ -258,9 +255,9 @@ public class Serverinfo {
           host = "localhost";
         }
       } else if (nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT)) {
-        nonsslport = Integer.valueOf(text);
+        nonsslport = Integer.parseInt(text);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_SSLPORT)) {
-        sslport = Integer.valueOf(text);
+        sslport = Integer.parseInt(text);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
         afunix = text;
         /*HOST2
@@ -282,11 +279,11 @@ public class Serverinfo {
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
         certdir = textUtf8;
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
-        waitcount = Integer.valueOf(textUtf8);
+        waitcount = Integer.parseInt(textUtf8);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
-        waitdelay = Float.valueOf(textUtf8);
+        waitdelay = (long)(Float.parseFloat(textUtf8) * 1000);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
-        waitsuccess = Integer.valueOf(text);
+        waitsuccess = Integer.parseInt(text);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
         parseFeatures(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
@@ -313,7 +310,7 @@ public class Serverinfo {
     // Expand substitutions fully at this point
     for (var key: subsKvs.keySet()) {
       subsKvs.put(key,
-                  propertyReplace(subsKvs.getOnlyString((String)key),
+                  propertyReplace(subsKvs.getOnlyString(key),
                                   subsKvs));
     }
 
@@ -420,8 +417,8 @@ public class Serverinfo {
     int segStart = 0;
 
     while (true) {
-      if (pos > 0) {
-        sb.append(val.substring(segStart, pos));
+      if (pos > segStart) {
+        sb.append(val, segStart, pos);
       }
 
       final int end = val.indexOf(":", pos);
@@ -433,7 +430,7 @@ public class Serverinfo {
       }
 
       final String pval =
-              props.getOnlyString(val.substring(pos + 2, end).trim());
+              props.getOnlyString(val.substring(pos + 1, end).trim());
 
       if (pval != null) {
         sb.append(pval);
@@ -444,7 +441,7 @@ public class Serverinfo {
         break;
       }
 
-      pos = val.indexOf(":", segStart);
+      pos = val.indexOf("$", segStart);
 
       if (pos < 0) {
         //Done.
@@ -457,6 +454,6 @@ public class Serverinfo {
   }
 
   public static int ival(final String val, final int start, final int end) {
-    return Integer.valueOf(val.substring(start, end));
+    return Integer.parseInt(val.substring(start, end));
   }
 }

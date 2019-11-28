@@ -261,6 +261,10 @@ public class Manager implements Logged {
     message("load", kvs);
   }
 
+  public void protocol(final String message) {
+    message("protocol", new KeyVals("protocol", message));
+  }
+
   public void trace(final String message) {
     message("trace", new KeyVals("message", message));
   }

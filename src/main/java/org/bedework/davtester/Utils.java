@@ -20,12 +20,32 @@ import org.bedework.util.misc.Util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 public class Utils {
+  /**
+   *
+   * @param val list
+   * @param other list
+   * @param <T> type of elements - must be comparable
+   * @return val - other
+   */
+  public static <T> List<T> diff(final List<T> val, final Collection<T> other) {
+    final Set<T> valSet = new TreeSet<>(val);
+
+    valSet.removeAll(other);
+
+    return new ArrayList<T>(valSet);
+  }
+
   public static String encodeUtf8(final String val) {
     return StandardCharsets.UTF_8.encode(val).toString();
   }

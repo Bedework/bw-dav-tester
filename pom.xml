@@ -30,6 +30,7 @@
     <ical4j-vcard.version>1.0.4</ical4j-vcard.version>
 
 		<!-- Third Party Library Versions -->
+    <commons-lang3.version>3.3.2</commons-lang3.version>
     <http-client.version>4.5.3</http-client.version>
     <http-core.version>4.4.8</http-core.version>
 
@@ -146,6 +147,12 @@
     </dependency>
 
 		<!-- Third Party Dependencies -->
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
