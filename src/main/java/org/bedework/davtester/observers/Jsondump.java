@@ -18,7 +18,6 @@ package org.bedework.davtester.observers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Date;
@@ -78,10 +77,12 @@ public class Jsondump extends BaseResultsObserver {
   }
 
   public void finish() {
+    throwException("Unimplemented");
+    /*
     try {
       manager().print(om.writeValueAsString(manager().getResults()));
     } catch (JsonProcessingException e) {
       throwException(e);
-    }
+    }*/
   }
 }

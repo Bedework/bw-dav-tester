@@ -273,7 +273,7 @@
                the classpath declaration in the bin scripts -->
           <includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
           <!-- set alternative assemble directory -->
-          <assembleDirectory>${project.build.directory}/client</assembleDirectory>
+          <assembleDirectory>${project.build.directory}/davtest</assembleDirectory>
           <!-- Extra JVM arguments that will be included in the bin scripts
           <extraJvmArguments>-Xms128m</extraJvmArguments> -->
           <!-- Generate bin scripts for windows and unix pr default -->
@@ -284,8 +284,8 @@
           </platforms>
           <programs>
             <program>
-              <mainClass>org.bedework.caldav.test.TestCalDav</mainClass>
-              <id>client</id>
+              <mainClass>org.bedework.davtester.Testcaldav</mainClass>
+              <id>davtest</id>
             </program>
           </programs>
         </configuration>
@@ -296,14 +296,14 @@
         <version>2.5.3</version>
         <executions>
           <execution>
-            <id>client-assembly</id>
+            <id>davtest-assembly</id>
             <phase>install</phase>
             <goals>
               <goal>single</goal>
             </goals>
             <configuration>
               <descriptors>
-                <descriptor>src/assembly/client.xml</descriptor>
+                <descriptor>src/assembly/davtest.xml</descriptor>
               </descriptors>
             </configuration>
           </execution>

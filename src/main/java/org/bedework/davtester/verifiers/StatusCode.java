@@ -16,9 +16,11 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.Manager;
 
-import org.apache.http.HttpResponse;
+import org.apache.http.Header;
+
+import java.net.URI;
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -27,14 +29,13 @@ import static java.lang.String.format;
 */
 public class StatusCode extends Verifier {
   @Override
-  public VerifyResult verify(final Manager manager,
-                             final String uri,
-                             final HttpResponse response,
+  public VerifyResult verify(final URI uri,
+                             final List<Header> responseHeaders,
+                             final int status,
                              final String respdata,
                              final KeyVals args) {
     // If no status verification requested, then assume all 2xx codes are OK
     var teststatus = args.getStrings("status", "2xx");
-    int respStatus = -1;
 
     int test = 0;
     for (var ts : teststatus) {
@@ -44,12 +45,11 @@ public class StatusCode extends Verifier {
         test = Integer.parseInt(ts);
       }
 
-      respStatus = response.getStatusLine().getStatusCode();
       if (test < 100) {
-        if ((respStatus / 100) == test) {
+        if ((status / 100) == test) {
           return new VerifyResult();
         }
-      } else if (respStatus == test) {
+      } else if (status == test) {
         return new VerifyResult();
       }
     }
@@ -58,6 +58,6 @@ public class StatusCode extends Verifier {
     return new VerifyResult("        HTTP Status Code Wrong " +
                                     format("(expected %s): %d",
                                            String.valueOf(teststatus),
-                                           respStatus));
+                                           status));
   }
 }

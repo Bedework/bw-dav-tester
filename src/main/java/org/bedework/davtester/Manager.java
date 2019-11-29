@@ -70,7 +70,8 @@ public class Manager implements Logged {
   public static final int RESULT_IGNORED = 3;
 
   // 1 for each of above
-  private int[] totals = {0, 0, 0, 0};
+  public int[] totals = {0, 0, 0, 0};
+  public long totalTime;
 
   public static final String EX_INVALID_CONFIG_FILE = "Invalid Config File";
   public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
@@ -473,6 +474,7 @@ public class Manager implements Logged {
     }
 
     res.endTimer();
+    totalTime = res.total;
 
     message("finish", null);
 

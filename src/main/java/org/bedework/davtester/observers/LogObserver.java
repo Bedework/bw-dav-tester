@@ -15,34 +15,54 @@
 */
 package org.bedework.davtester.observers;
 
+import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
-import java.util.Observer;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
+import static java.lang.String.format;
 
 /**
  * A results observer that prints results to standard output.
  */
 public class LogObserver extends BaseResultsObserver {
-    RESULT_STRINGS = {
-        Manager.RESULT_OK: "[OK]",
-        Manager.RESULT_FAILED: "[FAILED]",
-        Manager.RESULT_ERROR: "[ERROR]",
-        Manager.RESULT_IGNORED: "[IGNORED]",
-    }
+  final static Map<Integer, String> RESULT_STRINGS = new HashMap<>();
+  static {
+    RESULT_STRINGS.put(Manager.RESULT_OK, "[OK]");
+    RESULT_STRINGS.put(Manager.RESULT_FAILED, "[FAILED]");
+    RESULT_STRINGS.put(Manager.RESULT_ERROR, "[ERROR]");
+    RESULT_STRINGS.put(Manager.RESULT_IGNORED, "[IGNORED]");
+  }
 
-  private String currentProtocol;
-  private String loggedFailures;
+  private List<String> currentProtocol = new ArrayList<>();
+  private List<String> loggedFailures = new ArrayList<>();
   private String currentFile;
   private String currentSuite;
 
   final boolean printDetails = false;
 
-  public LogObserver(final Manager manager) {
-    super(manager);
+  public LogObserver() {
   }
 
-  public void process(final String message, final Properties args) {
+  @Override
+  public void init(final Manager manager) {
+    super.init(manager);
+
+    addCall("start", this);
+    addCall("testProgress", this);
+    addCall("testFile", this);
+    addCall("protocol", this);
+    addCall("testSuite", this);
+    addCall("testResult", this);
+    addCall("finish", this);
+  }
+
+  @Override
+  public void process(final String message, final KeyVals args) {
     switch (message) {
       case "start":
         start();
@@ -66,125 +86,118 @@ public class LogObserver extends BaseResultsObserver {
     }
   }
 
-  public void updateCalls () {
-    super.updateCalls();
-    addCall("start", this);
-    addCall("testProgress", this);
-    addCall("testFile", this);
-    addCall("protocol", this);
-    addCall("testSuite", this);
-    addCall("testResult", this);
-    addCall("finish", this);
+  public void start () {
+    manager().logit("Starting tests");
+    /*
+    if manager().randomSeed != null:
+    manager().logit("Randomizing order using seed '{rs}'"
+                            .format(rs = manager().randomSeed))
+     */
+  }
+    
+  public void testProgress(final KeyVals args) {
+    manager().logit("");
+    manager().logit(format("File %s of %s", args.getOnlyInt("count"),
+                           args.getOnlyInt("total")));
+  }
+    
+  public void testFile(final KeyVals args) {
+    currentFile = args.getOnlyString("name").replace("/", ".");
+    manager().logit("");
+    logResult(currentFile, args);
+    var res = args.getOnlyInt("result");
+    if ((res == Manager.RESULT_FAILED) ||
+            (res == Manager.RESULT_ERROR)) {
+      var failtxt = format("%s\n%s\n\n%s",
+                           RESULT_STRINGS.get(res),
+                           args.getOnlyString("details"),
+                           currentFile);
+      loggedFailures.add(failtxt);
+    }
+  }
+    
+  public void testSuite(final KeyVals args) {
+    currentSuite = args.getOnlyString("name");
+    var resultName = "  Suite: " + args.getOnlyString("name");
+    logResult(resultName, args);
+    var res = args.getOnlyInt("result");
+    if ((res == Manager.RESULT_FAILED) ||
+            (res == Manager.RESULT_ERROR)) {
+      var failtxt = format("%s\n%s\n\n%s/%s",
+                           RESULT_STRINGS.get(res),
+                           args.getOnlyString("details"),
+                           currentFile,
+                           currentSuite);
+      loggedFailures.add(failtxt);
+    }
+  }
+    
+  public void testResult(final KeyVals args) {
+    var result_name = "    Test: " + args.getOnlyString("name");
+    logResult(result_name, args);
+
+    var res = args.getOnlyInt("result");
+    if ((res == Manager.RESULT_FAILED) ||
+            (res == Manager.RESULT_ERROR)) {
+      var failtxt = format("%s\n%s\n\n%s/%s/%s",
+                           RESULT_STRINGS.get(res),
+                           args.getOnlyString("details"),
+                           currentFile,
+                           currentSuite,
+                           args.getOnlyString("name"));
+      loggedFailures.add(failtxt);
+    }
+
+    if (currentProtocol != null) {
+      manager().logit("\n" + currentProtocol);
+      currentProtocol.clear();
+    }
   }
 
-    public void start () {
-      manager().logit("Starting tests")
-      if manager().randomSeed != null:
-      manager().logit("Randomizing order using seed '{rs}'"
-                            .format(rs = manager().randomSeed))
-    }
-    
-    public void testProgress(final Properties args) {
-      manager().logit("")
-      manager().logit("File {count} of {total}".format( * * result))
-    }
-    
-    public void testFile(final Properties args) {
-        currentFile = result["name"].replace("/", ".")[:-4]
-        manager().logit("")
-        _logResult(currentFile, result)
-        if (result["result"] in (manager().RESULT_FAILED, manager().RESULT_ERROR) {
-        failtxt = "{result}\n{details}\n\n{file}".format(
-                result = RESULT_STRINGS[result["result"]],
-                details = result["details"],
-                file = currentFile,
-                );
-        loggedFailures.append(failtxt);
-      }
-    }
-    
-    public void testSuite(final Properties args) {
-        currentSuite = result["name"]
-        result_name = "  Suite: " + result["name"]
-        _logResult(result_name, result)
-        if (result["result"] in (manager().RESULT_FAILED, manager().RESULT_ERROR) {
-        failtxt = "{result}\n{details}\n\n{file}/{suite}".format(
-                result = RESULT_STRINGS[result["result"]],
-                details = result["details"],
-                file = currentFile,
-                suite = currentSuite,
-                );
-        loggedFailures.append(failtxt);
-      }
-    }
-    
-    public void testResult(final Properties args) {
-      result_name = "    Test: " + result["name"]
-      _logResult(result_name, result)
-      if ())result["result"]
-      in(manager().RESULT_FAILED, manager().RESULT_ERROR)
-      {
-        failtxt = "{result}\n{details}\n\n{file}/{suite}/{test}"
-                .format(
-                        result = RESULT_STRINGS[result["result"]],
-                        details = result["details"],
-                        file = currentFile,
-                        suite = currentSuite,
-                        test = result["name"],
-                        )
-        loggedFailures.append(failtxt)
-      }
-
-        if (currentProtocol != null) {
-          manager().logit("\n".join(currentProtocol))
-          currentProtocol = []
-        }
+  public void logResult(final String name, final KeyVals args) {
+    if (args.containsKey("result")) {
+      var res = args.getOnlyInt("result");
+      var resultValue = RESULT_STRINGS.get(res);
+      manager().logit(format("%60s%10s", name, resultValue));
+    } else {
+      manager().logit(format("%s", name));
     }
 
-    public void logResult(name, final Properties args) {
-      if (result["result"] != null){
-        result_value = RESULT_STRINGS[result["result"]]
-        manager().logit("{name:<60}{value:>10}".format(name = name,
-                                                     value = result_value))
-      } else{
-        manager().logit("{name:<60}".format(name = name))
-      }
-      if (print_details && result[ "details"]){
-        manager().logit(result["details"])
-      }
+    if (printDetails && (args.getOnlyString("details") != null)) {
+      manager().logit(args.getOnlyString("details"));
     }
+  }
 
-    public void protocol(final Properties args) {
-      currentProtocol.append(result)
-    }
+  public void protocol(final KeyVals args) {
+    currentProtocol.add(args.getOnlyString("result"));
+  }
     
-    public void finish () {
-        manager().logit("")
-        if manager().totals[Manager.RESULT_FAILED] + manager().totals[Manager.RESULT_ERROR] != 0:
-            for (failed: loggedFailures) {
-              manager().logit("=" * 70)
-              manager().logit(failed)
-            }
+  public void finish () {
+    manager().logit("");
+    String overall;
+
+    if (manager().totals[Manager.RESULT_FAILED] +
+            manager().totals[Manager.RESULT_ERROR] != 0) {
+      for (var failed: loggedFailures) {
+        manager().logit("-".repeat(70));
+        manager().logit(failed);
+      }
             
-            overall = "FAILED (ok={o}, ignored={i}, failed={f}, errors={e})".format(
-                o=manager().totals[Manager.RESULT_OK],
-                i=manager().totals[Manager.RESULT_IGNORED],
-                f=manager().totals[Manager.RESULT_FAILED],
-                e=manager().totals[Manager.RESULT_ERROR],
-            );
-        } else
+      overall = format("FAILED (ok=%s, ignored=%s, failed=%s, errors=%s)",
+                       manager().totals[Manager.RESULT_OK],
+                       manager().totals[Manager.RESULT_IGNORED],
+                       manager().totals[Manager.RESULT_FAILED],
+                       manager().totals[Manager.RESULT_ERROR]);
+    } else {
+      overall = format("PASSED (ok=%s, ignored=%s)",
+                       manager().totals[Manager.RESULT_OK],
+                       manager().totals[Manager.RESULT_IGNORED]);
+      manager().logit("-".repeat(70));
+      manager().logit(format("Ran %s tests in %.3f\n",
+                      IntStream.of(manager().totals).sum(),
+                      manager().totalTime));
+    }
 
-  {
-    overall = "PASSED (ok={o}, ignored={i})".format(
-            o = manager().totals[Manager.RESULT_OK],
-            i = manager().totals[Manager.RESULT_IGNORED],
-            );
-    manager().logit("-" * 70);
-    manager().logit("Ran {total} tests in {time:.3f}s\n".format(
-            total = sum(manager().totals.values()),
-            time = manager().timeDiff,
-            ));
-
-    manager().logit(overall)
+    manager().logit(overall);
   }
 }
