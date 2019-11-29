@@ -31,6 +31,7 @@
 
 		<!-- Third Party Library Versions -->
     <commons-lang3.version>3.3.2</commons-lang3.version>
+    <diff-utils.version>4.5</diff-utils.version>
     <http-client.version>4.5.3</http-client.version>
     <http-core.version>4.4.8</http-core.version>
 
@@ -164,6 +165,12 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
       <version>${http-core.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.java-diff-utils</groupId>
+      <artifactId>java-diff-utils</artifactId>
+      <version>${diff-utils.version}</version>
     </dependency>
 
 		<dependency>

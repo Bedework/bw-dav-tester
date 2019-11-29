@@ -153,20 +153,24 @@ public class Utils {
   }
 
   public static String fileToString(final String fileName) {
-    final File f = new File(fileName);
+    return fileToString(new File(fileName));
+  }
 
-    if (!f.exists()) {
-      throwException("File " + fileName + " does not exist");
-      return null;// fake
-    }
+  public static String fileToString(final File f) {
+    try {
+      if (!f.exists()) {
+        throwException("File " + f.getCanonicalPath() + " does not exist");
+        return null;// fake
+      }
 
-    if (!f.isFile()) {
-      throwException("" + fileName + " is not a file");
-      return null;// fake
-    }
+      if (!f.isFile()) {
+        throwException("" + f.getCanonicalPath() + " is not a file");
+        return null;// fake
+      }
 
-    try (FileInputStream fis = new FileInputStream(f)) {
-      return Util.streamToString(fis);
+      try (FileInputStream fis = new FileInputStream(f)) {
+        return Util.streamToString(fis);
+      }
     } catch (final Throwable t) {
       throwException(t);
       return null;// fake

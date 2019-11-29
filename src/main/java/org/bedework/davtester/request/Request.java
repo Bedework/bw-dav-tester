@@ -3,9 +3,9 @@ package org.bedework.davtester.request;
 import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
+import org.bedework.davtester.Result;
 import org.bedework.davtester.Serverinfo.KeyVal;
 import org.bedework.davtester.XmlDefs;
-import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 import org.bedework.util.misc.Util;
 
@@ -16,7 +16,9 @@ import org.w3c.dom.Element;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -222,7 +224,7 @@ public class Request extends DavTesterBase {
       if (!uri.contains("?") || (uri.indexOf("?") > uri.indexOf("**"))) {
         uri = uri.replace("**", UUID.randomUUID().toString());
       }
-    } else (if (uri.contains("##")) {
+    } else if (uri.contains("##")) {
       if (!uri.contains("?") || uri.indexOf("?") > uri.indexOf("##")) {
         uri = uri.replace("##", String.valueOf(count));
       }
@@ -237,12 +239,12 @@ public class Request extends DavTesterBase {
 
     for (var hdr: headers) {
       res.add(new BasicHeader(hdr.getName(),
-                              si.extrasubs(hdr.getValue()));
+                              si.extrasubs(hdr.getValue())));
     }
 
     // Content type
     if (data != null) {
-      res.add(new BasicHeader("Content-Type", data.contentType);
+      res.add(new BasicHeader("Content-Type", data.contentType));
     }
 
     return res;
@@ -294,7 +296,7 @@ public class Request extends DavTesterBase {
     dataStr = String.valueOf(manager.serverInfo.subs(dataStr));
     manager.serverInfo.addextrasubs(new KeyVals("$request_count:",
                                                 String.valueOf(count)));
-    dataStr = manager.serverInfo.extrasubs(dataStr)
+    dataStr = manager.serverInfo.extrasubs(dataStr);
 
     if (!data.substitutions.isEmpty()) {
       dataStr = manager.serverInfo.subs(dataStr, data.substitutions);
@@ -304,48 +306,72 @@ public class Request extends DavTesterBase {
       if (data.contentType.startsWith("text/calendar")) {
         dataStr = generateCalendarData(dataStr);
       }
-    } else if (data.generator != null) {
-      dataStr = data.generator.doGenerate();
+    //} else if (data.generator != null) {
+      //dataStr = data.generator.doGenerate();
     }
 
     return dataStr;
   }
 
+  private static LinkedList<String> dataList;
+
   public boolean getNextData() {
-    if (dataList == null) {
-      dataList = sorted([path for path in
-      if (!path.startsWith(".")) {
-        os.listdir(getFilePath());
-      }
+    if (!getDataList().ok) {
+      //data.nextPath == null;
+      return false;
     }
 
-    if (!Util.isEmpty(dataList)) {
-      data.nextpath = os.path.join(getFilePath(), dataList.pop(0));
-      return true;
-    }
+    data.nextpath = dataList.pop();
+    return true;
 
-    data.nextpath == null;
-    data.dataList == null;
-
-    return false;
+    //data.dataList == null;
   }
 
   public boolean hasNextData() {
-    dataList = sorted([path for path in
-    os.listdir(getFilePath()) if not path.
-    startsWith(".")]);
-    return len(dataList) != 0;
+    return getDataList().ok;
+  }
 
-    File folder = new File("your/path");
-    File[] listOfFiles = folder.listFiles();
-
-    for (int i = 0; i < listOfFiles.length; i++) {
-      if (listOfFiles[i].isFile()) {
-        System.out.println("File " + listOfFiles[i].getName());
-      } else if (listOfFiles[i].isDirectory()) {
-        System.out.println("Directory " + listOfFiles[i].getName());
+  private Result getDataList() {
+    if (dataList != null) {
+      if (dataList.size() > 0) {
+        return Result.fail("No files in list for " + getFilePath());
       }
+
+      return Result.ok();
     }
+
+    dataList = new LinkedList<>();
+    File folder = new File(getFilePath());
+    if (!folder.isDirectory()) {
+      return Result.fail("Not a directory: " + getFilePath());
+    }
+
+    var fl = folder.listFiles();
+    if (fl == null) {
+      return Result.fail("No files in list for " + getFilePath());
+    }
+    Arrays.sort(fl);
+
+    dataList.clear();
+
+    for (File f: fl) {
+      if (!f.isFile()) {
+        continue;
+      }
+
+      var nm = f.getName();
+      if (nm.startsWith(".") || nm.endsWith("~")) {
+        continue;
+      }
+
+      dataList.add(f.getAbsolutePath());
+    }
+
+    if (dataList.size() > 0) {
+      return Result.fail("No files in list for " + getFilePath());
+    }
+
+    return Result.ok();
   }
 
   public String generateCalendarData(final String dataVal) {

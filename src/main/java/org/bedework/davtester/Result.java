@@ -7,10 +7,10 @@ package org.bedework.davtester;
  * User: mike Date: 11/26/19 Time: 12:22
  */
 public class Result<T> {
-  boolean ok = true;
-  String message;
+  public boolean ok = true;
+  public String message;
 
-  T val;
+  public T val;
 
   public Result() {
   }

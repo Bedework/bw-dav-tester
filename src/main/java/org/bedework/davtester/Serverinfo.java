@@ -75,7 +75,7 @@ public class Serverinfo {
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
   final KeyVals extrasubsKvs = new KeyVals();
-  List<String> calendardatafilters = new ArrayList<>();
+  public List<String> calendardatafilters = new ArrayList<>();
   List<String> addressdatafilters = new ArrayList<>();
   Date dtnow = new Date();
 

@@ -20,12 +20,12 @@ import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.davtester.verifiers.DataString;
+import org.bedework.davtester.verifiers.IcalendarDataMatch;
 import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 
 import org.apache.http.Header;
-import org.apache.http.HttpResponse;
 import org.w3c.dom.Element;
 
 import java.net.URI;
@@ -51,6 +51,7 @@ public class Verify extends DavTesterBase {
   private static final Map<String, Verifier> verifiers = new HashMap<>();
 
   static {
+    addVerifier("calendarDataMatch", new IcalendarDataMatch());
     addVerifier("dataString", new DataString());
     addVerifier("statusCode", new StatusCode());
   }

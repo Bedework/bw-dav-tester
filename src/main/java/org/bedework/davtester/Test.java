@@ -16,6 +16,7 @@
 package org.bedework.davtester;
 
 import org.bedework.davtester.request.Request;
+import org.bedework.util.misc.ToString;
 
 import org.w3c.dom.Element;
 
@@ -76,10 +77,10 @@ class Test extends DavTesterBase {
   }
 
   @Override
-  public void dump() {
-    super.dump();
-    for (var req: requests) {
-      req.dump();
-    }
+  public void toStringSegment(final ToString ts) {
+    super.toStringSegment(ts);
+    //for (var req: requests) {
+    //  req.dump();
+    //}
   }
 }

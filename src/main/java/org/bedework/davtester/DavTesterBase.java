@@ -15,6 +15,8 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.misc.ToString;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -91,8 +93,8 @@ public abstract class DavTesterBase {
     System.out.println(msg);
   }
 
-  public void dump() {
-    print("\n" + getKind() + ": " + name);
-    print("    description: " + description);
+  public void toStringSegment(final ToString ts) {
+    ts.append(getKind(), name);
+    ts.append("description", description);
   }
 }

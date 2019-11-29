@@ -34,7 +34,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 public class Data extends DavTesterBase {
   String contentType;
   String filepath;
-  Generator generator;
+  //Generator generator;
   String value;
   KeyVals substitutions = new KeyVals();
   boolean substitute;
@@ -46,16 +46,18 @@ public class Data extends DavTesterBase {
     super(manager);
   }
 
-  public void parseXML(final Element node) {
+  @Override
+  public String getKind() {
+    return "REQUEST.DATA";
+  }
 
-    substitute =
-            getYesNoAttributeValue(node,
-                                   XmlDefs.ATTR_SUBSTITUTIONS,
-                                   true);
-    generate =
-            getYesNoAttributeValue(node,
-                                   XmlDefs.ATTR_GENERATE,
-                                   false);
+  public void parseXML(final Element node) {
+    substitute = getYesNoAttributeValue(node,
+                                        XmlDefs.ATTR_SUBSTITUTIONS,
+                                        true);
+    generate = getYesNoAttributeValue(node,
+                                      XmlDefs.ATTR_GENERATE,
+                                      false);
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_CONTENTTYPE)) {

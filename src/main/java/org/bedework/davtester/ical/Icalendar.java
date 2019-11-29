@@ -13,15 +13,18 @@ import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
+import net.fortuna.ical4j.util.Strings;
 import net.fortuna.ical4j.validate.ValidationException;
 
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.bedework.davtester.Utils.throwException;
 
-/** Wrapper around ical4j representations
+/** Wrapper around ical4j representations.
  * User: mike Date: 11/27/19 Time: 00:10
  */
 public class Icalendar extends Component {
@@ -80,6 +83,10 @@ public class Icalendar extends Component {
 
   private Calendar cal;
 
+  private Icalendar() {
+    super("Icalendar");
+  }
+
   public static Icalendar parseText(final String val) {
     CalendarBuilder bldr =
             new CalendarBuilder(new CalendarParserImpl(),
@@ -108,6 +115,10 @@ public class Icalendar extends Component {
     }
 
     return res;
+  }
+
+  public List<String> toLines() {
+    return Arrays.asList(cal.toString().split(Strings.LINE_SEPARATOR));
   }
 
   @Override

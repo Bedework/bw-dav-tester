@@ -77,7 +77,7 @@ public class Manager implements Logged {
 
   public Serverinfo serverInfo = new Serverinfo();
   private String baseDir = "";
-  private String dataDir;
+  public String dataDir;
   private Path dataDirPath;
   Path pretestFile;
   private Caldavtest pretest;

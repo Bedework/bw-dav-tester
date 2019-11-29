@@ -36,6 +36,10 @@ public class KeyVals extends HashMap<String, List<Object>> {
     super();
   }
 
+  public KeyVals(final Map<String, List<Object>> val) {
+    super(val);
+  }
+
   public KeyVals(final String key, final Object val) {
     super();
 

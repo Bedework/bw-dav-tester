@@ -16,12 +16,15 @@
 package org.bedework.davtester;
 
 import org.bedework.davtester.Serverinfo.KeyVal;
+import org.bedework.util.misc.ToString;
 
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
@@ -40,7 +43,12 @@ class Testsuite extends DavTesterBase {
     super(manager);
   }
 
-    public List<KeyVal> aboutToRun () {
+  @Override
+  public String getKind() {
+    return "Testsuite";
+  }
+
+  public List<KeyVal> aboutToRun() {
         /*
         Typically we need the calendar/contact data for a test file to have a common set
         of UIDs, and for each overall test file to have unique UIDs. Occasionally, within
@@ -48,39 +56,46 @@ class Testsuite extends DavTesterBase {
         can be used to reset the active UIDs for a test suite.
         */
 
-      if (changeuid) {
-        return manager.serverInfo.newUIDs();
-      }
-
-      return new ArrayList<>();
+    if (changeuid) {
+      return manager.serverInfo.newUIDs();
     }
 
-    public void parseXML(final Element node) {
+    return new ArrayList<>();
+  }
+
+  public void parseXML(final Element node) {
+    try {
       name = getAttrVal(node, XmlDefs.ATTR_NAME);
-      ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
-      only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
-      changeuid = getYesNoAttributeValue(node,
-                                         XmlDefs.ATTR_CHANGE_UID);
-
-      for (var child : children(node)) {
-        if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-          parseFeatures(child, true);
-        } else if (nodeMatches(child,
-                               XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-          parseFeatures(child, false)
-        } else if (nodeMatches(child, XmlDefs.ELEMENT_TEST)) {
-          t = new Test(manager);
-          t.parseXML(child);
-          tests.append(t);
-        }
-      }
+    } catch (SAXException e) {
+      throwException(e);
     }
+    ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
+    only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
+    changeuid = getYesNoAttributeValue(node,
+                                       XmlDefs.ATTR_CHANGE_UID);
 
-  public void dump () {
-    print "\nTest Suite:"
-    print "    name: %s" % name
-    for (test:
-         tests) {
-      test.dump();
+    for (var child : children(node)) {
+      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
+        parseFeatures(child, true);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
+        parseFeatures(child, false);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_TEST)) {
+        var t = new Test(manager);
+        t.parseXML(child);
+        tests.add(t);
+      }
     }
   }
+
+  public String toString() {
+    var ts = new ToString(this);
+
+    ts.append("name", name);
+    for (var test : tests) {
+      test.toStringSegment(ts);
+    }
+
+    return ts.toString();
+  }
+}
