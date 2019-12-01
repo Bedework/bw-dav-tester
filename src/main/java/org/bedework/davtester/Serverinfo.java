@@ -312,7 +312,6 @@ public class Serverinfo {
                                   subsKvs));
     }
 
-    System.out.println("====================================" + subsKvs.get("$userid1:"));
     // Now cache some useful substitutions
     String user = "$userid1:";
     if (subsKvs.containsKey("$userid1:")) {
