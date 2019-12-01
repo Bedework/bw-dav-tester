@@ -38,6 +38,8 @@ import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -886,7 +888,6 @@ class Caldavtest extends DavTesterBase {
     }
 
     // Handle special methods
-    String method = null;
     String ruri = null;
 
     String methodPar = null;
@@ -896,7 +897,9 @@ class Caldavtest extends DavTesterBase {
       methodPar = split[1];
     }
 
-    switch (split[0]) {
+    String method = split[0];
+
+    switch (method) {
       case "DELETEALL":
         for (var requri: req.ruris) {
           var hrefs = doFindall(req,
@@ -1004,14 +1007,11 @@ class Caldavtest extends DavTesterBase {
         }
 
         return DoRequestResult.ok();
-
-      default:
-        return DoRequestResult.fail("Unknown method " + req.method);
     }
 
     final DoRequestResult drr = new DoRequestResult();
 
-    ruri = req.getURI(ruri);
+    ruri = req.getURI();
     if (ruri.equals("$")) {
       ruri = grabbedLocation;
     }
@@ -1074,7 +1074,17 @@ class Caldavtest extends DavTesterBase {
                                      Utils.encodeUtf8(label)));
     }
 
-    try (CloseableHttpResponse resp = manager.getHttpClient().execute(meth)) {
+    String requesttxt = null;
+    if (req.printRequest ) {
+      requesttxt = "\n-------BEGIN:REQUEST-------\n" +
+              data +
+              "\n--------END:REQUEST--------\n";
+      manager.protocol(requesttxt);
+    }
+
+    try (CloseableHttpResponse resp =
+                 manager.getHttpClient(req.user,
+                                       req.pswd).execute(meth)) {
       final HttpEntity ent = resp.getEntity();
 
       if (ent != null) {
@@ -1083,8 +1093,7 @@ class Caldavtest extends DavTesterBase {
         if (in != null) {
           drr.responseData = readContent(in, ent.getContentLength(),
                                          ContentType.getOrDefault(ent)
-                                                    .getCharset()
-                                                    .toString());
+                                                    .getCharset());
         }
       }
 
@@ -1113,12 +1122,9 @@ class Caldavtest extends DavTesterBase {
       }
     }
 
-    if (req.printRequest ||
+    if (!req.printRequest &&
             (manager.printRequestResponseOnError &&
                      (!drr.ok && !req.waitForSuccess))) {
-      var requesttxt = "\n-------BEGIN:REQUEST-------\n" +
-              data +
-              "\n--------END:REQUEST--------\n";
       manager.protocol(requesttxt);
     }
 
@@ -1509,9 +1515,16 @@ class Caldavtest extends DavTesterBase {
   }
 
   String readContent(final InputStream in, final long expectedLen,
-                     final String charset) throws Throwable {
+                     final Charset characterSet) throws Throwable {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     int len = 0;
+    String charset;
+
+    if (characterSet == null) {
+      charset = StandardCharsets.UTF_8.toString();
+    } else {
+      charset = characterSet.toString();
+    }
 
     //if (logger.debug()) {
     //  System.out.println("Read content - expected=" + expectedLen);

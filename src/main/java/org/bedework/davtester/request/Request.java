@@ -217,11 +217,7 @@ public class Request extends DavTesterBase {
   }
 
   public String getURI() {
-    return getURI(ruri);
-  }
-
-  public String getURI(final String val) {
-    var uri = manager.serverInfo.extrasubs(val);
+    var uri = manager.serverInfo.extrasubs(ruri);
     if (uri.contains("**")) {
       if (!uri.contains("?") || (uri.indexOf("?") > uri.indexOf("**"))) {
         uri = uri.replace("**", UUID.randomUUID().toString());

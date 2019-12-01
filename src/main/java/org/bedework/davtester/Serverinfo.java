@@ -428,7 +428,7 @@ public class Serverinfo {
       }
 
       final String pval =
-              props.getOnlyString(val.substring(pos + 1, end).trim());
+              props.getOnlyString(val.substring(pos, end + 1).trim());
 
       if (pval != null) {
         sb.append(pval);

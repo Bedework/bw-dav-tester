@@ -30,16 +30,18 @@ import java.util.TreeSet;
 public class Testcaldav {
 
   public static void main(final String[] args) {
-    var sname = "scripts/server/serverinfo.xml";
-    var dname = "scripts/tests";
-    var dtdname = "scripts/dtds";
+    var base = "src/main/resources/";
+    var sname = base + "scripts/server/serverinfo.xml";
+    var dname = base + "scripts/tests";
+    var dtdname = base + "scripts/dtds";
+    var resname = base;
     var fnames = new ArrayList<String>();
     var ssl = false;
     var all = false;
     var excludes = new TreeSet<String>();
     String subdir = null;
     String baseDir = null;
-    var pidfile = "../CalendarServer/logs/caldavd.pid";
+    var pidfile = "target/CalendarServer/logs/caldavd.pid";
     var randomOrder = false;
     //var random_seed = String.valueOf(new Random.randint(0, 1000000));
     var observerNames = new ArrayList<String>();
@@ -95,6 +97,11 @@ public class Testcaldav {
 
         if (pargs.ifMatch("-x")) {
           dname = pargs.next();
+          continue;
+        }
+
+        if (pargs.ifMatch("-res")) {
+          resname = pargs.next();
           continue;
         }
 
@@ -210,6 +217,7 @@ public class Testcaldav {
       }
 
       manager.setTestsDir(dname);
+      manager.setResDir(resname);
 
       if (all) {
         File f = new File(dname);

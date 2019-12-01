@@ -84,6 +84,9 @@ public class Manager implements Logged {
   private String testsDir;
   private Path testsDirPath;
 
+  private String resDir;
+  public Path resDirPath;
+
   Path pretestFile;
   private Caldavtest pretest;
   Path posttestFile;
@@ -163,28 +166,21 @@ public class Manager implements Logged {
     this.textMode = textMode;
   }
 
-  public CloseableHttpClient getHttpClient() {
-    // Need credentials provider?
-    if (httpClient != null) {
-      return httpClient;
+  public CloseableHttpClient getHttpClient(final String user,
+                                           final String pw) {
+    if (httpClient == null) {
+      final HttpClientBuilder clb = HttpClients.custom();
+      clb.setDefaultCredentialsProvider(credsProvider);
+      httpClient = clb.build();
     }
 
-    final HttpClientBuilder clb = HttpClients.custom();
-
-    credsProvider.setCredentials(
-            new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
-            new UsernamePasswordCredentials(null,
-                                            null));
-
-    httpClient = clb.build();
+    if (user != null) {
+      credsProvider.setCredentials(
+              new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+              new UsernamePasswordCredentials(user,
+                                              pw));
+    }
     return httpClient;
-  }
-
-  public void setCredentials(final String user, final String pw) {
-    credsProvider.setCredentials(
-            new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
-            new UsernamePasswordCredentials(user,
-                                            pw));
   }
 
   public void setPretest(final String path) {
@@ -222,6 +218,11 @@ public class Manager implements Logged {
   public void setTestsDir(final String path) {
     testsDir = path;
     testsDirPath = Paths.get(path);
+  }
+
+  public void setResDir(final String path) {
+    resDir = path;
+    resDirPath = Paths.get(path);
   }
 
   public Path normTestsPath(final String path) {
