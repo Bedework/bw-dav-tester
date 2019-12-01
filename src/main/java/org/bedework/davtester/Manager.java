@@ -256,8 +256,11 @@ public class Manager implements Logged {
                    final int current,
                    final int total) {
     final var kvs = new KeyVals("total", total);
-    kvs.put("name", file.toString());
+    if (file != null) {
+      kvs.put("name", file.toString());
+    }
     kvs.put("current", current);
+    kvs.put("total", total);
 
     message("load", kvs);
   }
@@ -329,8 +332,7 @@ public class Manager implements Logged {
   public void readXML(final String serverfile,
                       final List<Path> testfiles,
                       final boolean ssl,
-                      final boolean all,
-                      final KeyVals moresubs) {
+                      final boolean all) {
     trace(format("Reading Server Info from \"%s\"",
                  serverfile));
 
@@ -340,7 +342,7 @@ public class Manager implements Logged {
       doc = XmlUtils.parseXml(serverfile);
     } catch (final Throwable t) {
       error(format("Unable to parse file '%s' because: %s",
-                   serverfile));
+                   serverfile, t.getMessage()));
 
       throwException(t);
     }
@@ -369,6 +371,7 @@ public class Manager implements Logged {
 //                .join(base_dir, serverInfo.certdir)
     }
 
+    final KeyVals moresubs = new KeyVals();
     moresubs.put("$host:", format("%s://%s", serverInfo.getScheme(), serverInfo.host));
     //HOST2 moresubs.put("$host2:", format("https://%s", serverInfo.host2));
 

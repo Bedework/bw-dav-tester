@@ -23,13 +23,18 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +55,8 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  XML processing utilities.
  */
 public class XmlUtils {
+  public static Path dtdPath;
+
   public static Document parseXml(final String fileName) {
     try {
       final File f = new File(fileName);
@@ -82,6 +89,30 @@ public class XmlUtils {
       factory.setNamespaceAware(true);
 
       final DocumentBuilder builder = factory.newDocumentBuilder();
+
+      builder.setEntityResolver(new EntityResolver() {
+        @Override
+        public InputSource resolveEntity(final String publicId,
+                                         final String systemId)
+                throws SAXException, IOException {
+          Path s = Paths.get(systemId);
+          final String sname = s.getFileName().toString();
+          if (sname.equals("serverinfo.dtd") || sname.equals("caldavtest.dtd")) {
+            // One of ours
+            return new InputSource(dtdPath.resolve(sname).toAbsolutePath().toString());
+          }
+          // If no match, returning null makes process continue normally
+          return null;
+        }
+      });
+/*
+public class CopyrightResolver implements EntityResolver {
+    public InputSource resolveEntity(String publicID, String systemID)
+        throws SAXException {
+    }
+ */
+
+
 
       return builder.parse(new InputSource(is));
     } catch (final Throwable t) {
@@ -147,7 +178,8 @@ public class XmlUtils {
       if (str == null) {
         return null;
       }
-      return StandardCharsets.UTF_8.encode(str).toString();
+
+      return Utils.encodeUtf8(str);
     } catch (final Throwable t) {
       throwException(t);
       return null; // fake
@@ -171,7 +203,7 @@ public class XmlUtils {
       if (str == null) {
         return null;
       }
-      return StandardCharsets.UTF_8.encode(str).toString();
+      return Utils.encodeUtf8(str);
     } catch (final Throwable t) {
       throwException(t);
       return null; // fake

@@ -19,7 +19,6 @@ import org.bedework.util.misc.Util;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -47,7 +46,8 @@ public class Utils {
   }
 
   public static String encodeUtf8(final String val) {
-    return StandardCharsets.UTF_8.encode(val).toString();
+    return val;
+    //return new String(StandardCharsets.UTF_8.encode(val).array());
   }
 
   public static String upperFirst(String val) {

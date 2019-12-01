@@ -21,6 +21,7 @@ package org.bedework.davtester;
 //import uuid4;
 
 import org.bedework.davtester.Utils.DtParts;
+import org.bedework.util.misc.ToString;
 import org.bedework.util.xml.XmlUtil;
 
 import org.w3c.dom.Node;
@@ -245,21 +246,18 @@ public class Serverinfo {
 
   public void parseXML(final Node node) {
     for (var child: children(node)) {
-      var text = content(child);
-      var textUtf8 = contentUtf8(child);
-          
       if (nodeMatches(child, XmlDefs.ELEMENT_HOST)) {
         try {
-          host = textUtf8;
+          host = contentUtf8(child);
         } catch (final Throwable t){
           host = "localhost";
         }
       } else if (nodeMatches(child, XmlDefs.ELEMENT_NONSSLPORT)) {
-        nonsslport = Integer.parseInt(text);
+        nonsslport = Integer.parseInt(content(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_SSLPORT)) {
-        sslport = Integer.parseInt(text);
+        sslport = Integer.parseInt(content(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_UNIX)) {
-        afunix = text;
+        afunix = content(child);
         /*HOST2
       } else if (nodeMatches(child, XmlDefs.ELEMENT_HOST2)) {
         try {
@@ -275,27 +273,27 @@ public class Serverinfo {
         afunix2 = text;
          */
       } else if (nodeMatches(child, XmlDefs.ELEMENT_AUTHTYPE)) {
-        authtype = textUtf8;
+        authtype = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
-        certdir = textUtf8;
+        certdir = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
-        waitcount = Integer.parseInt(textUtf8);
+        waitcount = Integer.parseInt(contentUtf8(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
-        waitdelay = (long)(Float.parseFloat(textUtf8) * 1000);
+        waitdelay = (long)(Float.parseFloat(contentUtf8(child)) * 1000);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
-        waitsuccess = Integer.parseInt(text);
+        waitsuccess = Integer.parseInt(content(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
         parseFeatures(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
         parseSubstitutionsXML(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CALENDARDATAFILTER)) {
-        calendardatafilters.add(textUtf8);
+        calendardatafilters.add(contentUtf8(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_ADDRESSDATAFILTER)) {
-        addressdatafilters.add(textUtf8);
+        addressdatafilters.add(contentUtf8(child));
       }
-
-      updateParams();
     }
+
+    updateParams();
   }
 
   public void parseFeatures (final Node node) {
@@ -314,8 +312,9 @@ public class Serverinfo {
                                   subsKvs));
     }
 
+    System.out.println("====================================" + subsKvs.get("$userid1:"));
     // Now cache some useful substitutions
-    String user;
+    String user = "$userid1:";
     if (subsKvs.containsKey("$userid1:")) {
       user = "$userid1:";
     } else {
@@ -455,5 +454,33 @@ public class Serverinfo {
 
   public static int ival(final String val, final int start, final int end) {
     return Integer.parseInt(val.substring(start, end));
+  }
+
+  public String toString() {
+    final ToString ts = new ToString(this);
+
+     ts.append("host", host);
+     ts.append("port", port);
+     ts.append("afunix", afunix);
+
+    ts.append("nonsslport", nonsslport);
+    ts.append("sslport", sslport);
+    ts.append("authtype", authtype);
+    ts.append("certdir", certdir);
+
+    ts.append("ssl", ssl);
+
+    ts.append("features", features);
+    ts.append("user", user);
+    ts.append("pswd", pswd);
+    ts.append("waitcount", waitcount);
+    ts.append("waitdelay", waitdelay);
+    ts.append("waitsuccess", waitsuccess);
+    ts.append("subsKvs", subsKvs);
+    ts.append("extrasubsKvs", extrasubsKvs);
+    ts.append("calendardatafilters", calendardatafilters);
+    ts.append("addressdatafilters", addressdatafilters);
+
+    return ts.toString();
   }
 }

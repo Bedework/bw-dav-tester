@@ -38,7 +38,6 @@ import org.w3c.dom.Element;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1071,7 +1070,7 @@ class Caldavtest extends DavTesterBase {
 
     if (!hasUserAgent && (label != null)) {
       meth.addHeader(new BasicHeader("User-Agent",
-                                     StandardCharsets.UTF_8.encode(label).toString()));
+                                     Utils.encodeUtf8(label)));
     }
 
     try (CloseableHttpResponse resp = manager.getHttpClient().execute(meth)) {

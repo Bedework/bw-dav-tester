@@ -32,6 +32,7 @@ public class Testcaldav {
   public static void main(final String[] args) {
     var sname = "scripts/server/serverinfo.xml";
     var dname = "scripts/tests";
+    var dtdname = "scripts/dtds";
     var fnames = new ArrayList<String>();
     var ssl = false;
     var all = false;
@@ -94,6 +95,11 @@ public class Testcaldav {
 
         if (pargs.ifMatch("-x")) {
           dname = pargs.next();
+          continue;
+        }
+
+        if (pargs.ifMatch("-dtds")) {
+          dtdname = pargs.next();
           continue;
         }
 
@@ -182,7 +188,7 @@ public class Testcaldav {
         }
 
         if (pargs.isMinusArg()) {
-          //warn("Bad argument: " + pargs.current());
+          System.err.println("Bad argument: " + pargs.current());
           return;
         }
 
@@ -193,6 +199,14 @@ public class Testcaldav {
 
       if (sname == null) {
         excludes.add("serverinfo.xml");
+      }
+
+      if (dtdname != null) {
+        XmlUtils.dtdPath = Paths.get(dtdname);
+      } else if (baseDir != null) {
+        XmlUtils.dtdPath = Paths.get(baseDir, "dtds");
+      } else {
+        XmlUtils.dtdPath = Paths.get("scripts/dtds");
       }
 
       if (all) {
@@ -218,7 +232,7 @@ public class Testcaldav {
       // Load observers
       // DOTHIS map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
 
-      manager.readXML(sname, manager.normDataPaths(fnames), ssl, all, null);
+      manager.readXML(sname, manager.normDataPaths(fnames), ssl, all);
 
       /* MEMUSAGE
       if (manager.memUsage) {
@@ -227,6 +241,8 @@ public class Testcaldav {
         pid = int(s);
       }
        */
+
+      System.out.println(manager.serverInfo.toString());
 
       var result = manager.runAll();
 
