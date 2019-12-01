@@ -133,6 +133,7 @@ class Caldavtest extends DavTesterBase {
     this.name = testPath.getFileName().toString();
 
     doc = XmlUtils.parseXml(testPath.toString());
+    parseXML(doc.getDocumentElement());
   }
 
   public TestResult run() {

@@ -199,10 +199,12 @@ public class Request extends DavTesterBase {
 
   public Request(final Manager manager) {
     super(manager);
-    scheme = manager.serverInfo.getScheme();
-    host = manager.serverInfo.host;
-    port = manager.serverInfo.port;
-    afunix = manager.serverInfo.afunix;
+    if (manager != null) {
+      scheme = manager.serverInfo.getScheme();
+      host = manager.serverInfo.host;
+      port = manager.serverInfo.port;
+      afunix = manager.serverInfo.afunix;
+    }
   }
 
   @Override

@@ -353,19 +353,16 @@ public class Manager implements Logged {
                          final String details,
                          final Integer resultCode,
                          final KeyVals addons) {
-    final KeyVals resultDetails = new KeyVals();
-
-    resultDetails.put("name", name);
-    resultDetails.put("details", details);
-    resultDetails.put("result", resultCode);
+    testsuite.put("name", name);
+    testsuite.put("details", details);
+    testsuite.put("result", resultCode);
 
     if (addons != null) {
-      resultDetails.addAll(addons);
+      testsuite.addAll(addons);
     }
 
-    testsuite.addAll(resultDetails);
     totals[resultCode]++;
-    message("testResult", (KeyVals)testsuite.get("details"));
+    message("testResult", testsuite);
   }
 
   public void readXML(final String serverfile,
