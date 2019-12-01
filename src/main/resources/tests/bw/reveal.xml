@@ -1,0 +1,29 @@
+Insert this to reveal eventys.
+
+
+<test-suite name='reveal events in fb range'>
+  <test name='1'>
+    <description>time-range query with limit over same range</description>
+    <request>
+      <method>REPORT</method>
+      <ruri>$calendarpath1:/</ruri>
+      <header>
+        <name>Depth</name>
+        <value>1</value>
+      </header>
+      <data>
+        <content-type>text/xml; charset=utf-8</content-type>
+        <filepath>scripts/tests/bw/resource/1.xml</filepath>
+      </data>
+      <verify>
+        <callback>multistatusItems</callback>
+        <arg>
+          <name>okhrefs</name>
+          <value>5.ics</value>
+          <value>6.ics</value>
+          <value>7.ics</value>
+        </arg>
+      </verify>
+    </request>
+  </test>
+</test-suite>

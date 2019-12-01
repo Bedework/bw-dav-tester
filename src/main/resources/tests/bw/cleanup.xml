@@ -1,0 +1,100 @@
+<caldavtest>
+  <description>Clean up users</description>
+
+  <start>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarpath1:/</ruri>
+    </request>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$taskspath1:/</ruri>
+    </request>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$notificationpath1:/</ruri>
+    </request>
+    <request user="$userid2:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarpath2:/</ruri>
+    </request>
+    <request user="$userid2:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$taskspath1:/</ruri>
+    </request>
+    <request user="$userid2:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$notificationpath2:/</ruri>
+    </request>
+    <request user="$userid3:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarpath3:/</ruri>
+    </request>
+    <request user="$userid3:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$taskspath1:/</ruri>
+    </request>
+    <request user="$userid3:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$notificationpath3:/</ruri>
+    </request>
+  </start>
+
+  <test-suite name='Check cleaned'>
+    <test name='1'>
+      <description>query for resources with VCALENDAR &amp; VEVENT defined</description>
+      <request>
+        <method>REPORT</method>
+        <ruri>$calendarpath1:/</ruri>
+        <header>
+          <name>Depth</name>
+          <value>1</value>
+        </header>
+        <data>
+          <content-type>text/xml; charset=utf-8</content-type>
+          <filepath>Resource/CalDAV/reports/basicquery/1.txt</filepath>
+        </data>
+        <verify>
+          <callback>multistatusItems</callback>
+        </verify>
+      </request>
+    </test>
+    <test name='2'>
+      <description>query for resources with VCALENDAR &amp; VEVENT defined</description>
+      <request>
+        <method>REPORT</method>
+        <ruri>$calendarpath2:/</ruri>
+        <header>
+          <name>Depth</name>
+          <value>1</value>
+        </header>
+        <data>
+          <content-type>text/xml; charset=utf-8</content-type>
+          <filepath>Resource/CalDAV/reports/basicquery/1.txt</filepath>
+        </data>
+        <verify>
+          <callback>multistatusItems</callback>
+        </verify>
+      </request>
+    </test>
+    <test name='3'>
+      <description>query for resources with VCALENDAR &amp; VEVENT defined</description>
+      <request>
+        <method>REPORT</method>
+        <ruri>$calendarpath3:/</ruri>
+        <header>
+          <name>Depth</name>
+          <value>1</value>
+        </header>
+        <data>
+          <content-type>text/xml; charset=utf-8</content-type>
+          <filepath>Resource/CalDAV/reports/basicquery/1.txt</filepath>
+        </data>
+        <verify>
+          <callback>multistatusItems</callback>
+        </verify>
+      </request>
+    </test>
+  </test-suite>
+
+</caldavtest>

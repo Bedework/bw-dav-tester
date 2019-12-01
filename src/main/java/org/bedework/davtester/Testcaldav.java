@@ -209,6 +209,8 @@ public class Testcaldav {
         XmlUtils.dtdPath = Paths.get("scripts/dtds");
       }
 
+      manager.setTestsDir(dname);
+
       if (all) {
         File f = new File(dname);
         Path stDir = Paths.get(f.getAbsolutePath());
@@ -232,7 +234,7 @@ public class Testcaldav {
       // Load observers
       // DOTHIS map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
 
-      manager.readXML(sname, manager.normDataPaths(fnames), ssl, all);
+      manager.readXML(sname, manager.normTestsPaths(fnames), ssl, all);
 
       /* MEMUSAGE
       if (manager.memUsage) {

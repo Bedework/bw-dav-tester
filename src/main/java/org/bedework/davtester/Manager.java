@@ -80,6 +80,10 @@ public class Manager implements Logged {
   private String baseDir = "";
   public String dataDir;
   private Path dataDirPath;
+
+  private String testsDir;
+  private Path testsDirPath;
+
   Path pretestFile;
   private Caldavtest pretest;
   Path posttestFile;
@@ -197,11 +201,46 @@ public class Manager implements Logged {
   }
 
   public Path normDataPath(final String path) {
-    return dataDirPath.resolve(Paths.get(path));
+    var p = Paths.get(path);
+
+    Path np = null;
+    try {
+      np = dataDirPath.resolve(p);
+    } catch (final Throwable t) {
+      throwException("Unable to resolve path " + path +
+                             " against " + dataDirPath +
+                             " exception " + t);
+    }
+
+    return np;
   }
 
   public List<Path> normDataPaths(final List<String> path) {
     return path.stream().map(this::normDataPath).collect(Collectors.toList());
+  }
+
+  public void setTestsDir(final String path) {
+    testsDir = path;
+    testsDirPath = Paths.get(path);
+  }
+
+  public Path normTestsPath(final String path) {
+    var p = Paths.get(path);
+
+    Path np = null;
+    try {
+      np = testsDirPath.resolve(p);
+    } catch (final Throwable t) {
+      throwException("Unable to resolve path " + path +
+                             " against " + testsDirPath +
+                             " exception " + t);
+    }
+
+    return np;
+  }
+
+  public List<Path> normTestsPaths(final List<String> path) {
+    return path.stream().map(this::normTestsPath).collect(Collectors.toList());
   }
 
   public boolean featureSupported(final String feature) {
