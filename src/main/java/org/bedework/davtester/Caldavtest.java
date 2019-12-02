@@ -700,7 +700,7 @@ class Caldavtest extends DavTesterBase {
 
   public Result doWaitcount(final Request originalRequest,
                             final UriIdPw uip,
-                            final int count,
+                            final int hrefCount,
                             final String label) {
     var hrefs = new ArrayList<String>();
 
@@ -719,7 +719,7 @@ class Caldavtest extends DavTesterBase {
                              null, // stats
                              null, // etags
                              format("%s | %s %d", label,
-                                    "WAITCOUNT", count),
+                                    "WAITCOUNT", hrefCount),
                              1);
       hrefs.clear();
 
@@ -738,7 +738,7 @@ class Caldavtest extends DavTesterBase {
           }
         }
 
-        if (hrefs.size() == count) {
+        if (hrefs.size() == hrefCount) {
           return Result.ok();
         }
       }
@@ -766,7 +766,15 @@ class Caldavtest extends DavTesterBase {
       if (rd.startsWith("BEGIN:VCALENDAR")) {
         var uidpos = rd.indexOf("UID:");
         if (uidpos != -1) {
-          var uid = rd.substring(uidpos + 4, rd.indexOf("\r\n"));
+          var end = rd.indexOf("\r\n");
+          if (end < 0) {
+            end = rd.indexOf("\n");
+          }
+
+          if (end < 0) {
+            return Result.fail("No UID end found in\n" + rdata.toString());
+          }
+          var uid = rd.substring(uidpos + 4, end);
           test = uidmaps.computeIfAbsent(uid, s -> "unknown");
         }
       }
