@@ -28,9 +28,12 @@ import net.fortuna.ical4j.model.Property;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicHeader;
 import org.w3c.dom.Element;
@@ -100,11 +103,11 @@ class Caldavtest extends DavTesterBase {
 
       nreq.ruris.add(uri);
       nreq.ruri = uri;
-      if (req.user != null) {
-        nreq.user = req.user;
+      if (req.getUser() != null) {
+        nreq.setUser(req.getUser());
       }
-      if (req.pswd != null) {
-        nreq.pswd = req.pswd;
+      if (req.getPswd() != null) {
+        nreq.setPswd(req.getPswd());
       }
       nreq.cert = req.cert;
 
@@ -903,7 +906,7 @@ class Caldavtest extends DavTesterBase {
       case "DELETEALL":
         for (var requri: req.ruris) {
           var hrefs = doFindall(req,
-                                new UriIdPw(requri, req.user, req.pswd),
+                                new UriIdPw(requri, req.getUser(), req.getPswd()),
                                 format("%s | %s", label, "DELETEALL"));
           if (!hrefs.ok) {
             return DoRequestResult.fail(hrefs.message);
@@ -972,7 +975,7 @@ class Caldavtest extends DavTesterBase {
         var wcount = Integer.parseInt(methodPar);
         for (var wdruri: req.ruris) {
           var waitres = doWaitcount(req,
-                                    new UriIdPw(wdruri, req.user, req.pswd),
+                                    new UriIdPw(wdruri, req.getUser(), req.getPswd()),
                                     wcount,
                                     label);
           if (!waitres.ok) {
@@ -986,7 +989,7 @@ class Caldavtest extends DavTesterBase {
       case "WAITDELETEALL":
         for (var wdruri: req.ruris) {
           var waitres = doWaitcount(req,
-                                    new UriIdPw(wdruri, req.user, req.pswd),
+                                    new UriIdPw(wdruri, req.getUser(), req.getPswd()),
                                     Integer.parseInt(methodPar),
                                     label);
           if (!waitres.ok) {
@@ -996,7 +999,7 @@ class Caldavtest extends DavTesterBase {
           }
 
           var hrefs = doFindall(req,
-                                new UriIdPw(wdruri, req.user, req.pswd),
+                                new UriIdPw(wdruri, req.getUser(), req.getPswd()),
                                 format("%s | %s", label, "DELETEALL"));
           if (!hrefs.ok) {
             return DoRequestResult.fail(hrefs.message);
@@ -1031,7 +1034,7 @@ class Caldavtest extends DavTesterBase {
     // Special for GETCHANGED
     if (req.method.equals("GETCHANGED")) {
       if (!doWaitchanged(req,
-                         new UriIdPw(ruri, req.user, req.pswd),
+                         new UriIdPw(ruri, req.getUser(), req.getPswd()),
                          etags.get(ruri),
                          label)) {
         return DoRequestResult.fail("Resource did not change");
@@ -1039,7 +1042,9 @@ class Caldavtest extends DavTesterBase {
       method = "GET";
     }
 
-    stats.startTimer();
+    if (stats != null) {
+      stats.startTimer();
+    }
 
     final URI uri;
     try {
@@ -1074,6 +1079,10 @@ class Caldavtest extends DavTesterBase {
                                      Utils.encodeUtf8(label)));
     }
 
+    if (data != null) {
+      setContent(meth, data.getBytes(), req.getData().contentType);
+    }
+
     String requesttxt = null;
     if (req.printRequest ) {
       requesttxt = "\n-------BEGIN:REQUEST-------\n" +
@@ -1083,8 +1092,8 @@ class Caldavtest extends DavTesterBase {
     }
 
     try (CloseableHttpResponse resp =
-                 manager.getHttpClient(req.user,
-                                       req.pswd).execute(meth)) {
+                 manager.getHttpClient(req.getUser(),
+                                       req.getPswd()).execute(meth)) {
       final HttpEntity ent = resp.getEntity();
 
       if (ent != null) {
@@ -1106,8 +1115,10 @@ class Caldavtest extends DavTesterBase {
       throwException(t);
     }
 
-    // Stop request timer before verification
-    stats.endTimer();
+    if (stats != null) {
+      // Stop request timer before verification
+      stats.endTimer();
+    }
 
     if (doverify && (drr.responseData != null)) {
       var vres = req.verifyRequest(uri,
@@ -1298,6 +1309,31 @@ class Caldavtest extends DavTesterBase {
     }
 
     return drr;
+  }
+
+  /** Send content
+   *
+   * @param content the content as bytes
+   * @param contentType its type
+   * @throws HttpException if not entity enclosing request
+   */
+  private static void setContent(final HttpRequestBase req,
+                                final byte[] content,
+                                final String contentType) {
+    if (content == null) {
+      return;
+    }
+
+    if (!(req instanceof HttpEntityEnclosingRequestBase)) {
+      throwException("Invalid operation for method " +
+                             req.getMethod());
+    }
+
+    final HttpEntityEnclosingRequestBase eem = (HttpEntityEnclosingRequestBase)req;
+
+    final ByteArrayEntity entity = new ByteArrayEntity(content);
+    entity.setContentType(contentType);
+    eem.setEntity(entity);
   }
 
   public void parseXML (final Element node) {
@@ -1516,6 +1552,7 @@ class Caldavtest extends DavTesterBase {
 
   String readContent(final InputStream in, final long expectedLen,
                      final Charset characterSet) throws Throwable {
+    StringBuilder res = new StringBuilder();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     int len = 0;
     String charset;
@@ -1542,42 +1579,56 @@ class Caldavtest extends DavTesterBase {
       len++;
 
       if (ich == '\n') {
+        if (res.length() == 0) {
+          continue;
+        }
         if (hadLf) {
-          System.out.println("");
+          res.append('\n');
           hadLf = false;
           hadCr = false;
         } else {
           hadLf = true;
         }
-      } else if (ich == '\r') {
+        continue;
+      }
+
+      if (ich == '\r') {
         if (hadCr) {
-          System.out.println("");
+          res.append('\r');
           hadLf = false;
           hadCr = false;
         } else {
           hadCr = true;
         }
-      } else if (hadCr || hadLf) {
+        continue;
+      }
+
+      if (hadCr || hadLf) {
         hadLf = false;
         hadCr = false;
 
         if (baos.size() > 0) {
-          String ln = new String(baos.toByteArray(), charset);
-          System.out.println(ln);
+          res.append(new String(baos.toByteArray(), charset));
+          if (hadCr) {
+            res.append('\r');
+          } else {
+            res.append('\n');
+          }
         }
 
         baos.reset();
         baos.write(ich);
-      } else {
-        baos.write(ich);
+        continue;
       }
+
+      baos.write(ich);
     }
 
     if (baos.size() > 0) {
-      return new String(baos.toByteArray(), charset);
+      res.append(new String(baos.toByteArray(), charset));
     }
 
-    return null;
+    return res.toString();
   }
 
   /*

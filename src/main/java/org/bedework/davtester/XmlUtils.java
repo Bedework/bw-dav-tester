@@ -189,7 +189,12 @@ public class CopyrightResolver implements EntityResolver {
   public static String attr(final Element nd,
                             final String attr) {
     try {
-      return getAttrVal(nd, attr);
+      var str =  getAttrVal(nd, attr);
+      if ((str == null) || (str.length() == 0)) {
+        return null;
+      }
+
+      return str;
     } catch (final Throwable t) {
       throwException(t);
       return null; // fake
@@ -200,7 +205,7 @@ public class CopyrightResolver implements EntityResolver {
                                 final String attr) {
     try {
       var str = getAttrVal(nd, attr);
-      if (str == null) {
+      if ((str == null) || (str.length() == 0)) {
         return null;
       }
       return Utils.encodeUtf8(str);

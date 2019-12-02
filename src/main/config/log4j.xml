@@ -162,11 +162,11 @@
 
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
-      <priority value="INFO"/>
+      <priority value="TRACE"/>
    </category>
 
    <category name="httpclient.wire.content">
-      <priority value="INFO"/>
+      <priority value="TRACE"/>
    </category>
 
    <!-- ical4j is noisy -->

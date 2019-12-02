@@ -40,15 +40,15 @@ public class UriIdPw {
     req.ruri = ruri;
 
     if (user != null) {
-      req.user = user;
+      req.setUser(user);
     }
     if (pswd != null) {
-      req.pswd = pswd;
+      req.setPswd(pswd);
     }
   }
 
   static UriIdPw fromRequest(final Request req) {
-    return new UriIdPw(req.ruri, req.user, req.pswd);
+    return new UriIdPw(req.ruri, req.getUser(), req.getPswd());
   }
 
   Request makeRequest(final Request originalRequest,

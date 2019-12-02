@@ -34,7 +34,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Represents the data/body portion of an HTTP request.
  */
 public class Data extends DavTesterBase {
-  String contentType;
+  public String contentType;
   String filepath;
   //Generator generator;
   String value;

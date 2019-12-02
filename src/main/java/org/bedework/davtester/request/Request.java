@@ -151,8 +151,8 @@ public class Request extends DavTesterBase {
   private String afunix;
 
   private boolean auth = true;
-  public String user;
-  public String pswd;
+  private String user;
+  private String pswd;
   public String cert;
   public boolean endDelete;
   public boolean printRequest;
@@ -429,10 +429,34 @@ public class Request extends DavTesterBase {
     return res;
   }
 
+  public void setUser(final String val) {
+    if ((val == null) || (val.length() == 0)) {
+      user = null;
+    } else {
+      user = val;
+    }
+  }
+
+  public String getUser() {
+    return user;
+  }
+
+  public void setPswd(final String val) {
+    if ((val == null) || (val.length() == 0)) {
+      pswd = null;
+    } else {
+      pswd = val;
+    }
+  }
+
+  public String getPswd() {
+    return pswd;
+  }
+
   public void parseXML(final Element node) {
     auth = getYesNoAttributeValue(node, XmlDefs.ATTR_AUTH, true);
-    user = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_USER));
-    pswd = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_PSWD));
+    setUser(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_USER)));
+    setPswd(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_PSWD)));
     cert = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_CERT));
     endDelete = getYesNoAttributeValue(node,
                                         XmlDefs.ATTR_END_DELETE);

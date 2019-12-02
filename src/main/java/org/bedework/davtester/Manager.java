@@ -174,11 +174,22 @@ public class Manager implements Logged {
       httpClient = clb.build();
     }
 
-    if (user != null) {
+    String u = user;
+    String p = pw;
+
+    if (u == null) {
+      u = serverInfo.user;
+    }
+
+    if (p== null) {
+      p = serverInfo.pswd;
+    }
+
+    if (u != null) {
       credsProvider.setCredentials(
               new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
-              new UsernamePasswordCredentials(user,
-                                              pw));
+              new UsernamePasswordCredentials(u,
+                                              p));
     }
     return httpClient;
   }

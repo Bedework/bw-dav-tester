@@ -15,6 +15,8 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.logging.BwLogger;
+import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.ToString;
 
 import org.w3c.dom.Document;
@@ -30,7 +32,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 /**
  * Base for many dav tester classes
  */
-public abstract class DavTesterBase {
+public abstract class DavTesterBase implements Logged {
   protected final Manager manager;
 
   protected Document doc;
@@ -96,5 +98,20 @@ public abstract class DavTesterBase {
   public void toStringSegment(final ToString ts) {
     ts.append(getKind(), name);
     ts.append("description", description);
+  }
+
+  /* ====================================================================
+   *                   Logged methods
+   * ==================================================================== */
+
+  private BwLogger logger = new BwLogger();
+
+  @Override
+  public BwLogger getLogger() {
+    if ((logger.getLoggedClass() == null) && (logger.getLoggedName() == null)) {
+      logger.setLoggedClass(getClass());
+    }
+
+    return logger;
   }
 }

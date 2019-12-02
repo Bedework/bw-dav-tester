@@ -22,8 +22,8 @@ package org.bedework.davtester;
 
 import org.bedework.davtester.Utils.DtParts;
 import org.bedework.util.misc.ToString;
-import org.bedework.util.xml.XmlUtil;
 
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.net.MalformedURLException;
@@ -69,8 +69,8 @@ public class Serverinfo {
   boolean ssl;
 
   Set<String> features = new TreeSet<>();
-  public String user = "";
-  public String pswd = "";
+  public String user = null;
+  public String pswd = null;
   int waitcount = 120;
   long waitdelay = 250; // .25 second
   int waitsuccess = 10;
@@ -110,6 +110,9 @@ public class Serverinfo {
 
   public String subs(final String subval,
                      final KeyVals db) {
+    if (subval == null) {
+      return null;
+    }
     var sub = subval;
 
     // Special handling for relative date-times
@@ -313,34 +316,34 @@ public class Serverinfo {
     }
 
     // Now cache some useful substitutions
-    String user = "$userid1:";
+    String uname;
     if (subsKvs.containsKey("$userid1:")) {
-      user = "$userid1:";
+      uname = "$userid1:";
     } else {
-      user = "$userid01:";
+      uname = "$userid01:";
     }
 
-    String pswd;
+    String pname;
     if (subsKvs.containsKey("$pswd1:")) {
-      pswd = "$pswd1:";
+      pname = "$pswd1:";
     } else {
-      pswd = "$pswd01:";
+      pname = "$pswd01:";
     }
 
-    user = subsKvs.getOnlyString(user);
+    user = subsKvs.getOnlyString(uname);
     if (user == null) {
       throw new RuntimeException("Must have userid substitution");
     }
 
-    pswd = subsKvs.getOnlyString(pswd);
+    pswd = subsKvs.getOnlyString(pname);
     if (pswd == null) {
       throw new RuntimeException("Must have pswd substitution");
     }
   }
 
-  public void parseRepeatXML(final Node node){
+  public void parseRepeatXML(final Element node){
     // Look for count
-    var count = XmlUtil.numAttrs(node);
+    var count = XmlUtils.getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
 
     for (var child: children(node)) {
       parseSubstitutionXML(child, count);
