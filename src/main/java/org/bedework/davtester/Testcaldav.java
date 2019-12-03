@@ -30,10 +30,10 @@ import java.util.TreeSet;
 public class Testcaldav {
 
   public static void main(final String[] args) {
-    var base = "src/main/resources/";
-    var sname = base + "scripts/server/serverinfo.xml";
-    var dname = base + "scripts/tests";
-    var dtdname = base + "scripts/dtds";
+    var base = "src/main/rsrc/";
+    var sname = base + "server/serverinfo.xml";
+    var dname = base + "tests";
+    var dtdname = base + "dtds";
     var resname = base;
     var fnames = new ArrayList<String>();
     var ssl = false;
