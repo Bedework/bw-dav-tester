@@ -766,9 +766,9 @@ class Caldavtest extends DavTesterBase {
       if (rd.startsWith("BEGIN:VCALENDAR")) {
         var uidpos = rd.indexOf("UID:");
         if (uidpos != -1) {
-          var end = rd.indexOf("\r\n");
+          var end = rd.indexOf("\r\n", uidpos);
           if (end < 0) {
-            end = rd.indexOf("\n");
+            end = rd.indexOf("\n", uidpos);
           }
 
           if (end < 0) {
