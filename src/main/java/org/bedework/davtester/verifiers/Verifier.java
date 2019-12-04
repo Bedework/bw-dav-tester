@@ -17,6 +17,8 @@ package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
+import org.bedework.util.logging.BwLogger;
+import org.bedework.util.logging.Logged;
 
 import org.apache.http.Header;
 
@@ -27,7 +29,7 @@ import java.util.List;
  *
  * User: mike Date: 11/20/19 Time: 22:55
  */
-public abstract class Verifier {
+public abstract class Verifier implements Logged {
   public static class VerifyResult {
     public boolean ok = true;
     public String text;
@@ -38,10 +40,12 @@ public abstract class Verifier {
 
     // A not ok
     public VerifyResult(String text) {
+      ok = false;
       this.text = text;
     }
 
     public void append(final String val) {
+      ok = false;
       if ((val == null) || (val.length() == 0)) {
         return;
       }
@@ -71,4 +75,19 @@ public abstract class Verifier {
                                       final int status,
                                       final String respdata,
                                       final KeyVals args);
+
+  /* ====================================================================
+   *                   Logged methods
+   * ==================================================================== */
+
+  private BwLogger logger = new BwLogger();
+
+  @Override
+  public BwLogger getLogger() {
+    if ((logger.getLoggedClass() == null) && (logger.getLoggedName() == null)) {
+      logger.setLoggedClass(getClass());
+    }
+
+    return logger;
+  }
 }

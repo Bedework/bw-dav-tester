@@ -430,7 +430,7 @@ class Caldavtest extends DavTesterBase {
               req, false, doverify, forceverify,
               null, // stats
               null, // etags
-              format("%s | #%s", label, String.valueOf(reqCount + 1)),
+              format("%s | #%s", label, String.valueOf(reqCount)),
               count);
       if (resreq.message != null) {
         resulttxt += resreq.message;
@@ -445,6 +445,8 @@ class Caldavtest extends DavTesterBase {
         result = false;
         break;
       }
+
+      reqCount++;
     }
 
     final String s;

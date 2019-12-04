@@ -37,8 +37,12 @@ public class StatusCode extends Verifier {
     // If no status verification requested, then assume all 2xx codes are OK
     var teststatus = args.getStrings("status", "2xx");
 
-    int test = 0;
+    if (debug()) {
+      debug("teststatus: " + teststatus + " actual: " + status);
+    }
+
     for (var ts : teststatus) {
+      final int test;
       if (ts.substring(1, 3).equals("xx")) {
         test = Integer.parseInt(ts.substring(0, 1));
       } else {
@@ -55,9 +59,14 @@ public class StatusCode extends Verifier {
     }
 
     // Didn't match any
-    return new VerifyResult("        HTTP Status Code Wrong " +
-                                    format("(expected %s): %d",
-                                           String.valueOf(teststatus),
-                                           status));
+    var msg = format("        HTTP Status Code Wrong " +
+                             "(expected %s): %d",
+                     String.valueOf(teststatus),
+                     status);
+    if (debug()) {
+      debug(msg);
+    }
+
+    return new VerifyResult(msg);
   }
 }
