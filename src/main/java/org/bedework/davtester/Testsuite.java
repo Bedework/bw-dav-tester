@@ -73,6 +73,8 @@ class Testsuite extends DavTesterBase {
     only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
     changeuid = getYesNoAttributeValue(node,
                                        XmlDefs.ATTR_CHANGE_UID);
+    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
+                                       false);
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {

@@ -27,9 +27,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.TreeSet;
 
-public class Testcaldav {
+public class Testcaldav extends DavTesterBase {
+
+  public Testcaldav() {
+    super(new Manager());
+  }
 
   public static void main(final String[] args) {
+    var tester = new Testcaldav();
+    tester.processArgs(args);
+    tester.runTests();
+  }
+
+  void processArgs(final String[] args) {
     var base = "src/main/rsrc/";
     var sname = base + "server/serverinfo.xml";
     var dname = base + "tests";
@@ -76,7 +86,6 @@ public class Testcaldav {
     // Process single options
     try {
       final Args pargs = new Args(args);
-      final Manager manager = new Manager();
 
       while (pargs.more()) {
         if (pargs.ifMatch("-m")) {
@@ -117,6 +126,11 @@ public class Testcaldav {
 
         if (pargs.ifMatch("--all")) {
           all = true;
+          continue;
+        }
+
+        if (pargs.ifMatch("--httptrace")) {
+          httpTraceOn();
           continue;
         }
 
@@ -240,7 +254,14 @@ public class Testcaldav {
       }
 
       // Load observers
-      // DOTHIS map(lambda name: loadObserver(name), observer_names if observer_names } else ["log", ])
+
+      if (Util.isEmpty(observerNames)) {
+        manager.loadObserver("log");
+      } else {
+        for (var name: observerNames) {
+          manager.loadObserver(name);
+        }
+      }
 
       manager.readXML(sname, manager.normTestsPaths(fnames), ssl, all);
 
@@ -252,13 +273,20 @@ public class Testcaldav {
       }
        */
 
-      System.out.println(manager.serverInfo.toString());
-
-      var result = manager.runAll();
-
-      System.out.println(result.toString());
+      debug(manager.serverInfo.toString());
     } catch (final Throwable t) {
       throw new RuntimeException(t);
     }
+  }
+
+  void runTests() {
+    var result = manager.runAll();
+
+    System.out.println(result.toString());
+  }
+
+  @Override
+  public String getKind() {
+    return "Testdav";
   }
 }

@@ -15,7 +15,7 @@
 		<!-- Bedework Versions -->
     <bw-util.version>4.0.27-SNAPSHOT</bw-util.version>
     <bw-util-conf.version>4.1.0-SNAPSHOT</bw-util-conf.version>
-    <bw-util-logging.version>4.0.4</bw-util-logging.version>
+    <bw-util-logging.version>4.0.5-SNAPSHOT</bw-util-logging.version>
     <bw-util-network.version>4.1.0-SNAPSHOT</bw-util-network.version>
     <bw-util-tz.version>4.1.0-SNAPSHOT</bw-util-tz.version>
 

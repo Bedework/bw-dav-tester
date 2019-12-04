@@ -60,6 +60,8 @@ class Test extends DavTesterBase {
     stats = getYesNoAttributeValue(node, XmlDefs.ATTR_STATS);
     ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
     only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
+    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
+                                       false);
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {

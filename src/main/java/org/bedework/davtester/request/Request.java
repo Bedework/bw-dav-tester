@@ -455,6 +455,8 @@ public class Request extends DavTesterBase {
 
   public void parseXML(final Element node) {
     auth = getYesNoAttributeValue(node, XmlDefs.ATTR_AUTH, true);
+    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
+                                       false);
     setUser(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_USER)));
     setPswd(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_PSWD)));
     cert = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_CERT));

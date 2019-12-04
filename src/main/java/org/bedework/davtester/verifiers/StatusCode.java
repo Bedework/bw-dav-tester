@@ -63,9 +63,9 @@ public class StatusCode extends Verifier {
                              "(expected %s): %d",
                      String.valueOf(teststatus),
                      status);
-    if (debug()) {
-      debug(msg);
-    }
+    //if (debug()) {
+    //  debug(msg);
+    //}
 
     return new VerifyResult(msg);
   }

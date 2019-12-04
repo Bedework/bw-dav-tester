@@ -132,6 +132,9 @@ public class KeyVals extends HashMap<String, List<Object>> {
    * @param val single string to set or replace current value
    */
   public void put(final String name, final Object val) {
+    if (val == null) {
+      return;
+    }
     List<Object> vals = new ArrayList<>(1);
 
     vals.add(val);

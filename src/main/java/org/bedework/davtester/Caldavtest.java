@@ -171,6 +171,10 @@ class Caldavtest extends DavTesterBase {
     }
 
     try {
+      if (httpTrace) {
+        httpTraceOn();
+      }
+
       final TestResult res;
       var doReqres = doRequests("Start Requests...", startRequests, false,
                           true,
@@ -200,22 +204,36 @@ class Caldavtest extends DavTesterBase {
       }
 
       return TestResult.failed();
+    } finally {
+      if (httpTrace) {
+        httpTraceOff();
+      }
     }
   }
 
-  public TestResult runTests(final String label){
+  public TestResult runTests(final String label) {
     var res = new TestResult();
 
     var testfile = manager.testFile(name, description, null);
     for (var suite : suites) {
-      res.add(runTestSuite(testfile, suite,
-                           format("%s | %s",
-                                  label,
-                                  suite.name)));
-      }
+      try {
+        if (suite.httpTrace) {
+          httpTraceOn();
+        }
 
-      return res;
+        res.add(runTestSuite(testfile, suite,
+                             format("%s | %s",
+                                    label,
+                                    suite.name)));
+      } finally {
+        if (suite.httpTrace) {
+          httpTraceOff();
+        }
+      }
     }
+
+    return res;
+  }
 
   public TestResult runTestSuite(final KeyVals testfile,
                                  final Testsuite suite,
@@ -260,14 +278,24 @@ class Caldavtest extends DavTesterBase {
       }
 
       for (var test: suite.tests) {
-        var result = runTest(testsuite, test, etags, onlyTests,
-                             format("%s | %s", label, test.name));
-        if (result == 't') {
-          res.ok += 1;
-        } else if (result == 'f') {
-          res.failed += 1;
-        } else {
-          res.ignored += 1;
+        try {
+          if (test.httpTrace) {
+            httpTraceOn();
+          }
+
+          var result = runTest(testsuite, test, etags, onlyTests,
+                               format("%s | %s", label, test.name));
+          if (result == 't') {
+            res.ok += 1;
+          } else if (result == 'f') {
+            res.failed += 1;
+          } else {
+            res.ignored += 1;
+          }
+        } finally {
+          if (test.httpTrace) {
+            httpTraceOff();
+          }
         }
       }
       /*
@@ -277,6 +305,7 @@ class Caldavtest extends DavTesterBase {
               }
         */
     }
+
     manager.trace(format("  Suite Results: %d PASSED, %d FAILED, %d IGNORED\n",
                           res.ok, res.failed, res.ignored));
     /* POSTGRES
@@ -1101,6 +1130,10 @@ class Caldavtest extends DavTesterBase {
       manager.protocol(requesttxt);
     }
 
+    if (req.httpTrace) {
+      httpTraceOn();
+    }
+
     try (CloseableHttpResponse resp =
                  manager.getHttpClient(req.getUser(),
                                        req.getPswd()).execute(meth)) {
@@ -1123,6 +1156,10 @@ class Caldavtest extends DavTesterBase {
       drr.status = HttpUtil.getStatus(resp);
     } catch (final Throwable t) {
       throwException(t);
+    } finally {
+      if (req.httpTrace) {
+        httpTraceOff();
+      }
     }
 
     if (stats != null) {
@@ -1346,9 +1383,11 @@ class Caldavtest extends DavTesterBase {
     eem.setEntity(entity);
   }
 
-  public void parseXML (final Element node) {
+  public void parseXML(final Element node) {
     ignoreAll = getYesNoAttributeValue(node,
                                        XmlDefs.ATTR_IGNORE_ALL,
+                                       false);
+    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
                                        false);
 
     for (var child : children(node)) {

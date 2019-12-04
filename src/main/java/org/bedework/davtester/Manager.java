@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.throwException;
+import static org.bedework.davtester.Utils.upperFirst;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -276,8 +277,15 @@ public class Manager implements Logged {
 
   public void loadObserver(final String observerName) {
     try {
+      String cname;
+      if (observerName.contains(".")) {
+        cname = observerName;
+      } else {
+        cname = "org.bedework.davtester.observers." + upperFirst(observerName);
+      }
       var module = Util
-              .getObject(observerName, BaseResultsObserver.class);
+              .getObject(cname,
+                         BaseResultsObserver.class);
 
       var observer = (BaseResultsObserver)module;
 
@@ -331,13 +339,13 @@ public class Manager implements Logged {
 
     results.put("name", name);
     results.put("details", details);
-    results.put("result", resultCode);
     results.put("tests", res);
 
     if (resultCode != null) {
+      results.put("result", resultCode);
       totals[resultCode]++;
     }
-    message("testFile", res);
+    message("testFile", results);
     return res;
   }
 
@@ -349,10 +357,10 @@ public class Manager implements Logged {
 
     testfile.put("name", name);
     testfile.put("details", details);
-    testfile.put("result", resultCode);
     testfile.put("tests", res);
 
     if (resultCode != null) {
+      testfile.put("result", resultCode);
       totals[resultCode]++;
     }
 

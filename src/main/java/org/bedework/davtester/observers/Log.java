@@ -29,7 +29,7 @@ import static java.lang.String.format;
 /**
  * A results observer that prints results to standard output.
  */
-public class LogObserver extends BaseResultsObserver {
+public class Log extends BaseResultsObserver {
   final static Map<Integer, String> RESULT_STRINGS = new HashMap<>();
   static {
     RESULT_STRINGS.put(Manager.RESULT_OK, "[OK]");
@@ -45,7 +45,7 @@ public class LogObserver extends BaseResultsObserver {
 
   final boolean printDetails = false;
 
-  public LogObserver() {
+  public Log() {
   }
 
   @Override
@@ -83,6 +83,7 @@ public class LogObserver extends BaseResultsObserver {
         testSuite(args);
         break;
       case "testResult":
+        testResult(args);
     }
   }
 
@@ -105,14 +106,17 @@ public class LogObserver extends BaseResultsObserver {
     currentFile = args.getOnlyString("name").replace("/", ".");
     manager().logit("");
     logResult(currentFile, args);
-    var res = args.getOnlyInt("result");
-    if ((res == Manager.RESULT_FAILED) ||
-            (res == Manager.RESULT_ERROR)) {
-      var failtxt = format("%s\n%s\n\n%s",
-                           RESULT_STRINGS.get(res),
-                           args.getOnlyString("details"),
-                           currentFile);
-      loggedFailures.add(failtxt);
+
+    if (args.containsKey("result")) {
+      var res = args.getOnlyInt("result");
+      if ((res == Manager.RESULT_FAILED) ||
+              (res == Manager.RESULT_ERROR)) {
+        var failtxt = format("%s\n%s\n\n%s",
+                             RESULT_STRINGS.get(res),
+                             args.getOnlyString("details"),
+                             currentFile);
+        loggedFailures.add(failtxt);
+      }
     }
   }
     
@@ -120,15 +124,18 @@ public class LogObserver extends BaseResultsObserver {
     currentSuite = args.getOnlyString("name");
     var resultName = "  Suite: " + args.getOnlyString("name");
     logResult(resultName, args);
-    var res = args.getOnlyInt("result");
-    if ((res == Manager.RESULT_FAILED) ||
-            (res == Manager.RESULT_ERROR)) {
-      var failtxt = format("%s\n%s\n\n%s/%s",
-                           RESULT_STRINGS.get(res),
-                           args.getOnlyString("details"),
-                           currentFile,
-                           currentSuite);
-      loggedFailures.add(failtxt);
+
+    if (args.containsKey("result")) {
+      var res = args.getOnlyInt("result");
+      if ((res == Manager.RESULT_FAILED) ||
+              (res == Manager.RESULT_ERROR)) {
+        var failtxt = format("%s\n%s\n\n%s/%s",
+                             RESULT_STRINGS.get(res),
+                             args.getOnlyString("details"),
+                             currentFile,
+                             currentSuite);
+        loggedFailures.add(failtxt);
+      }
     }
   }
     
@@ -136,16 +143,18 @@ public class LogObserver extends BaseResultsObserver {
     var result_name = "    Test: " + args.getOnlyString("name");
     logResult(result_name, args);
 
-    var res = args.getOnlyInt("result");
-    if ((res == Manager.RESULT_FAILED) ||
-            (res == Manager.RESULT_ERROR)) {
-      var failtxt = format("%s\n%s\n\n%s/%s/%s",
-                           RESULT_STRINGS.get(res),
-                           args.getOnlyString("details"),
-                           currentFile,
-                           currentSuite,
-                           args.getOnlyString("name"));
-      loggedFailures.add(failtxt);
+    if (args.containsKey("result")) {
+      var res = args.getOnlyInt("result");
+      if ((res == Manager.RESULT_FAILED) ||
+              (res == Manager.RESULT_ERROR)) {
+        var failtxt = format("%s\n%s\n\n%s/%s/%s",
+                             RESULT_STRINGS.get(res),
+                             args.getOnlyString("details"),
+                             currentFile,
+                             currentSuite,
+                             args.getOnlyString("name"));
+        loggedFailures.add(failtxt);
+      }
     }
 
     if (currentProtocol != null) {
@@ -194,8 +203,8 @@ public class LogObserver extends BaseResultsObserver {
                        manager().totals[Manager.RESULT_IGNORED]);
       manager().logit("-".repeat(70));
       manager().logit(format("Ran %s tests in %.3f\n",
-                      IntStream.of(manager().totals).sum(),
-                      manager().totalTime));
+                             IntStream.of(manager().totals).sum(),
+                             (float)manager().totalTime / 1000));
     }
 
     manager().logit(overall);

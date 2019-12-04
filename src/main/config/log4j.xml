@@ -162,11 +162,11 @@
 
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
-      <priority value="TRACE"/>
+      <priority value="INFO"/>
    </category>
 
    <category name="httpclient.wire.content">
-      <priority value="TRACE"/>
+      <priority value="INFO"/>
    </category>
 
    <!-- ical4j is noisy -->
@@ -179,34 +179,8 @@
       <priority value="INFO"/>
    </category>
 
-   <!-- Hide all the hibernate stuff - below are some finer categories -->
-   <category name="org.hibernate">
-      <priority value="INFO"/>
-   </category>
-
-   <category name="org.hibernate.type">
-      <priority value="INFO"/>
-   </category>
-
-   <category name="org.hibernate.engine">
-      <priority value="INFO"/>
-   </category>
-
-   <category name="org.hibernate.impl.BatcherImpl">
-      <priority value="INFO"/>
-   </category>
-
-   <category name="org.hibernate.cfg">
-      <priority value="INFO"/>
-   </category>
-
    <!-- Set bedework categories -->
    <category name="org.bedework">
-     <priority value="DEBUG"/>
-   </category>
-
-   <!-- Set rpi categories -->
-   <category name="edu.rpi">
      <priority value="DEBUG"/>
    </category>
 

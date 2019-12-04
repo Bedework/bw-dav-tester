@@ -23,7 +23,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeSet;
+import java.util.logging.Level;
 
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
@@ -41,6 +43,9 @@ public abstract class DavTesterBase implements Logged {
   String description = "";
 
   protected boolean only;
+
+  public boolean httpTrace = false;
+  private Stack<Level> savedHttpLevels = new Stack<>();
 
   private Set<String> requireFeatures = new TreeSet<>();
   private Set<String> excludeFeatures = new TreeSet<>();
@@ -88,6 +93,17 @@ public abstract class DavTesterBase implements Logged {
           excludeFeatures.add(contentUtf8(child));
         }
       }
+    }
+  }
+
+  protected void httpTraceOn() {
+    savedHttpLevels.push(getLogLevel("org.apache.http"));
+    setLogLevel("org.apache.http", Level.FINE);
+  }
+
+  protected void httpTraceOff() {
+    if (!savedHttpLevels.empty()) {
+      setLogLevel("org.apache.http", savedHttpLevels.pop());
     }
   }
 
