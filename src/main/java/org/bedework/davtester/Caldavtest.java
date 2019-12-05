@@ -143,7 +143,7 @@ class Caldavtest extends DavTesterBase {
 
   public TestResult run() {
     if (missingFeatures().size() != 0) {
-      manager.testFile(name,
+      manager.testFile(testPath.toString(),
                        format("Missing features: %s",
                                            missingFeatures()),
                        RESULT_IGNORED);
@@ -151,7 +151,7 @@ class Caldavtest extends DavTesterBase {
     }
 
     if (excludedFeatures().size() != 0) {
-      manager.testFile(name,
+      manager.testFile(testPath.toString(),
                        format("Excluded features: %s",
                               excludedFeatures()),
                        RESULT_IGNORED);
@@ -182,7 +182,7 @@ class Caldavtest extends DavTesterBase {
                                         "START_REQUESTS"), 1);
 
       if (!doReqres) {
-        manager.testFile(name,
+        manager.testFile(testPath.toString(),
                          "Start items failed - tests will not be run.",
                          manager.RESULT_ERROR);
         res = TestResult.failed();
@@ -195,7 +195,7 @@ class Caldavtest extends DavTesterBase {
                  format("%s | %s", name, "END_REQUESTS"), 1);
       return res;
     } catch (final Throwable t) {
-      manager.testFile(name,
+      manager.testFile(testPath.toString(),
                        format("FATAL ERROR: %s", t.getMessage()),
                        manager.RESULT_ERROR);
 
@@ -214,7 +214,8 @@ class Caldavtest extends DavTesterBase {
   public TestResult runTests(final String label) {
     var res = new TestResult();
 
-    var testfile = manager.testFile(name, description, null);
+    var testfile = manager.testFile(testPath.toString(),
+                                    description, null);
     for (var suite : suites) {
       try {
         if (suite.httpTrace) {
@@ -1122,14 +1123,6 @@ class Caldavtest extends DavTesterBase {
       setContent(meth, data.getBytes(), req.getData().contentType);
     }
 
-    String requesttxt = null;
-    if (req.printRequest ) {
-      requesttxt = "\n-------BEGIN:REQUEST-------\n" +
-              data +
-              "\n--------END:REQUEST--------\n";
-      manager.protocol(requesttxt);
-    }
-
     if (req.httpTrace) {
       httpTraceOn();
     }
@@ -1180,9 +1173,12 @@ class Caldavtest extends DavTesterBase {
       }
     }
 
-    if (!req.printRequest &&
+    if (req.printRequest ||
             (manager.printRequestResponseOnError &&
                      (!drr.ok && !req.waitForSuccess))) {
+      var requesttxt = "\n-------BEGIN:REQUEST-------\n" +
+              data +
+              "\n--------END:REQUEST--------\n";
       manager.protocol(requesttxt);
     }
 

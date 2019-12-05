@@ -37,9 +37,9 @@ public class StatusCode extends Verifier {
     // If no status verification requested, then assume all 2xx codes are OK
     var teststatus = args.getStrings("status", "2xx");
 
-    if (debug()) {
-      debug("teststatus: " + teststatus + " actual: " + status);
-    }
+    //if (debug()) {
+    //  debug("teststatus: " + teststatus + " actual: " + status);
+    //}
 
     for (var ts : teststatus) {
       final int test;

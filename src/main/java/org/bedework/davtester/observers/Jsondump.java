@@ -18,10 +18,12 @@ package org.bedework.davtester.observers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Properties;
+import java.util.List;
 
 import static org.bedework.davtester.Utils.throwException;
 
@@ -29,7 +31,7 @@ import static org.bedework.davtester.Utils.throwException;
  * A results observer that prints results to standard output.
  */
 public class Jsondump extends BaseResultsObserver {
-  private String currentProtocol;
+  private List<String> currentProtocol = new ArrayList<>();
   private ObjectMapper om = new ObjectMapper();
 
   public Jsondump() {
@@ -39,10 +41,10 @@ public class Jsondump extends BaseResultsObserver {
   public void init(final Manager manager) {
     super.init(manager);
 
-    addCall("finish", this);
     addCall("protocol", this);
     addCall("testSuite", this);
     addCall("testResult", this);
+    addCall("finish", this);
   }
 
   public void process(final String message, final KeyVals args) {
@@ -57,14 +59,18 @@ public class Jsondump extends BaseResultsObserver {
         testSuite(args);
         break;
       case "testResult":
+        testResult(args);
     }
   }
 
   public void protocol(final KeyVals args) {
-    currentProtocol = args.getOnlyString("protocol");
+    var s = args.getOnlyString("protocol");
+    if (s != null) {
+      currentProtocol.add(s);
+    }
   }
 
-  public void testResult(final Properties args) {
+  public void testResult(final KeyVals args) {
     args.put("time", new Date());
     if (currentProtocol != null) {
       args.put("protocol", currentProtocol);
@@ -78,11 +84,10 @@ public class Jsondump extends BaseResultsObserver {
 
   public void finish() {
     throwException("Unimplemented");
-    /*
     try {
-      manager().print(om.writeValueAsString(manager().getResults()));
+      manager().logit(om.writeValueAsString(manager().getResults()));
     } catch (JsonProcessingException e) {
       throwException(e);
-    }*/
+    }
   }
 }

@@ -27,7 +27,7 @@
 	<start/>
 	
 	<test-suite name='1. Event Creation'>
-		<test name='1.1' http-trace='yes'>
+		<test name='1.1'>
 			<description>Create new single-instance meeting titled "Meeting 1.1" with the location "Durham".</description>
 			<request end-delete='yes'>
 				<method>PUT</method>

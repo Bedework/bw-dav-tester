@@ -158,7 +158,10 @@ public class Log extends BaseResultsObserver {
     }
 
     if (currentProtocol != null) {
-      manager().logit("\n" + currentProtocol);
+      manager().logit("\n");
+      for (var cp: currentProtocol) {
+        manager().logit(cp);
+      }
       currentProtocol.clear();
     }
   }
@@ -178,7 +181,10 @@ public class Log extends BaseResultsObserver {
   }
 
   public void protocol(final KeyVals args) {
-    currentProtocol.add(args.getOnlyString("result"));
+    var s = args.getOnlyString("protocol");
+    if (s != null) {
+      currentProtocol.add(s);
+    }
   }
     
   public void finish () {

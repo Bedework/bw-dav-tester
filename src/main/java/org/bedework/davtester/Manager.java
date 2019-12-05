@@ -49,7 +49,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.FileWriter;
-import java.io.Writer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -101,7 +100,6 @@ public class Manager implements Logged {
   String postgresLog;
   String logFileName;
   FileWriter logFile;
-  private Writer logFileWriter;
 
   private CloseableHttpClient httpClient;
   final CredentialsProvider credsProvider = new BasicCredentialsProvider();
@@ -262,8 +260,8 @@ public class Manager implements Logged {
 
   public void logit(final String str) {
     try {
-      if (logFileWriter != null) {
-        logFileWriter.write(str + "\n");
+      if (logFile != null) {
+        logFile.write(str + "\n");
       }
       System.out.println(str);
     } catch (final Throwable t) {
