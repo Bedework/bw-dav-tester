@@ -194,7 +194,7 @@ public class Log extends BaseResultsObserver {
     if (manager().totals[Manager.RESULT_FAILED] +
             manager().totals[Manager.RESULT_ERROR] != 0) {
       for (var failed: loggedFailures) {
-        manager().logit("-".repeat(70));
+        manager().logit("=".repeat(70));
         manager().logit(failed);
       }
             
@@ -207,11 +207,12 @@ public class Log extends BaseResultsObserver {
       overall = format("PASSED (ok=%s, ignored=%s)",
                        manager().totals[Manager.RESULT_OK],
                        manager().totals[Manager.RESULT_IGNORED]);
-      manager().logit("-".repeat(70));
-      manager().logit(format("Ran %s tests in %.3f\n",
-                             IntStream.of(manager().totals).sum(),
-                             (float)manager().totalTime / 1000));
     }
+
+    manager().logit("-".repeat(70));
+    manager().logit(format("Ran %s tests in %.3f\n",
+                           IntStream.of(manager().totals).sum(),
+                           (float)manager().totalTime / 1000));
 
     manager().logit(overall);
   }
