@@ -24,6 +24,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -43,6 +44,18 @@ public class Utils {
     valSet.removeAll(other);
 
     return new ArrayList<T>(valSet);
+  }
+
+  public static <T> List<T> symmetricDiff(final Collection<T> val, final Collection<T> other) {
+    Set<T> symmetricDiff = new HashSet<T>(val);
+    symmetricDiff.addAll(other);
+
+    Set<T> tmp = new HashSet<T>(val);
+    tmp.retainAll(other);
+
+    symmetricDiff.removeAll(tmp);
+
+    return new ArrayList<T>(symmetricDiff);
   }
 
   /**

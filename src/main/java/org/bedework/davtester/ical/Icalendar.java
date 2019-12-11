@@ -117,6 +117,16 @@ public class Icalendar extends Component {
     return res;
   }
 
+  public ComponentList<Component> getComponents(final String name) {
+    var res = new ComponentList<>();
+
+    if (cal != null) {
+      res.addAll(cal.getComponents(name));
+    }
+
+    return res;
+  }
+
   public List<String> toLines() {
     return Arrays.asList(cal.toString().split(Strings.LINE_SEPARATOR));
   }
