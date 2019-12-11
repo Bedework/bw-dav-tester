@@ -2551,8 +2551,6 @@
       <exclude-feature>
         <feature>bedework-calendar-system</feature>
         <!-- Different time ranges for events and tasks in query - screw up search -->
-      </exclude-feature>
-      <exclude-feature>
         <feature>split-calendars</feature>
       </exclude-feature>
 			<description>query for VEVENTS and VTODOs within time range</description>
