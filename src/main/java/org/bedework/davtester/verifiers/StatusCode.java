@@ -22,8 +22,6 @@ import org.apache.http.Header;
 import java.net.URI;
 import java.util.List;
 
-import static java.lang.String.format;
-
 /**
  Verifier that checks the response status code for a specific value.
 */
@@ -51,22 +49,22 @@ public class StatusCode extends Verifier {
 
       if (test < 100) {
         if ((status / 100) == test) {
-          return new VerifyResult();
+          return result;
         }
       } else if (status == test) {
-        return new VerifyResult();
+        return result;
       }
     }
 
     // Didn't match any
-    var msg = format("        HTTP Status Code Wrong " +
-                             "(expected %s): %d",
-                     String.valueOf(teststatus),
-                     status);
+    fmsg("        HTTP Status Code Wrong " +
+                 "(expected %s): %d",
+         String.valueOf(teststatus),
+         status);
     //if (debug()) {
     //  debug(msg);
     //}
 
-    return new VerifyResult(msg);
+    return result;
   }
 }

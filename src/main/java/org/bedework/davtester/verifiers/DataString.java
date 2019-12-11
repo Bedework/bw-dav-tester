@@ -22,8 +22,6 @@ import org.apache.http.Header;
 import java.net.URI;
 import java.util.List;
 
-import static java.lang.String.format;
-
 /**
  * Verifier that checks the response body for an exact match to data in a file.
  */
@@ -44,14 +42,15 @@ public class DataString extends Verifier {
     // Test empty
     if (empty) {
       if (respdata != null) {
-        return new VerifyResult("        Response data has a body");
+        append("        Response data has a body");
       }
-      return new VerifyResult();
+      return result;
     }
 
     // look for response data
     if (respdata == null) {
-      return new VerifyResult("        No response body");
+      append("        No response body");
+      return result;
     }
 
     String newrespdata;
@@ -67,30 +66,32 @@ public class DataString extends Verifier {
     for (var item : equals) {
       item = manager.serverInfo.subs(item);
       if (!newrespdata.equals(item)) {
-        return new VerifyResult(
-                format("        Response data does not equal \"%s\"",
-                       item));
+        fmsg("        Response data does not equal \"%s\"",
+             item);
+        return result;
       }
     }
+
     for (var item : contains) {
       item = manager.serverInfo.subs(item);
       if (!newrespdata.contains(item.replace("\n", "\r\n"))
               && (!newrespdata.contains(item))) {
-        return new VerifyResult(
-                format("        Response data does not contain \"%s\"",
-                       item));
+        fmsg("        Response data does not contain \"%s\"",
+             item);
+        return result;
       }
     }
+
     for (var item : notcontains) {
       item = manager.serverInfo.subs(item);
       if (newrespdata.contains(item.replace("\n", "\r\n"))
               || newrespdata.contains(item)) {
-        return new VerifyResult(
-                format("        Response data incorrectly contains \"%s\"",
-                       item));
+        fmsg("        Response data incorrectly contains \"%s\"",
+             item);
+        return result;
       }
     }
 
-    return new VerifyResult();
+    return result;
   }
 }

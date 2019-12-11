@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static java.lang.String.format;
 import static org.bedework.davtester.Utils.fileToString;
 
 /**
@@ -84,19 +83,21 @@ public class IcalendarDataMatch extends Verifier {
     // status code must be 200, 201, 207 or explicitly specified code
 
     if (!statusCode.contains(String.valueOf(status))) {
-      new VerifyResult(format("        HTTP Status Code Wrong: %d",
-                              status));
+      fmsg("        HTTP Status Code Wrong: %d",
+           status);
+      return result;
     }
 
     // look for response data
     if (respdata == null) {
-      new VerifyResult("        No response body");
+      append("        No response body");
+      return result;
     }
 
     // look for one file
     if ((files.size() != 1) && (caldata.size() != 1)) {
-      return new VerifyResult(
-              "        No file to compare response to");
+      append("        No file to compare response to");
+      return result;
     }
 
     // read in all data from specified file or use provided data
@@ -132,7 +133,7 @@ public class IcalendarDataMatch extends Verifier {
       Patch<String> patch = DiffUtils.diff(dataLines, respLines);
 
       if (Util.isEmpty(patch.getDeltas())) {
-        return new VerifyResult();
+        return result;
       }
 
       /*var result = respCalendar == dataCalendar;
@@ -157,13 +158,14 @@ public class IcalendarDataMatch extends Verifier {
         errorDiff.append('\n');
       }
 
-      return new VerifyResult(format("        Response data does not " +
-                                             "exactly match file data%s",
-                                     errorDiff));
+      fmsg("        Response data does not " +
+                   "exactly match file data%s",
+           errorDiff);
+      return result;
     } catch (final Throwable t) {
-      return new VerifyResult(format("        Response data is not " +
-                                             "calendar data: %s",
-                                     t.getMessage()));
+      fmsg("        Response data is not calendar data: %s",
+           t.getMessage());
+      return result;
     }
   }
 

@@ -184,7 +184,7 @@ class Caldavtest extends DavTesterBase {
       if (!doReqres) {
         manager.testFile(testPath.toString(),
                          "Start items failed - tests will not be run.",
-                         manager.RESULT_ERROR);
+                         Manager.RESULT_ERROR);
         res = TestResult.failed();
       } else {
         res = runTests(name);
@@ -197,7 +197,7 @@ class Caldavtest extends DavTesterBase {
     } catch (final Throwable t) {
       manager.testFile(testPath.toString(),
                        format("FATAL ERROR: %s", t.getMessage()),
-                       manager.RESULT_ERROR);
+                       Manager.RESULT_ERROR);
 
       if (manager.debug()) {
         manager.error(t);
@@ -1165,7 +1165,7 @@ class Caldavtest extends DavTesterBase {
                                    drr.responseHeaders,
                                    drr.status,
                                    drr.responseData);
-      drr.append(vres.text);
+      drr.append(vres.getText());
     } else if (forceverify) {
       drr.ok = (drr.status / 100 == 2);
       if (!drr.ok) {

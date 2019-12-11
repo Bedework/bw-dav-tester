@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static java.lang.String.format;
 import static java.lang.String.valueOf;
 
 /**
@@ -106,9 +105,6 @@ public class Header extends Verifier {
       }
     }
 
-    var result = true;
-    StringBuilder resulttxt = new StringBuilder();
-
     for (var ti : testInfo) {
       var hdrs = getHeaders(ti.hdrName, responseHeaders);
       if (Util.isEmpty(hdrs)) {
@@ -116,25 +112,19 @@ public class Header extends Verifier {
           continue;
         }
 
-        result = false;
-        fmsg(resulttxt,
-             "        Missing Response Header: %s",
+        fmsg("        Missing Response Header: %s",
              ti.hdrName);
         continue;
       }
 
       if (!Util.isEmpty(hdrs) && (ti.present == Presence.absent)) {
-        result = false;
-        fmsg(resulttxt,
-             "        Response Header was present one or more times: %s",
+        fmsg("        Response Header was present one or more times: %s",
              ti.hdrName);
         continue;
       }
 
       if ((hdrs.size() != 1) && (ti.present == Presence.single)) {
-        result = false;
-        fmsg(resulttxt,
-             "        Multiple Response Headers: %s",
+        fmsg("        Multiple Response Headers: %s",
              ti.hdrName);
         continue;
       }
@@ -150,19 +140,13 @@ public class Header extends Verifier {
         }
 
         if (ti.matchValue != matched) {
-          result = false;
-          fmsg(resulttxt,
-               "        Wrong Response Header Value: %s: %s",
+          fmsg("        Wrong Response Header Value: %s: %s",
                ti.hdrName, valueOf(hdrs));
         }
       }
     }
 
-    if (result) {
-      return new VerifyResult();
-    }
-
-    return new VerifyResult(resulttxt.toString());
+    return result;
   }
 
   private List<org.apache.http.Header> getHeaders(final String name,
@@ -176,14 +160,5 @@ public class Header extends Verifier {
     }
 
     return res;
-  }
-
-  private void fmsg(final StringBuilder sb,
-                    final String fmt,
-                    final Object... args) {
-    if (sb.length() > 0) {
-      sb.append("\n");
-    }
-    sb.append(format(fmt, args));
   }
 }

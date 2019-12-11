@@ -17,13 +17,18 @@ package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
+import org.bedework.davtester.XmlUtils;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 
 import org.apache.http.Header;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.net.URI;
 import java.util.List;
+
+import static java.lang.String.format;
 
 /** Base class for verifiers
  *
@@ -32,7 +37,7 @@ import java.util.List;
 public abstract class Verifier implements Logged {
   public static class VerifyResult {
     public boolean ok = true;
-    public String text;
+    public StringBuilder text = new StringBuilder();
 
     // An ok result
     public VerifyResult() {
@@ -41,26 +46,44 @@ public abstract class Verifier implements Logged {
     // A not ok
     public VerifyResult(String text) {
       ok = false;
-      this.text = text;
+      this.text.append(text);
+    }
+
+    public String getText() {
+      return text.toString();
     }
 
     public void append(final String val) {
+      append(val, true);
+    }
+
+    public void nl() {
+      ok = false;
+      text.append("\n");
+    }
+
+    public void append(final String val,
+                       final boolean addnl) {
       ok = false;
       if ((val == null) || (val.length() == 0)) {
         return;
       }
 
-      if (text == null) {
-        text = val;
-        return;
+      if (addnl && (text.length() > 0)) {
+        text.append("\n");
       }
-
-      text += "\n";
-      text += val;
+      text.append(val);
     }
+
+
   }
 
   protected Manager manager;
+
+  // Per verify call
+  protected Document doc;
+  protected Element docRoot;
+  protected VerifyResult result;
 
   public void init(final Manager manager) {
     this.manager = manager;
@@ -70,11 +93,61 @@ public abstract class Verifier implements Logged {
     return manager.featureSupported(feature);
   }
 
-  public abstract VerifyResult verify(final URI uri,
-                                      final List<Header> responseHeaders,
-                                      final int status,
-                                      final String respdata,
-                                      final KeyVals args);
+  public VerifyResult doVerify(final URI uri,
+                               final List<Header> responseHeaders,
+                               final int status,
+                               final String respdata,
+                               final KeyVals args) {
+    // Setup for call.
+    doc = null;
+    result = new VerifyResult();
+
+    return verify(uri, responseHeaders, status, respdata, args);
+  }
+
+  protected abstract VerifyResult verify(final URI uri,
+                                         final List<Header> responseHeaders,
+                                         final int status,
+                                         final String respdata,
+                                         final KeyVals args);
+
+  protected boolean parseXml(final String str) {
+    try {
+      doc = XmlUtils.parseXmlString(str);
+      docRoot = doc.getDocumentElement();
+      return true;
+    } catch (final Throwable t) {
+      fmsg("           HTTP response is not valid XML: %s\n", str);
+      return false;
+    }
+  }
+
+  protected List<Element> findNodes(final String testPath) {
+    return XmlUtils.findNodes(doc, false, testPath);
+  }
+
+  protected List<Element> findNodes(final Element el,
+                                    final String testPath) {
+    return XmlUtils.findNodes(el, false, testPath);
+  }
+
+  protected void fmsg(final String fmt,
+                      final Object... args) {
+    result.append(format(fmt, args));
+  }
+
+  protected void append(final String val) {
+    result.append(val);
+  }
+
+  protected void append(final String val,
+                        final boolean addnl) {
+    result.append(val, addnl);
+  }
+
+  protected void nl() {
+    result.nl();
+  }
 
   /* ====================================================================
    *                   Logged methods

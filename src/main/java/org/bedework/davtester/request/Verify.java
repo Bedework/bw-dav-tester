@@ -21,6 +21,7 @@ import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.davtester.verifiers.DataString;
 import org.bedework.davtester.verifiers.IcalendarDataMatch;
+import org.bedework.davtester.verifiers.MultistatusItems;
 import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
@@ -53,6 +54,9 @@ public class Verify extends DavTesterBase {
   static {
     addVerifier("calendarDataMatch", new IcalendarDataMatch());
     addVerifier("dataString", new DataString());
+    addVerifier("dataString", new DataString());
+    addVerifier("header", new org.bedework.davtester.verifiers.Header());
+    addVerifier("multistatusItems", new MultistatusItems());
     addVerifier("statusCode", new StatusCode());
   }
 
@@ -95,7 +99,7 @@ public class Verify extends DavTesterBase {
     // Always clone the args as this verifier may be called multiple times
     var newargs = new KeyVals(args);
 
-    return verifier.verify(uri, responseHeaders, status, respdata, newargs);
+    return verifier.doVerify(uri, responseHeaders, status, respdata, newargs);
   }
 
   @Override

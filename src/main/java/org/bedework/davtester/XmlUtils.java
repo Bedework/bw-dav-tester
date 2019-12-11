@@ -436,7 +436,7 @@ public void readOneStringElement(node, ename) {
     return split.rootPath + "/" + testPathToXpath(split.childPath);
   }
 
-  public static List<Element> findNodes(final Document doc,
+  public static List<Element> findNodes(final Object context,
                                         final boolean atRoot,
                                         final String testPath) {
     var xp = testPathToXpath(testPath);
@@ -455,7 +455,7 @@ public void readOneStringElement(node, ename) {
       XPathExpression expr = xpath.compile(xp);
 
       //Search XPath expression
-      Object result = expr.evaluate(doc, XPathConstants.NODESET);
+      Object result = expr.evaluate(context, XPathConstants.NODESET);
 
       var nodes = (NodeList)result;
       var res = new ArrayList<Element>(nodes.getLength());

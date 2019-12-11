@@ -675,9 +675,27 @@ what hrefs were returned and whether those had a good (2xx) or bad
 	Argument: 'badhrefs'
 		A set of hrefs for which a non-2xx response status is required.
 	
+	Argument: 'nohrefs'
+		?.
+	
+	Argument: '<Status-code>'
+		Value is an href for which the given response status is required.
+	
+	Argument: 'count'
+		Single value count of OK responses (-1 for some reason?).
+	
+	Argument: 'totalcount'
+		First value count of OK responses. Second number of !OK responses
+	
+	Argument: 'ignoremissing'
+	    No value - ignore extra ok or bad responses not in expected sets.
+	    
+	Argument: 'responsecount'
+		Single value count of responses.
+	
 	Argument: 'prefix'
-		A prefix that is appended to all of the specified okhrefs and
-		badhrefs values.
+		A prefix that is prepended to all of the specified okhrefs and
+		badhrefs values. "-" signifies no prefix.
 
 	Example:
 	

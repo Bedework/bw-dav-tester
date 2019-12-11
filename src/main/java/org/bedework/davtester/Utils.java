@@ -32,15 +32,30 @@ import java.util.UUID;
 public class Utils {
   /**
    *
-   * @param val list
-   * @param other list
+   * @param val Collection
+   * @param other Collection
    * @param <T> type of elements - must be comparable
    * @return val - other
    */
-  public static <T> List<T> diff(final List<T> val, final Collection<T> other) {
+  public static <T> List<T> diff(final Collection<T> val, final Collection<T> other) {
     final Set<T> valSet = new TreeSet<>(val);
 
     valSet.removeAll(other);
+
+    return new ArrayList<T>(valSet);
+  }
+
+  /**
+   *
+   * @param val Collection
+   * @param other Collection
+   * @param <T> type of elements - must be comparable
+   * @return intersection of val and other
+   */
+  public static <T> List<T> intersection(final Collection<T> val, final Collection<T> other) {
+    final Set<T> valSet = new TreeSet<>(val);
+
+    valSet.retainAll(other);
 
     return new ArrayList<T>(valSet);
   }

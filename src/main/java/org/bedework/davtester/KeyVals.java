@@ -63,11 +63,18 @@ public class KeyVals extends HashMap<String, List<Object>> {
     return (String)getOnly(key);
   }
 
+  public Integer getInt(final String key) {
+    return (Integer)getOnly(key);
+  }
+
   public int getOnlyInt(final String key) {
     return (Integer)getOnly(key);
   }
 
   public boolean getOnlyBool(final String key) {
+    if (!containsKey(key)) {
+      return false;
+    }
     return (Boolean)getOnly(key);
   }
 
@@ -94,6 +101,34 @@ public class KeyVals extends HashMap<String, List<Object>> {
         throwException("Not a string: " + snext);
       }
       di.set((String)snext);
+    }
+
+    return res;
+  }
+
+  public List<Integer> getInts(final String key,
+                               final Integer... defaults) {
+    var val = get(key);
+    if (Util.isEmpty(val)) {
+      if (defaults.length == 0) {
+        return new ArrayList<>();
+      }
+
+      return Arrays.asList(defaults);
+    }
+
+    var len = val.size();
+    List<Integer> res = new ArrayList<>(len);
+    ListIterator<Integer> di = res.listIterator();
+    ListIterator si = val.listIterator();
+    for (int i = 0; i < len; i++) {
+      di.next();
+
+      var snext = si.next();
+      if (!(snext instanceof Integer)) {
+        throwException("Not an Integer: " + snext);
+      }
+      di.set((Integer)snext);
     }
 
     return res;

@@ -420,7 +420,7 @@ public class Request extends DavTesterBase {
         res.ok = false;
 
         res.append(format("Failed Verifier: %s\n", verifier.name));
-        res.append(ires.text);
+        res.append(ires.getText());
       } else {
         res.append(format("Passed Verifier: %s\n", verifier.name));
       }
