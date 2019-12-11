@@ -412,6 +412,21 @@ public void readOneStringElement(node, ename) {
                         xpath.substring(pos + 1));
   }
 
+  public static QName toQName(final String val) {
+    if (!val.startsWith("{")) {
+      return new QName(null, val);
+    }
+
+    var pos = val.indexOf("}");
+
+    if (pos < 0) {
+      throwException("Bad QName string: " + val);
+    }
+
+    return new QName(val.substring(1, pos),
+                     val.substring(pos + 1));
+  }
+
   public static String testPathToXpath(final String testPath) {
     var split = xmlPathSplit(testPath);
 

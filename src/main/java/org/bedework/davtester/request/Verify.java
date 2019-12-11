@@ -20,8 +20,10 @@ import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlDefs;
 import org.bedework.davtester.verifiers.DataString;
+import org.bedework.davtester.verifiers.FreeBusy;
 import org.bedework.davtester.verifiers.IcalendarDataMatch;
 import org.bedework.davtester.verifiers.MultistatusItems;
+import org.bedework.davtester.verifiers.Prepostcondition;
 import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
@@ -55,8 +57,10 @@ public class Verify extends DavTesterBase {
     addVerifier("calendarDataMatch", new IcalendarDataMatch());
     addVerifier("dataString", new DataString());
     addVerifier("dataString", new DataString());
+    addVerifier("freeBusy", new FreeBusy());
     addVerifier("header", new org.bedework.davtester.verifiers.Header());
     addVerifier("multistatusItems", new MultistatusItems());
+    addVerifier("prepostcondition", new Prepostcondition());
     addVerifier("statusCode", new StatusCode());
   }
 

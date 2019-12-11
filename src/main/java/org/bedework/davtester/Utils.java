@@ -43,19 +43,19 @@ public class Utils {
 
     valSet.removeAll(other);
 
-    return new ArrayList<T>(valSet);
+    return new ArrayList<>(valSet);
   }
 
   public static <T> List<T> symmetricDiff(final Collection<T> val, final Collection<T> other) {
-    Set<T> symmetricDiff = new HashSet<T>(val);
+    Set<T> symmetricDiff = new HashSet<>(val);
     symmetricDiff.addAll(other);
 
-    Set<T> tmp = new HashSet<T>(val);
+    Set<T> tmp = new HashSet<>(val);
     tmp.retainAll(other);
 
     symmetricDiff.removeAll(tmp);
 
-    return new ArrayList<T>(symmetricDiff);
+    return new ArrayList<>(symmetricDiff);
   }
 
   /**
@@ -70,7 +70,7 @@ public class Utils {
 
     valSet.retainAll(other);
 
-    return new ArrayList<T>(valSet);
+    return new ArrayList<>(valSet);
   }
 
   public static String encodeUtf8(final String val) {
@@ -106,28 +106,6 @@ public class Utils {
    */
   public static void throwException(final Throwable t) {
     throw new RuntimeException(t);
-  }
-
-  public static class KeyValsPropertyFetcher implements Util.PropertyFetcher {
-    private final KeyVals props;
-
-    public KeyValsPropertyFetcher(KeyVals props) {
-      this.props = props;
-    }
-
-    public String get(String name) {
-      var val = this.props.get(name);
-
-      if (Util.isEmpty(val)) {
-        return null;
-      }
-
-      var val0 = val.get(0);
-      if (val0 instanceof String) {
-        return (String)val0;
-      }
-      return null;
-    }
   }
 
   public static String uuid() {

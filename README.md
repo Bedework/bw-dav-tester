@@ -750,7 +750,7 @@ Looks for specific FREEBUSY periods for a particular ATTENDEE.
 ## prepostcondition
 Performs a check of response body and status code to verify that a
 specific pre-/post-condition error was returned. The response status
-code has to be one of 403 or 409.
+code has to be one of 403, 409 or 507.
 
 	Argument: 'error'
 		The expected XML element qualified-name to match.
