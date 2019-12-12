@@ -18,6 +18,7 @@ package org.bedework.davtester.verifiers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.XmlUtils;
 import org.bedework.util.misc.Util;
+import org.bedework.util.xml.XmlUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -25,14 +26,15 @@ import org.apache.http.Header;
 import java.net.URI;
 import java.util.List;
 
+import javax.xml.namespace.QName;
+
 import static org.bedework.davtester.Utils.fileToString;
-import static org.bedework.davtester.XmlUtils.docToString;
 
 /**
  * Verifier that checks the response body for an exact match to data
  * in a file.
  */
-public class DataMatch extends Verifier {
+public class XmlDataMatch extends Verifier {
   @Override
   public VerifyResult verify(final URI uri,
                              final List<Header> responseHeaders,
@@ -41,6 +43,8 @@ public class DataMatch extends Verifier {
                              final KeyVals args) {
     // Get arguments
     var filepath = args.getOnlyString("filepath");
+    var filters = args.getStrings("filter");
+
     if (manager.dataDir != null) {
       filepath = Util.buildPath(false, manager.dataDir,
                                 "/", filepath);
@@ -67,41 +71,37 @@ public class DataMatch extends Verifier {
     }
 
     data = manager.serverInfo.subs(data);
+    data = manager.serverInfo.extrasubs(data);
 
-    if (data.equals(respdata)) {
-      return result;
+    var nrespdata = normalizeXMLData(respdata, filters);
+    data = normalizeXMLData(data, filters);
+
+    if (!nrespdata.equals(data)) {
+      errorDiff("        Response data does not " +
+                        "exactly match file data%s",
+                respdata, data);
     }
-
-    data = data.replace("\n", "\r\n");
-    if (data.equals(respdata)) {
-      return result;
-    }
-
-    // If we have an iCalendar file, then unwrap data and do compare
-    if (filepath.endsWith(".ics")) {
-      data = data.replace("\r\n ", "");
-      var rd = respdata.replace("\r\n ", "");
-      if (data.equals(rd)) {
-        return result;
-      }
-    } else if (filepath.endsWith(".xml")) {
-      var rd = docToString(XmlUtils.parseXml(respdata));
-
-      var xdata = docToString(XmlUtils.parseXml(data));
-      if (xdata == null) {
-        fmsg("        Unable to parse xml data: %s", data);
-        return result;
-      }
-
-      if (xdata.equals(rd)) {
-        return result;
-      }
-    }
-
-    errorDiff("        Response data does not " +
-                      "exactly match file data%s",
-              respdata, data);
 
     return result;
+  }
+
+  private String normalizeXMLData(final String data,
+                                  final List<String> filters) {
+    var doc = XmlUtils.parseXmlString(data);
+    var root = doc.getDocumentElement();
+
+    // Apply filters
+    for (var filter : filters) {
+      var qn = QName.valueOf(filter);
+      var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
+                                           qn.getLocalPart());
+      for (var i = 0; i <= nl.getLength(); i++) {
+        var node = nl.item(i);
+
+        XmlUtil.clear(node);
+      }
+    }
+
+    return XmlUtils.docToString(doc);
   }
 }

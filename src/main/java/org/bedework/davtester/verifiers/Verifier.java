@@ -21,6 +21,9 @@ import org.bedework.davtester.XmlUtils;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 
+import com.github.difflib.DiffUtils;
+import com.github.difflib.patch.AbstractDelta;
+import com.github.difflib.patch.Patch;
 import net.fortuna.ical4j.model.Period;
 import net.fortuna.ical4j.model.PeriodList;
 import org.apache.http.Header;
@@ -29,6 +32,7 @@ import org.w3c.dom.Element;
 
 import java.net.URI;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -127,6 +131,27 @@ public abstract class Verifier implements Logged {
     return pl;
   }
 
+  protected void errorDiff(final String msg,
+                           final String actual,
+                           final String expected) {
+    var actLines = Arrays.asList(actual.split("\n"));
+    var expLines = Arrays.asList(expected.split("\n"));
+
+    try {
+      Patch<String> patch = DiffUtils.diff(expLines, actLines);
+      var errorDiff = new StringBuilder();
+
+      for (AbstractDelta<String> delta : patch.getDeltas()) {
+        errorDiff.append(delta.toString());
+        errorDiff.append('\n');
+      }
+
+      fmsg(msg, errorDiff);
+    } catch (final Throwable t) {
+      fmsg("        Unable to diff data and response: %s",
+           t.getMessage());
+    }
+  }
   protected boolean parseXml(final String str) {
     try {
       doc = XmlUtils.parseXmlString(str);
