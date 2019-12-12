@@ -163,6 +163,10 @@ public class CopyrightResolver implements EntityResolver {
     }
   }
 
+  public static QName getQName(final Element el) {
+    return new QName(el.getNamespaceURI(), el.getLocalName());
+  }
+
   public static String content(Element nd) {
     try {
       return XmlUtil.getElementContent(nd);
@@ -412,21 +416,6 @@ public void readOneStringElement(node, ename) {
                         xpath.substring(pos + 1));
   }
 
-  public static QName toQName(final String val) {
-    if (!val.startsWith("{")) {
-      return new QName(null, val);
-    }
-
-    var pos = val.indexOf("}");
-
-    if (pos < 0) {
-      throwException("Bad QName string: " + val);
-    }
-
-    return new QName(val.substring(1, pos),
-                     val.substring(pos + 1));
-  }
-
   public static String testPathToXpath(final String testPath) {
     var split = xmlPathSplit(testPath);
 
@@ -484,5 +473,19 @@ public void readOneStringElement(node, ename) {
       throwException(t);
       return null; // fake
     }
+  }
+
+  public static List<Element> findAll(final Element root,
+                                      final String tag) {
+    final QName qn = QName.valueOf(tag);
+    final List<Element> res = new ArrayList<>();
+
+    for (final var el: children(root)) {
+      if (nodeMatches(el, qn)) {
+        res.add(el);
+      }
+    }
+
+    return res;
   }
 }

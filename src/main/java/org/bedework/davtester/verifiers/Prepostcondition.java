@@ -28,7 +28,6 @@ import javax.xml.namespace.QName;
 
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.XmlUtils.children;
-import static org.bedework.davtester.XmlUtils.toQName;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -79,7 +78,7 @@ public class Prepostcondition extends Verifier {
     var expected = new ArrayList<QName>();
 
     for (var ts: teststatus) {
-      expected.add(toQName(ts));
+      expected.add(QName.valueOf(ts));
     }
 
     var got = new ArrayList<QName>();

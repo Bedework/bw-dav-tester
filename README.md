@@ -895,7 +895,7 @@ is a match, otherwise False.
 	</verify>
 	
 ## xmlElementMatch
-Compares the response with an XML path and returns TRUE if there
+Compares the response with an XML path and returns True if there
 is a match, otherwise False.
 The path is the absolute xpath from the root element down. Attribute, attribute-value
 and text contents tests of the matched element can be done using:
@@ -912,9 +912,9 @@ and text contents tests of the matched element can be done using:
 	[|] - node is empty.
 	[||] - node is not empty.
 	[json] - node contains valid JSON data.
-	[icalendar] - node contains valid iCalendare data.
+	[icalendar] - node contains valid iCalendar data.
 	
-	Each path segment can now have its own test and "../" can be used to move up to
+Each path segment can now have its own test and "../" can be used to move up to
 	the parent. This allows testing for an element matching specific content plus
 	its sibling matching other specific content. e.g., "/{D}A/{D}B[=b]/../{D}C[=c]
 	which checks for an element {D}A with two child elements {D}B and {D}C each

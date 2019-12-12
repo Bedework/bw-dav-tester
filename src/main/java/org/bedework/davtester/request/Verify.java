@@ -27,6 +27,7 @@ import org.bedework.davtester.verifiers.Prepostcondition;
 import org.bedework.davtester.verifiers.StatusCode;
 import org.bedework.davtester.verifiers.Verifier;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
+import org.bedework.davtester.verifiers.XmlElementMatch;
 
 import org.apache.http.Header;
 import org.w3c.dom.Element;
@@ -62,6 +63,7 @@ public class Verify extends DavTesterBase {
     addVerifier("multistatusItems", new MultistatusItems());
     addVerifier("prepostcondition", new Prepostcondition());
     addVerifier("statusCode", new StatusCode());
+    addVerifier("xmlElementMatch", new XmlElementMatch());
   }
 
   private String callback;
