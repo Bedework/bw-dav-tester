@@ -188,28 +188,28 @@ public class MultistatusItems extends Verifier {
       }
 
       if (okMissing.size() != 0) {
-        badList("        %d Items not returned in report (OK):",
-                okMissing);
+        badHrefs("        %d Items not returned in report (OK):",
+                 okMissing);
       }
 
       if (okExtras.size() != 0) {
-        badList("        %d Unexpected items returned in report (OK):",
-                okExtras);
+        badHrefs("        %d Unexpected items returned in report (OK):",
+                 okExtras);
       }
 
       if (noExtras.size() != 0) {
-        badList("        %d Unwanted items returned in report (OK):",
-                noExtras);
+        badHrefs("        %d Unwanted items returned in report (OK):",
+                 noExtras);
       }
 
       if (badMissing.size() != 0) {
-        badList("        %d Items not returned in report (BAD):",
-                badMissing);
+        badHrefs("        %d Items not returned in report (BAD):",
+                 badMissing);
       }
 
       if (badExtras.size() != 0) {
-        badList("        %d Unexpected items returned in report (BAD):",
-             badExtras);
+        badHrefs("        %d Unexpected items returned in report (BAD):",
+                 badExtras);
       }
     }
 
@@ -217,14 +217,14 @@ public class MultistatusItems extends Verifier {
       var l = diff(statusHrefs.keySet(),
               statusCodeHrefs.keySet());
       if (!Util.isEmpty(l)) {
-        badList("        %d Status Codes not returned in report:", l);
+        badHrefs("        %d Status Codes not returned in report:", l);
       }
 
       l = diff(statusCodeHrefs.keySet(),
                statusHrefs.keySet());
       if (!Util.isEmpty(l)) {
-        badList("        %d Unexpected Status Codes returned in report:",
-                l);
+        badHrefs("        %d Unexpected Status Codes returned in report:",
+                 l);
       }
 
       var allKeys = new TreeSet<>(statusHrefs.keySet());
@@ -232,28 +232,19 @@ public class MultistatusItems extends Verifier {
       for (var key: allKeys) {
         var kl = diff(statusHrefs.get(key), statusCodeHrefs.get(key));
         if (!Util.isEmpty(kl)) {
-          badList("        %d Items not returned in report for %d:",
-               kl, key);
+          badHrefs("        %d Items not returned in report for %d:",
+                   kl, key);
         }
 
         kl = diff(statusCodeHrefs.get(key), statusHrefs.get(key));
         if (!Util.isEmpty(kl)) {
-          badList("        %d Unexpected items returned in report for %d:",
-                  kl, key);
+          badHrefs("        %d Unexpected items returned in report for %d:",
+                   kl, key);
         }
       }
     }
 
     return result;
-  }
-
-  private void badList(final String msg, final List hrefs,
-                       final Object... args) {
-    fmsg(msg, hrefs.size(), args);
-    for (var i: hrefs) {
-      append(" " + i, false);
-    }
-    nl();
   }
 
   /**
