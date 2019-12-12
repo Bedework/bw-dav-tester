@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +43,10 @@ import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -121,6 +126,21 @@ public class CopyrightResolver implements EntityResolver {
     }
   }
 
+  public static String docToString(Document doc) {
+    TransformerFactory tf = TransformerFactory.newInstance();
+    Transformer transformer;
+    try {
+      transformer = tf.newTransformer();
+
+      StringWriter writer = new StringWriter();
+      transformer.transform(new DOMSource(doc), new StreamResult(writer));
+      return writer.getBuffer().toString();
+    } catch (final Throwable t) {
+      throwException(t);
+    }
+
+    return null;
+  }
   public static Namespaces namespaces = new Namespaces();
 
   private static DavUtil davUtil = new DavUtil();

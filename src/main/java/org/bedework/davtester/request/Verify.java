@@ -19,6 +19,7 @@ import org.bedework.davtester.DavTesterBase;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlDefs;
+import org.bedework.davtester.verifiers.DataMatch;
 import org.bedework.davtester.verifiers.DataString;
 import org.bedework.davtester.verifiers.FreeBusy;
 import org.bedework.davtester.verifiers.IcalendarDataMatch;
@@ -56,7 +57,7 @@ public class Verify extends DavTesterBase {
 
   static {
     addVerifier("calendarDataMatch", new IcalendarDataMatch());
-    addVerifier("dataString", new DataString());
+    addVerifier("dataMatch", new DataMatch());
     addVerifier("dataString", new DataString());
     addVerifier("freeBusy", new FreeBusy());
     addVerifier("header", new org.bedework.davtester.verifiers.Header());
