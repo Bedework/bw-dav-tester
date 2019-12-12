@@ -20,18 +20,15 @@ import org.bedework.davtester.ical.Icalendar;
 
 import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.Period;
-import net.fortuna.ical4j.model.PeriodList;
 import net.fortuna.ical4j.model.component.VFreeBusy;
 import net.fortuna.ical4j.model.parameter.FbType;
 import org.apache.http.Header;
 
 import java.net.URI;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.bedework.davtester.Utils.symmetricDiff;
-import static org.bedework.davtester.Utils.throwException;
 
 /**
  * Verifier that checks the response of a free-busy-query.
@@ -131,19 +128,5 @@ public class FreeBusy extends Verifier {
     }
 
     return result;
-  }
-
-  private PeriodList getPeriods(final List<String> vals) {
-    final PeriodList pl = new PeriodList();
-
-    for (final var val: vals) {
-      try {
-        pl.add(new Period(val));
-      } catch (final ParseException pe) {
-        throwException(pe);
-      }
-    }
-
-    return pl;
   }
 }

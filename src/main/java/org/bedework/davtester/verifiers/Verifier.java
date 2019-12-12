@@ -21,14 +21,18 @@ import org.bedework.davtester.XmlUtils;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 
+import net.fortuna.ical4j.model.Period;
+import net.fortuna.ical4j.model.PeriodList;
 import org.apache.http.Header;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.net.URI;
+import java.text.ParseException;
 import java.util.List;
 
 import static java.lang.String.format;
+import static org.bedework.davtester.Utils.throwException;
 
 /** Base class for verifiers
  *
@@ -74,8 +78,6 @@ public abstract class Verifier implements Logged {
       }
       text.append(val);
     }
-
-
   }
 
   protected Manager manager;
@@ -110,6 +112,20 @@ public abstract class Verifier implements Logged {
                                          final int status,
                                          final String respdata,
                                          final KeyVals args);
+
+  protected PeriodList getPeriods(final List<String> vals) {
+    final PeriodList pl = new PeriodList();
+
+    for (final var val: vals) {
+      try {
+        pl.add(new Period(val));
+      } catch (final ParseException pe) {
+        throwException(pe);
+      }
+    }
+
+    return pl;
+  }
 
   protected boolean parseXml(final String str) {
     try {
