@@ -16,17 +16,13 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.XmlUtils;
 import org.bedework.util.misc.Util;
-import org.bedework.util.xml.XmlUtil;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 
 import java.net.URI;
 import java.util.List;
-
-import javax.xml.namespace.QName;
 
 import static org.bedework.davtester.Utils.fileToString;
 
@@ -83,25 +79,5 @@ public class XmlDataMatch extends Verifier {
     }
 
     return result;
-  }
-
-  private String normalizeXMLData(final String data,
-                                  final List<String> filters) {
-    var doc = XmlUtils.parseXmlString(data);
-    var root = doc.getDocumentElement();
-
-    // Apply filters
-    for (var filter : filters) {
-      var qn = QName.valueOf(filter);
-      var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
-                                           qn.getLocalPart());
-      for (var i = 0; i <= nl.getLength(); i++) {
-        var node = nl.item(i);
-
-        XmlUtil.clear(node);
-      }
-    }
-
-    return XmlUtils.docToString(doc);
   }
 }

@@ -778,9 +778,7 @@ whether the returned properties (and optionally their values) are good (2xx) or 
 	Argument: 'okprops'
 		A set of properties for which a 2xx response status is required. Two forms can be used:
 		
-		'propname' - will test for the presence of the property named
-		'propname'. The element data must be a qualified XML element
-		name.
+		'propname' - will test for the presence of the named property. The element data must be a qualified XML element name.
 	
 		'propname$value' - will test for the presence of the property
 		named 'propname' and check that its value matches the provided
@@ -793,7 +791,16 @@ whether the returned properties (and optionally their values) are good (2xx) or 
 		'value'. The element data must be a qualified XML element name.
 		XML elements in the property value can be tested provided proper
 		XML escaping is used (see example).
+		
+	Argument: 'count'
+		Single value count of OK responses (-1 for some reason?).
+
+	Argument: 'ignore'
+	    Hrefs to skip in the response
 	
+	Argument: 'only'
+	    Hrefs must be in this set
+	    
 	Argument: 'badhrefs'
 		A set of properties for which a non-2xx response status is
 		required. The same two forms as used for 'okprops' can be used

@@ -20,6 +20,8 @@ import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlUtils;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
+import org.bedework.util.misc.Util;
+import org.bedework.util.xml.XmlUtil;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
@@ -34,6 +36,8 @@ import java.net.URI;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.xml.namespace.QName;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.throwException;
@@ -170,6 +174,28 @@ public abstract class Verifier implements Logged {
   protected List<Element> findNodes(final Element el,
                                     final String testPath) {
     return XmlUtils.findNodes(el, false, testPath);
+  }
+
+  protected String normalizeXMLData(final String data,
+                                  final List<String> filters) {
+    var doc = XmlUtils.parseXmlString(data);
+    var root = doc.getDocumentElement();
+
+    if (!Util.isEmpty(filters)) {
+      // Apply filters
+      for (var filter : filters) {
+        var qn = QName.valueOf(filter);
+        var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
+                                             qn.getLocalPart());
+        for (var i = 0; i <= nl.getLength(); i++) {
+          var node = nl.item(i);
+
+          XmlUtil.clear(node);
+        }
+      }
+    }
+
+    return XmlUtils.docToString(doc);
   }
 
   protected void fmsg(final String fmt,

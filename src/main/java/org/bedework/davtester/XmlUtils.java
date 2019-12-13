@@ -155,6 +155,16 @@ public class CopyrightResolver implements EntityResolver {
     }
   }
 
+  public static MultiStatusResponse getExtMkcolResponse(
+          final String val) {
+    try {
+      return davUtil.getExtMkcolResponse(val);
+    } catch (final Throwable t) {
+      throwException(t);
+      return new MultiStatusResponse(); // fake
+    }
+  }
+
   public static List<Element> childrenMatching(final Node nd,
                                                final QName tag) {
     try {

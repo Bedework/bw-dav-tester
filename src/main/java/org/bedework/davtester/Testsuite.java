@@ -19,12 +19,10 @@ import org.bedework.davtester.Serverinfo.KeyVal;
 import org.bedework.util.misc.ToString;
 
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
@@ -64,11 +62,7 @@ class Testsuite extends DavTesterBase {
   }
 
   public void parseXML(final Element node) {
-    try {
-      name = getAttrVal(node, XmlDefs.ATTR_NAME);
-    } catch (SAXException e) {
-      throwException(e);
-    }
+    name = getAttrVal(node, XmlDefs.ATTR_NAME);
     ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
     only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
     changeuid = getYesNoAttributeValue(node,

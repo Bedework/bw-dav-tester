@@ -22,7 +22,6 @@ import org.bedework.util.xml.tagdefs.WebdavTags;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
-import org.xml.sax.SAXException;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -118,14 +117,8 @@ public class AclItems extends Verifier {
         }
 
         // Should really only be on element inside privilege
-        try {
-          var gpriv = XmlUtil.getOnlyElement(priv);
-          grantedPrivs.add(getQName(gpriv).toString());
-        } catch (SAXException e) {
-          fmsg("           Failue getting DAV:prov child: %s",
-               respdata);
-          return result;
-        }
+        var gpriv = XmlUtil.getOnlyElement(priv);
+        grantedPrivs.add(getQName(gpriv).toString());
       }
 
       // Now do set difference
