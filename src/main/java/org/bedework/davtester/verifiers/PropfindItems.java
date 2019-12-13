@@ -53,43 +53,6 @@ import static org.bedework.davtester.XmlUtils.multiStatusResponse;
  </ul>
  */
 public class PropfindItems extends Verifier {
-  private static class NameVal implements Comparable<NameVal> {
-    final String name;
-
-    final String val;
-
-    private NameVal(final String name,
-                    final String val) {
-      this.name = name;
-      this.val = val;
-    }
-
-    public boolean equals(final Object o) {
-      if (!(o instanceof NameVal)) {
-        return false;
-      }
-
-      var that = (NameVal)o;
-
-      return (Util.cmpObjval(name, that.name) == 0) &&
-              (Util.cmpObjval(val, that.val) == 0);
-    }
-
-    @Override
-    public int compareTo(final NameVal that) {
-      var res = Util.cmpObjval(name, that.name);
-
-      if (res != 0) {
-        return res;
-      }
-      return Util.cmpObjval(val, that.val);
-    }
-
-    public String toString() {
-      return "[" + name + ", " + val + "]";
-    }
-  }
-
   @Override
   public VerifyResult verify(final URI uri,
                              final List<Header> responseHeaders,
@@ -204,7 +167,7 @@ public class PropfindItems extends Verifier {
         // Determine status for this propstat
         boolean isOkStatus = propstat.status / 100 == 2;
 
-        for (var prop : propstat.props) {
+        for (var prop: propstat.props) {
           var fqname = getQName(prop).toString();
           var testNv = new NameVal(fqname, null);
 
@@ -287,13 +250,5 @@ public class PropfindItems extends Verifier {
     }
 
     return result;
-  }
-
-  private String normalizeXML(final String val) {
-    if (!val.startsWith("<")) {
-      return val;
-    }
-
-    return normalizeXMLData(val, null);
   }
 }

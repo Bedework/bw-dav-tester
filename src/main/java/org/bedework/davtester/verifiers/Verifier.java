@@ -47,6 +47,50 @@ import static org.bedework.davtester.Utils.throwException;
  * User: mike Date: 11/20/19 Time: 22:55
  */
 public abstract class Verifier implements Logged {
+  protected static class NameVal implements Comparable<NameVal> {
+    final String name;
+    final String val;
+    final boolean match;
+
+    protected NameVal(final String name,
+                      final String val) {
+      this(name, val, false);
+    }
+
+    protected NameVal(final String name,
+                      final String val,
+                      final boolean match) {
+      this.name = name;
+      this.val = val;
+      this.match = match;
+    }
+
+    public boolean equals(final Object o) {
+      if (!(o instanceof NameVal)) {
+        return false;
+      }
+
+      var that = (NameVal)o;
+
+      return (Util.cmpObjval(name, that.name) == 0) &&
+              (Util.cmpObjval(val, that.val) == 0);
+    }
+
+    @Override
+    public int compareTo(final NameVal that) {
+      var res = Util.cmpObjval(name, that.name);
+
+      if (res != 0) {
+        return res;
+      }
+      return Util.cmpObjval(val, that.val);
+    }
+
+    public String toString() {
+      return "[" + name + ", " + val + "]";
+    }
+  }
+
   public static class VerifyResult {
     public boolean ok = true;
     public StringBuilder text = new StringBuilder();
@@ -196,6 +240,14 @@ public abstract class Verifier implements Logged {
     }
 
     return XmlUtils.docToString(doc);
+  }
+
+  protected String normalizeXML(final String val) {
+    if (!val.startsWith("<")) {
+      return val;
+    }
+
+    return normalizeXMLData(val, null);
   }
 
   protected void fmsg(final String fmt,
