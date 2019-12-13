@@ -16,68 +16,39 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.util.misc.Util;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
-
-import static org.bedework.davtester.Utils.fileToString;
 
 /**
  * Verifier that checks the response body for an exact match to data
  * in a file.
  */
-public class XmlDataMatch extends Verifier {
+public class XmlDataMatch extends FileDataMatch {
   @Override
-  public VerifyResult verify(final URI uri,
-                             final List<Header> responseHeaders,
-                             final int status,
-                             final String respdata,
-                             final KeyVals args) {
-    // Get arguments
-    var filepath = args.getOnlyString("filepath");
-    var filters = args.getStrings("filter");
+  public List<Integer> expectedStatus(final KeyVals args) {
+    return Arrays.asList(200, 207);
+  }
 
-    if (manager.dataDir != null) {
-      filepath = Util.buildPath(false, manager.dataDir,
-                                "/", filepath);
-    }
-
-    // status code must be 200, 207
-    if ((status != 200) && (status != 207)) {
-      fmsg("        HTTP Status Code Wrong: %d", status);
-      return result;
-    }
-
-    // look for response data
-    if (StringUtils.isEmpty(respdata)) {
-      append("        No response body");
-      return result;
-    }
-
-    // read in all data from specified file
-    var data = fileToString(filepath);
-
-    if (data == null) {
-      append("        Could not read data file");
-      return result;
-    }
-
-    data = manager.serverInfo.subs(data);
-    data = manager.serverInfo.extrasubs(data);
-
+  @Override
+  public void compare(final URI uri,
+                      final List<Header> responseHeaders,
+                      final int status,
+                      final String respdata,
+                      final KeyVals args,
+                      final String filepath,
+                      final List<String> filters,
+                      final String data) {
     var nrespdata = normalizeXMLData(respdata, filters);
-    data = normalizeXMLData(data, filters);
+    var ndata = normalizeXMLData(data, filters);
 
-    if (!nrespdata.equals(data)) {
+    if (!nrespdata.equals(ndata)) {
       errorDiff("        Response data does not " +
                         "exactly match file data%s",
                 respdata, data);
     }
-
-    return result;
   }
 }

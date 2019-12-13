@@ -27,7 +27,7 @@
     <ical4j.artifactId>ical4j</ical4j.artifactId>
     <ical4j.version>1.1.4</ical4j.version>
     -->
-    <ical4j-vcard.version>1.0.4</ical4j-vcard.version>
+    <ical4j-vcard.version>1.0.5</ical4j-vcard.version>
 
 		<!-- Third Party Library Versions -->
     <commons-lang3.version>3.3.2</commons-lang3.version>

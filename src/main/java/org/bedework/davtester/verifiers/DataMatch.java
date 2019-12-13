@@ -17,91 +17,66 @@ package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.XmlUtils;
-import org.bedework.util.misc.Util;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.bedework.davtester.Utils.fileToString;
 import static org.bedework.davtester.XmlUtils.docToString;
 
 /**
  * Verifier that checks the response body for an exact match to data
  * in a file.
  */
-public class DataMatch extends Verifier {
+public class DataMatch extends FileDataMatch {
   @Override
-  public VerifyResult verify(final URI uri,
-                             final List<Header> responseHeaders,
-                             final int status,
-                             final String respdata,
-                             final KeyVals args) {
-    // Get arguments
-    var filepath = args.getOnlyString("filepath");
-    if (manager.dataDir != null) {
-      filepath = Util.buildPath(false, manager.dataDir,
-                                "/", filepath);
-    }
+  public List<Integer> expectedStatus(final KeyVals args) {
+    return Arrays.asList(200, 207);
+  }
 
-    // status code must be 200, 207
-    if ((status != 200) && (status != 207)) {
-      fmsg("        HTTP Status Code Wrong: %d", status);
-      return result;
-    }
-
-    // look for response data
-    if (StringUtils.isEmpty(respdata)) {
-      append("        No response body");
-      return result;
-    }
-
-    // read in all data from specified file
-    var data = fileToString(filepath);
-
-    if (data == null) {
-      append("        Could not read data file");
-      return result;
-    }
-
-    data = manager.serverInfo.subs(data);
-
+  @Override
+  public void compare(final URI uri,
+                      final List<Header> responseHeaders,
+                      final int status,
+                      final String respdata,
+                      final KeyVals args,
+                      final String filepath,
+                      final List<String> filters,
+                      final String data) {
     if (data.equals(respdata)) {
-      return result;
+      return;
     }
 
-    data = data.replace("\n", "\r\n");
-    if (data.equals(respdata)) {
-      return result;
+    var ndata = data.replace("\n", "\r\n");
+    if (ndata.equals(respdata)) {
+      return;
     }
 
-    // If we have an iCalendar file, then unwrap data and do compare
-    if (filepath.endsWith(".ics")) {
-      data = data.replace("\r\n ", "");
+    // If we have iCalendar data, then unwrap data and do compare
+    if ((filepath != null) && filepath.endsWith(".ics")) {
+      ndata = ndata.replace("\r\n ", "");
       var rd = respdata.replace("\r\n ", "");
-      if (data.equals(rd)) {
-        return result;
+      if (ndata.equals(rd)) {
+        return;
       }
-    } else if (filepath.endsWith(".xml")) {
+    } else if ((filepath != null) && filepath.endsWith(".xml")) {
       var rd = docToString(XmlUtils.parseXml(respdata));
 
       var xdata = docToString(XmlUtils.parseXml(data));
       if (xdata == null) {
         fmsg("        Unable to parse xml data: %s", data);
-        return result;
+        return;
       }
 
       if (xdata.equals(rd)) {
-        return result;
+        return;
       }
     }
 
     errorDiff("        Response data does not " +
                       "exactly match file data%s",
               respdata, data);
-
-    return result;
   }
 }

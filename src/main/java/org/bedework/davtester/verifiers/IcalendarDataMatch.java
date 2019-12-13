@@ -35,26 +35,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static org.bedework.davtester.Utils.fileToString;
-
 /**
  * Verifier that matches an ical response body to a file.
  */
-public class IcalendarDataMatch extends Verifier {
-  private List<String> filters;
+public class IcalendarDataMatch extends FileDataMatch {
+  @Override
+  public List<Integer> expectedStatus(final KeyVals args) {
+    return args.getInts("status", 200, 201, 207);
+  }
 
   @Override
-  public VerifyResult verify(final URI uri,
-                             final List<Header> responseHeaders,
-                             final int status,
-                             final String respdata,
-                             final KeyVals args) {
-    // Get arguments
-    var files = manager.normDataPaths(args.getStrings("filepath"));
-    var caldata = args.getStrings("data");
-    filters = args.getStrings("filter");
-    var statusCode = args.getStrings("status", "200", "201", "207");
-
+  public void compare(final URI uri,
+                      final List<Header> responseHeaders,
+                      final int status,
+                      final String respdata,
+                      final KeyVals args,
+                      final String filepath,
+                      final List<String> filters,
+                      final String data) {
     if (!featureSupported("EMAIL parameter")) {
       filters.add("ATTENDEE:EMAIL");
       filters.add("ORGANIZER:EMAIL");
@@ -80,49 +78,12 @@ public class IcalendarDataMatch extends Verifier {
       doTimezones = args.getOnlyBool("doTimezones");
     }
 
-    // status code must be 200, 201, 207 or explicitly specified code
-
-    if (!statusCode.contains(String.valueOf(status))) {
-      fmsg("        HTTP Status Code Wrong: %d",
-           status);
-      return result;
-    }
-
-    // look for response data
-    if (respdata == null) {
-      append("        No response body");
-      return result;
-    }
-
-    // look for one file
-    if ((files.size() != 1) && (caldata.size() != 1)) {
-      append("        No file to compare response to");
-      return result;
-    }
-
-    // read in all data from specified file or use provided data
-    String data;
-
-    if (!Util.isEmpty(files)) {
-      data = fileToString(files.get(0).toFile());
-    } else if (caldata.size() == 0) {
-      data = null;
-    } else {
-      data = caldata.get(0);
-    }
-
-    if (data == null) {
-      return new VerifyResult("        Could not read data file");
-    }
-
-    data = manager.serverInfo.extrasubs(manager.serverInfo.subs(data));
-
     try {
       var respCalendar = Icalendar.parseText(respdata);
-      removePropertiesParameters(respCalendar, doTimezones);
+      removePropertiesParameters(respCalendar, doTimezones, filters);
 
       var dataCalendar = Icalendar.parseText(data);
-      removePropertiesParameters(dataCalendar, doTimezones);
+      removePropertiesParameters(dataCalendar, doTimezones, filters);
 
       // Why is this being done?
       //reconcileRecurrenceOverrides(respCalendar, dataCalendar);
@@ -133,7 +94,7 @@ public class IcalendarDataMatch extends Verifier {
       Patch<String> patch = DiffUtils.diff(dataLines, respLines);
 
       if (Util.isEmpty(patch.getDeltas())) {
-        return result;
+        return;
       }
 
       /*var result = respCalendar == dataCalendar;
@@ -161,11 +122,9 @@ public class IcalendarDataMatch extends Verifier {
       fmsg("        Response data does not " +
                    "exactly match file data%s",
            errorDiff);
-      return result;
     } catch (final Throwable t) {
       fmsg("        Response data is not calendar data: %s",
            t.getMessage());
-      return result;
     }
   }
 
@@ -247,7 +206,8 @@ public class IcalendarDataMatch extends Verifier {
                         "X-CALENDARSERVER-ATTENDEE-COMMENT"));
 
   private void removePropertiesParameters(final Component component,
-                                          final boolean doTimezones) {
+                                          final boolean doTimezones,
+                                          final List<String> filters) {
     if (!doTimezones) {
       var toRemove = new ArrayList<Component>();
 
@@ -256,7 +216,7 @@ public class IcalendarDataMatch extends Verifier {
           toRemove.add(subcomponent);
           continue;
         }
-        removePropertiesParameters(subcomponent, doTimezones);
+        removePropertiesParameters(subcomponent, doTimezones, filters);
       }
 
       for (var c: toRemove) {
@@ -289,7 +249,7 @@ public class IcalendarDataMatch extends Verifier {
         }
       }
 
-      for (var filter : filters) {
+      for (var filter: filters) {
         if (filter.contains(":")) {
           var split = filter.split(":");
           if (property.getName().equals(split[0])) {
