@@ -1094,8 +1094,7 @@ class Caldavtest extends DavTesterBase {
               .setPort(req.port)
               .build();
     } catch (final Throwable t) {
-      throwException(t);
-      return DoRequestResult.fail("Fake for ide"); // fake
+      return throwException(t);
     }
 
     HttpRequestBase meth = HttpUtil.findMethod(method, uri);

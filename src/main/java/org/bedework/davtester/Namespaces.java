@@ -73,8 +73,7 @@ public class Namespaces {
 
       return abbr;
     } catch (Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
   

@@ -109,8 +109,7 @@ public class Verify extends DavTesterBase {
     var verifier = verifiers.get(callback);
 
     if (verifier == null) {
-      throwException("Unknown verifier: " + callback);
-      return null; // fake
+      return throwException("Unknown verifier: " + callback);
     }
 
     // Always clone the args as this verifier may be called multiple times

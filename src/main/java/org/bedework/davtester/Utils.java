@@ -96,7 +96,7 @@ public class Utils {
    *
    * @param message to display
    */
-  public static void throwException(final String message) {
+  public static <T> T throwException(final String message) {
     throw new RuntimeException(message);
   }
 
@@ -104,7 +104,7 @@ public class Utils {
    *
    * @param t exception
    */
-  public static void throwException(final Throwable t) {
+  public static <T> T throwException(final Throwable t) {
     throw new RuntimeException(t);
   }
 
@@ -165,21 +165,20 @@ public class Utils {
   public static String fileToString(final File f) {
     try {
       if (!f.exists()) {
-        throwException("File " + f.getCanonicalPath() + " does not exist");
-        return null;// fake
+        return throwException("File " + f.getCanonicalPath() +
+                                      " does not exist");
       }
 
       if (!f.isFile()) {
-        throwException("" + f.getCanonicalPath() + " is not a file");
-        return null;// fake
+        return throwException("" + f.getCanonicalPath() +
+                                      " is not a file");
       }
 
       try (FileInputStream fis = new FileInputStream(f)) {
         return Util.streamToString(fis);
       }
     } catch (final Throwable t) {
-      throwException(t);
-      return null;// fake
+      return throwException(t);
     }
   }
 }

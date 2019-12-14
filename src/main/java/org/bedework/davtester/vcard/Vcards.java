@@ -23,8 +23,7 @@ public class Vcards {
     try {
       return bldr.build();
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 

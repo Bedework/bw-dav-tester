@@ -37,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.xml.namespace.QName;
@@ -70,8 +69,7 @@ public class XmlUtils {
 
       return parseXml(is);
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -82,8 +80,7 @@ public class XmlUtils {
 
       return parseXml(is);
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -121,8 +118,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return builder.parse(new InputSource(is));
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -136,10 +132,8 @@ public class CopyrightResolver implements EntityResolver {
       transformer.transform(new DOMSource(doc), new StreamResult(writer));
       return writer.getBuffer().toString();
     } catch (final Throwable t) {
-      throwException(t);
+      return throwException(t);
     }
-
-    return null;
   }
   public static Namespaces namespaces = new Namespaces();
 
@@ -150,8 +144,7 @@ public class CopyrightResolver implements EntityResolver {
     try {
       return davUtil.getMultiStatusResponse(val);
     } catch (final Throwable t) {
-      throwException(t);
-      return new MultiStatusResponse(); // fake
+      return throwException(t);
     }
   }
 
@@ -160,8 +153,7 @@ public class CopyrightResolver implements EntityResolver {
     try {
       return davUtil.getExtMkcolResponse(val);
     } catch (final Throwable t) {
-      throwException(t);
-      return new MultiStatusResponse(); // fake
+      return throwException(t);
     }
   }
 
@@ -179,8 +171,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return matched;
     } catch (final Throwable t) {
-      throwException(t);
-      return Collections.EMPTY_LIST; // fake
+      return throwException(t);
     }
   }
 
@@ -188,8 +179,7 @@ public class CopyrightResolver implements EntityResolver {
     try {
       return XmlUtil.getElements(nd);
     } catch (final Throwable t) {
-      throwException(t);
-      return Collections.EMPTY_LIST; // fake
+      return throwException(t);
     }
   }
 
@@ -201,8 +191,7 @@ public class CopyrightResolver implements EntityResolver {
     try {
       return XmlUtil.getElementContent(nd);
     } catch (final Throwable t) {
-      throwException(t);
-      return ""; // fake
+      return throwException(t);
     }
   }
 
@@ -215,8 +204,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return Utils.encodeUtf8(str);
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -230,8 +218,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return str;
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -244,8 +231,7 @@ public class CopyrightResolver implements EntityResolver {
       }
       return Utils.encodeUtf8(str);
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
@@ -255,8 +241,7 @@ public class CopyrightResolver implements EntityResolver {
       return XmlDefs.ATTR_VALUE_YES
               .equals(getAttrVal(node, attr));
     } catch (final Throwable t) {
-      throwException(t);
-      return false; // fake
+      return throwException(t);
     }
   }
 
@@ -271,8 +256,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return XmlDefs.ATTR_VALUE_YES.equals(val);
     } catch (final Throwable t) {
-      throwException(t);
-      return false; // fake
+      return throwException(t);
     }
   }
 
@@ -287,8 +271,7 @@ public class CopyrightResolver implements EntityResolver {
 
       return Integer.valueOf(val);
     } catch (final Throwable t) {
-      throwException(t);
-      return 0; // fake
+      return throwException(t);
     }
   }
 
@@ -500,8 +483,7 @@ public void readOneStringElement(node, ename) {
 
       return res;
     } catch (final Throwable t) {
-      throwException(t);
-      return null; // fake
+      return throwException(t);
     }
   }
 
