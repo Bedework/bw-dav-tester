@@ -21,8 +21,11 @@ import org.bedework.util.misc.ToString;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import static java.lang.String.format;
+import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
@@ -82,6 +85,94 @@ class Testsuite extends DavTesterBase {
         tests.add(t);
       }
     }
+  }
+
+  public TestResult run(final KeyVals testfile,
+                        final String label) {
+    try {
+      if (httpTrace) {
+        httpTraceOn();
+      }
+
+      return runTestSuite(testfile,
+                          format("%s | %s", label, name));
+    } finally {
+      if (httpTrace) {
+        httpTraceOff();
+      }
+    }
+  }
+
+  public TestResult runTestSuite(final KeyVals testfile,
+                                 final String label) {
+    var resultName = name;
+    var res = new TestResult();
+    // POSTGRES postgresCount = null;
+
+    if ((manager.currentTestfile.only && !only) || ignore) {
+      manager.testSuite(testfile, resultName,
+                        "    Deliberately ignored",
+                        RESULT_IGNORED);
+      res.ignored = tests.size();
+    } else if (hasMissingFeatures()) {
+      manager.testSuite(testfile, resultName,
+                        format("    Missing features: %s", missingFeatures()),
+                        RESULT_IGNORED);
+      res.ignored = tests.size();
+    } else if (hasExcludedFeatures()) {
+      manager.testSuite(testfile, resultName,
+                        format("    Excluded features: %s", excludedFeatures()),
+                        RESULT_IGNORED);
+      res.ignored = tests.size();
+    } else {
+      // POSTGRES postgresCount = postgresInit();
+      //if (manager.memUsage) {
+      //  start_usage = manager.getMemusage();
+      //}
+      var etags = new HashMap<String, String>();
+      var onlyTests = false;
+      for (var test: tests) {
+        if (test.only) {
+          onlyTests = true;
+          break;
+        }
+      }
+
+      var testsuite = manager.testSuite(testfile, resultName, "", null);
+      var uids = aboutToRun();
+      for (var kv: uids) {
+        manager.currentTestfile.uidmaps.put(kv.key, format("%s - %s", kv.val, label));
+      }
+
+      for (var test: tests) {
+        try {
+          if (test.httpTrace) {
+            httpTraceOn();
+          }
+
+          res.add(test.run(testsuite, etags, onlyTests,
+                           format("%s | %s", label, test.name)));
+        } finally {
+          if (test.httpTrace) {
+            httpTraceOff();
+          }
+        }
+      }
+      /*
+            if (manager.memUsage){
+              end_usage=manager.getMemusage();
+              manager.message("trace","    Mem. Usage: RSS=%s%% VSZ=%s%%"%(str(((end_usage[1]-start_usage[1])*100)/start_usage[1]),str(((end_usage[0]-start_usage[0])*100)/start_usage[0])))
+              }
+        */
+    }
+
+    manager.trace(format("  Suite Results: %d PASSED, %d FAILED, %d IGNORED\n",
+                         res.ok, res.failed, res.ignored));
+    /* POSTGRES
+        if postgresCount is ! null:
+            postgresResult(postgresCount, indent=4);
+         */
+    return res;
   }
 
   public String toString() {

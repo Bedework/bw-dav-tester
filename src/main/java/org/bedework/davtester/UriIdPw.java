@@ -23,13 +23,13 @@ import org.apache.http.message.BasicHeader;
  * User: mike Date: 11/24/19 Time: 16:27
  */
 public class UriIdPw {
-  final String ruri;
-  final String user;
-  final String pswd;
+  public final String ruri;
+  public final String user;
+  public final String pswd;
 
-  UriIdPw(final String ruri,
-          final String user,
-          final String pswd) {
+  public UriIdPw(final String ruri,
+                 final String user,
+                 final String pswd) {
     this.ruri = ruri;
     this.user = user;
     this.pswd = pswd;
@@ -47,18 +47,18 @@ public class UriIdPw {
     }
   }
 
-  static UriIdPw fromRequest(final Request req) {
+  public static UriIdPw fromRequest(final Request req) {
     return new UriIdPw(req.ruri, req.getUser(), req.getPswd());
   }
 
-  Request makeRequest(final Request originalRequest,
-                      final String method) {
+  public Request makeRequest(final Request originalRequest,
+                             final String method) {
     return makeRequest(originalRequest, method, null);
   }
 
-  Request makeRequest(final Request originalRequest,
-                      final String method,
-                      final String depth) {
+  public Request makeRequest(final Request originalRequest,
+                             final String method,
+                             final String depth) {
     var req = new Request(originalRequest.manager);
     req.method = method;
     req.scheme = originalRequest.scheme;

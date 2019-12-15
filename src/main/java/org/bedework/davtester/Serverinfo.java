@@ -71,8 +71,8 @@ public class Serverinfo {
   Set<String> features = new TreeSet<>();
   public String user = null;
   public String pswd = null;
-  int waitcount = 120;
-  long waitdelay = 250; // .25 second
+  public int waitcount = 120;
+  public long waitdelay = 250; // .25 second
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
   final KeyVals extrasubsKvs = new KeyVals();

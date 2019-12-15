@@ -35,7 +35,6 @@ import time
 import org.bedework.davtester.observers.BaseResultsObserver;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
-import org.bedework.util.misc.ToString;
 import org.bedework.util.misc.Util;
 
 import org.apache.http.auth.AuthScope;
@@ -88,10 +87,12 @@ public class Manager implements Logged {
   public Path resDirPath;
 
   Path pretestFile;
-  private Caldavtest pretest;
+  private Testfile pretest;
   Path posttestFile;
-  private Caldavtest posttest;
-  private List<Caldavtest> tests = new ArrayList<>();
+  private Testfile posttest;
+  private List<Testfile> testFiles = new ArrayList<>();
+  public Testfile currentTestfile;
+
   private boolean textMode;
   private int pid;
   boolean memUsage;
@@ -110,56 +111,7 @@ public class Manager implements Logged {
   boolean stoponfail = false;
   public boolean printRequest = false;
   public boolean printResponse = false;
-  boolean printRequestResponseOnError = false;
-
-  public static class TestResult extends RequestStats {
-    public int ok;
-    public int failed;
-    public int ignored;
-
-    public void add(final TestResult tr) {
-      ok += tr.ok;
-      failed += tr.failed;
-      ignored += tr.ignored;
-    }
-
-    public TestResult() {
-    }
-
-    public TestResult(final int ok,
-                      final int failed,
-                      final int ignored) {
-      this.ok = ok;
-      this.failed = failed;
-      this.ignored = ignored;
-    }
-
-    public static TestResult ok() {
-      return new TestResult(1, 0, 0);
-    }
-
-    public static TestResult failed() {
-      return new TestResult(0, 1, 0);
-    }
-
-    public static TestResult ignored() {
-      return new TestResult(0, 0, 1);
-    }
-
-    public String toString() {
-      final var ts = new ToString(this);
-
-      ts.append("ok", ok);
-      ts.append("failed", failed);
-      ts.append("ignored", ignored);
-
-      ts.newLine();
-
-      super.toStringSegment(ts);
-
-      return ts.toString();
-    }
-  }
+  public boolean printRequestResponseOnError = false;
 
   public void Manager(final boolean textMode) {
     this.textMode = textMode;
@@ -384,7 +336,7 @@ public class Manager implements Logged {
   }
 
   public void readXML(final String serverfile,
-                      final List<Path> testfiles,
+                      final List<Path> testfilePaths,
                       final boolean ssl,
                       final boolean all) {
     trace(format("Reading Server Info from \"%s\"",
@@ -463,27 +415,27 @@ public class Manager implements Logged {
 
     var ctr = 1;
 
-    for (var testfile : testfiles) {
-      load(testfile, ctr, testfiles.size());
+    for (var testfile : testfilePaths) {
+      load(testfile, ctr, testfilePaths.size());
       ctr++;
 
       // Open and parse the config file
-      var test = new Caldavtest(this, testfile, false);
+      var test = new Testfile(this, testfile, false);
 
       // ignore if all mode and ignore-all is set
       if (!all || !test.ignoreAll) {
-        tests.add(test);
+        testFiles.add(test);
       }
     }
 
     if (pretestFile != null) {
-      pretest = new Caldavtest(this, pretestFile, false);
+      pretest = new Testfile(this, pretestFile, false);
     }
     if (posttestFile != null) {
-      posttest = new Caldavtest(this, posttestFile, false);
+      posttest = new Testfile(this, posttestFile, false);
     }
 
-    load(null, ctr, testfiles.size());
+    load(null, ctr, testfilePaths.size());
   }
 
   public TestResult runAll() {
@@ -496,14 +448,15 @@ public class Manager implements Logged {
     var res = new TestResult();
     res.startTimer();
 
-    for (var test : tests) {
+    for (var testFile: testFiles) {
       ctr++;
 
-      if (tests.size() > 1) {
-        testProgress(ctr + 1, tests.size());
+      if (testFiles.size() > 1) {
+        testProgress(ctr + 1, testFiles.size());
       }
 
       if (pretest != null) {
+        currentTestfile = pretest;
         var testResult = pretest.run();
 
         // Always stop the tests if the pretest fails
@@ -512,7 +465,8 @@ public class Manager implements Logged {
         }
       }
 
-      var testResult = test.run();
+      currentTestfile = testFile;
+      var testResult = testFile.run();
 
       res.add(testResult);
 
@@ -521,6 +475,7 @@ public class Manager implements Logged {
       }
 
       if (posttest != null) {
+        currentTestfile = posttest;
         var postTestResult = posttest.run();
 
         // Always stop the tests if the posttest fails
