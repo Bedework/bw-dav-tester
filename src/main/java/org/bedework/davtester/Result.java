@@ -37,4 +37,12 @@ public class Result<T> {
 
     return res;
   }
+
+  public static Result fail(final Result from) {
+    var res = new Result();
+    res.ok = false;
+    res.message = from.message;
+
+    return res;
+  }
 }

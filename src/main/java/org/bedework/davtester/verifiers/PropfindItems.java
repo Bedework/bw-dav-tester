@@ -33,9 +33,7 @@ import java.util.List;
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
-import static org.bedework.davtester.XmlUtils.getExtMkcolResponse;
 import static org.bedework.davtester.XmlUtils.getQName;
-import static org.bedework.davtester.XmlUtils.multiStatusResponse;
 
 /**
  * Verifier that checks a propfind response to make sure that the
@@ -132,9 +130,12 @@ public class PropfindItems extends Verifier {
 
     final MultiStatusResponse msr;
     if (root.equals("{DAV:}multistatus")) {
-      msr = multiStatusResponse(respdata);
+      msr = getMultiStatusResponse(respdata);
     } else {
       msr = getExtMkcolResponse(respdata);
+    }
+    if (msr == null) {
+      return result;
     }
 
     var ctr = 0;

@@ -115,7 +115,7 @@ public class XmlElementMatch extends Verifier {
     String actualPath;
     String tests;
     if (path.contains("[")) {
-      var split = path.split("\\[", 1);
+      var split = path.split("\\[", 2);
       actualPath = split[0];
       tests = split[1];
     } else{
@@ -185,7 +185,7 @@ public class XmlElementMatch extends Verifier {
         String value;
 
         if (test.contains("=")) {
-          var split = test.split("=", 1);
+          var split = test.split("=", 2);
           attr = split[0];
           value = split[1];
           value = value.substring(1, value.length() - 1);
@@ -245,7 +245,7 @@ public class XmlElementMatch extends Verifier {
         String elval;
 
         if (test.contains("=")) {
-          var split = test.split("=", 1);
+          var split = test.split("=", 2);
           element = split[0];
           elval = split[1];
         } else {
@@ -333,10 +333,10 @@ public class XmlElementMatch extends Verifier {
     
     // Find the first test in the xpath
     if (xpath.contains("[")) {
-      var splits = xpath.split("\\[", 1);
+      var splits = xpath.split("\\[", 2);
       actualXpath = splits[0];
       tests = splits[1];
-    } else{
+    } else {
       actualXpath = xpath;
       tests = null;
     }

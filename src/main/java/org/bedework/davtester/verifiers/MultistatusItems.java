@@ -35,7 +35,6 @@ import java.util.TreeSet;
 
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.Utils.intersection;
-import static org.bedework.davtester.XmlUtils.multiStatusResponse;
 
 /**
  * Verifier that checks a multistatus response to make sure that the specified hrefs
@@ -103,7 +102,11 @@ public class MultistatusItems extends Verifier {
     final var statusCodeHrefs = new HashMap<Integer, Set<String>>();
 
     final MultiStatusResponse msr =
-            multiStatusResponse(respdata);
+            getMultiStatusResponse(respdata);
+    if (msr == null) {
+      return result;
+    }
+
     var ok = false;
     int code;
 

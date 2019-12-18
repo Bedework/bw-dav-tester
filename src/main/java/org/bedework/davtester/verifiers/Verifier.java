@@ -18,6 +18,7 @@ package org.bedework.davtester.verifiers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.Manager;
 import org.bedework.davtester.XmlUtils;
+import org.bedework.util.dav.DavUtil.MultiStatusResponse;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
@@ -41,6 +42,7 @@ import javax.xml.namespace.QName;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.throwException;
+import static org.bedework.davtester.XmlUtils.multiStatusResponse;
 
 /** Base class for verifiers
  *
@@ -275,6 +277,28 @@ public abstract class Verifier implements Logged {
 
   protected void nl() {
     result.nl();
+  }
+
+  protected MultiStatusResponse getMultiStatusResponse(final String data) {
+    try {
+      return multiStatusResponse(data);
+    } catch (final Throwable t) {
+      result.append(format(
+              "Bad multi-status response. Message was %s\n" +
+                      "Data was %s", t.getMessage(), data));
+      return null;
+    }
+  }
+
+  protected MultiStatusResponse getExtMkcolResponse(final String data) {
+    try {
+      return XmlUtils.getExtMkcolResponse(data);
+    } catch (final Throwable t) {
+      result.append(format(
+              "Bad multi-staus response. Message was %s\n" +
+                      "Data was %s", t.getMessage(), data));
+      return null;
+    }
   }
 
   /* ====================================================================

@@ -767,10 +767,14 @@ public class Request extends DavTesterBase {
 
       case "GETNEW":
       case "GETOTHER":
-        manager.currentTestfile.grabbedLocation =
+        final Result<String> dfnRes =
                 doFindnew(UriIdPw.fromRequest(this),
                           label,
                           method.equals("GETOTHER"));
+        if (!dfnRes.ok) {
+          return DoRequestResult.fail(dfnRes.message);
+        }
+        manager.currentTestfile.grabbedLocation = dfnRes.val;
         if (graburi != null) {
           manager.serverInfo.addextrasubs(
                   new KeyVals(graburi,
@@ -781,9 +785,13 @@ public class Request extends DavTesterBase {
         break;
 
       case "FINDNEW":
-        manager.currentTestfile.grabbedLocation =
+        final Result<String> dfnRes1 =
                 doFindnew(UriIdPw.fromRequest(this),
                           label, false);
+        if (!dfnRes1.ok) {
+          return DoRequestResult.fail(dfnRes1.message);
+        }
+        manager.currentTestfile.grabbedLocation = dfnRes1.val;
         if (graburi != null) {
           manager.serverInfo.addextrasubs(
                   new KeyVals(graburi,
@@ -792,9 +800,13 @@ public class Request extends DavTesterBase {
         return DoRequestResult.ok();
 
       case "GETCONTAINS":
-        manager.currentTestfile.grabbedLocation =
+        final Result<String> dfcRes =
                 doFindcontains(UriIdPw.fromRequest(this),
                                          methodPar, label);
+        if (!dfcRes.ok) {
+          return DoRequestResult.fail(dfcRes.message);
+        }
+        manager.currentTestfile.grabbedLocation = dfcRes.val;
         if (manager.currentTestfile.grabbedLocation == null) {
           return DoRequestResult.fail("No matching resource");
         }
@@ -956,6 +968,9 @@ public class Request extends DavTesterBase {
                                drr.responseHeaders,
                                drr.status,
                                drr.responseData);
+      if (!vres.ok) {
+        drr.ok = false;
+      }
       drr.append(vres.getText());
     } else if (forceverify) {
       drr.ok = (drr.status / 100 == 2);
@@ -1003,10 +1018,16 @@ public class Request extends DavTesterBase {
       if (drr.ok &&
               (drr.status == 207) &&
               (drr.responseData != null)) {
-        final MultiStatusResponse msr =
-                multiStatusResponse(drr.responseData);
+        final Result<MultiStatusResponse> msr =
+                getMultiStatusResponse(drr.responseData);
 
-        ctr = msr.responses.size();
+        if (!msr.ok) {
+          drr.ok = false;
+          drr.append(msr.message);
+          return drr;
+        }
+
+        ctr = msr.val.responses.size();
       }
 
       if (ctr == 0) {
@@ -1182,11 +1203,16 @@ public class Request extends DavTesterBase {
     if (reqres.ok &&
             (reqres.status == 207) &&
             (reqres.responseData != null)) {
-      final MultiStatusResponse msr =
-              multiStatusResponse(reqres.responseData);
 
       var requestUri = req.getURI();
-      for (var response: msr.responses) {
+      final Result<MultiStatusResponse> msr =
+              getMultiStatusResponse(reqres.responseData);
+
+      if (!msr.ok) {
+        return Result.fail(msr);
+      }
+
+      for (var response : msr.val.responses) {
         // Get href for this response
         if (!response.href.equals(requestUri)) {
           hrefs.add(new UriIdPw(response.href, uip.user, uip.pswd));
@@ -1217,9 +1243,9 @@ public class Request extends DavTesterBase {
     return true;
   }
 
-  public String doFindnew(final UriIdPw uip,
-                          final String label,
-                          final boolean other) {
+  public Result<String> doFindnew(final UriIdPw uip,
+                                  final String label,
+                                  final boolean other) {
     String hresult = null;
 
     var uri = uip.ruri;
@@ -1262,12 +1288,17 @@ public class Request extends DavTesterBase {
     if (reqres.ok &&
             (reqres.status == 207) &&
             (reqres.responseData != null)) {
-      final MultiStatusResponse msr =
-              multiStatusResponse(reqres.responseData);
 
       long latest = 0;
       var requestUri = req.getURI();
-      for (var response: msr.responses) {
+      final Result<MultiStatusResponse> msr =
+              getMultiStatusResponse(reqres.responseData);
+
+      if (!msr.ok) {
+        return Result.fail(msr);
+      }
+
+      for (var response : msr.val.responses) {
         if (!response.href.equals(requestUri) &&
                 (!other|| !(response.href.equals(skip)))) {
 
@@ -1319,12 +1350,12 @@ public class Request extends DavTesterBase {
       manager.currentTestfile.previouslyFound.add(hresult);
     }
 
-    return hresult;
+    return new Result<>(hresult);
   }
 
-  public String doFindcontains(final UriIdPw uip,
-                               final String match,
-                               final String label) {
+  public Result<String> doFindcontains(final UriIdPw uip,
+                                       final String match,
+                                       final String label) {
     var req = uip.makeRequest(this, "PROPFIND", "1");
 
     req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
@@ -1346,10 +1377,14 @@ public class Request extends DavTesterBase {
 
       var requestUri = req.getURI();
 
-      final MultiStatusResponse msr =
-              multiStatusResponse(reqres.responseData);
+      final Result<MultiStatusResponse> msr =
+              getMultiStatusResponse(reqres.responseData);
 
-      for (var response : msr.responses) {
+      if (!msr.ok) {
+        return Result.fail(msr);
+      }
+
+      for (var response : msr.val.responses) {
         if (!response.href.equals(requestUri)) {
           var respdata = req.doGet(new UriIdPw(response.href,
                                                uip.user,
@@ -1363,7 +1398,7 @@ public class Request extends DavTesterBase {
       }
     }
 
-    return href;
+    return new Result<>(href);
   }
 
   public Result doWaitcount(final UriIdPw uip,
@@ -1393,10 +1428,14 @@ public class Request extends DavTesterBase {
       if (reqres.ok &&
               (reqres.status == 207) &&
               (reqres.responseData != null)) {
-        final MultiStatusResponse msr =
-                multiStatusResponse(reqres.responseData);
+        final Result<MultiStatusResponse> msr =
+                getMultiStatusResponse(reqres.responseData);
 
-        for (var response : msr.responses) {
+        if (!msr.ok) {
+          return msr;
+        }
+
+        for (var response : msr.val.responses) {
           // Get href for this response
           var href = response.href;
           if (!StringUtils.stripEnd(href, "/").equals(
@@ -1486,10 +1525,14 @@ public class Request extends DavTesterBase {
 
   private Result<String> extractProperty(final String propertyname,
                                          final String respdata) {
-    final MultiStatusResponse msr =
-            multiStatusResponse(respdata);
+    final Result<MultiStatusResponse> msr =
+            getMultiStatusResponse(respdata);
 
-    for (var response: msr.responses) {
+    if (!msr.ok) {
+      return Result.fail(msr);
+    }
+
+    for (var response : msr.val.responses) {
       for (var propstat: response.propstats) {
         if ((propstat.status / 100) != 2) {
           continue;
@@ -1523,7 +1566,7 @@ public class Request extends DavTesterBase {
       }
     }
 
-    return Result.fail(null);
+    return Result.fail((String)null);
   }
 
   private List<Element> extractElements (final String elementpath,
@@ -1751,5 +1794,16 @@ public class Request extends DavTesterBase {
     }
 
     return res.toString();
+  }
+
+  private Result<MultiStatusResponse> getMultiStatusResponse(
+          final String data) {
+    try {
+      return new Result(multiStatusResponse(data));
+    } catch (final Throwable t) {
+      return Result.fail(format(
+              "Bad multi-staus response. Message was %s\n" +
+                      "Data was %s", t.getMessage(), data));
+    }
   }
 }

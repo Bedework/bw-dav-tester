@@ -157,7 +157,7 @@ public class Log extends BaseResultsObserver {
     if (args.containsKey("result")) {
       var res = args.getOnlyInt("result");
       var resultValue = RESULT_STRINGS.get(res);
-      manager().logit(format("%60s%10s", name, resultValue));
+      manager().logit(format("%-60s%-10s", name, resultValue));
     } else {
       manager().logit(format("%s", name));
     }

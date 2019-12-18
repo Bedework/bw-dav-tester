@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getQName;
-import static org.bedework.davtester.XmlUtils.multiStatusResponse;
 import static org.bedework.util.xml.XmlUtil.hasContent;
 import static org.bedework.util.xml.XmlUtil.setElementContent;
 
@@ -93,7 +92,10 @@ public class PropfindValues extends Verifier {
     }
 
     final MultiStatusResponse msr =
-            multiStatusResponse(respdata);
+            getMultiStatusResponse(respdata);
+    if (msr == null) {
+      return result;
+    }
 
     for (var response : msr.responses) {
       // Get href for this response
