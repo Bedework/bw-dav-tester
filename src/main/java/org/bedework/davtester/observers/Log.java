@@ -49,19 +49,6 @@ public class Log extends BaseResultsObserver {
   }
 
   @Override
-  public void init(final Manager manager) {
-    super.init(manager);
-
-    addCall("start", this);
-    addCall("testProgress", this);
-    addCall("testFile", this);
-    addCall("protocol", this);
-    addCall("testSuite", this);
-    addCall("testResult", this);
-    addCall("finish", this);
-  }
-
-  @Override
   public void process(final String message, final KeyVals args) {
     switch (message) {
       case "start":
@@ -140,8 +127,8 @@ public class Log extends BaseResultsObserver {
   }
     
   public void testResult(final KeyVals args) {
-    var result_name = "    Test: " + args.getOnlyString("name");
-    logResult(result_name, args);
+    var resultName = "    Test: " + args.getOnlyString("name");
+    logResult(resultName, args);
 
     if (args.containsKey("result")) {
       var res = args.getOnlyInt("result");

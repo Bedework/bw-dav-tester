@@ -16,7 +16,6 @@
 package org.bedework.davtester.observers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.Manager;
 
 /**
  * A results observer that prints results to standard output.
@@ -24,13 +23,6 @@ import org.bedework.davtester.Manager;
 public class Trace extends BaseResultsObserver {
 
   public Trace() {
-  }
-
-  @Override
-  public void init(final Manager manager) {
-    super.init(manager);
-
-    addCall("trace", this);
   }
 
   @Override

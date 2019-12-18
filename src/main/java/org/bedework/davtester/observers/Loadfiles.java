@@ -16,20 +16,12 @@
 package org.bedework.davtester.observers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.Manager;
 
 /**
  * A results observer that prints when a test file is loaded.
  */
 public class Loadfiles extends BaseResultsObserver {
   public Loadfiles() {
-  }
-
-  @Override
-  public void init(final Manager manager) {
-    super.init(manager);
-
-    addCall("load", this);
   }
 
   /**

@@ -20,9 +20,6 @@ import org.bedework.davtester.Manager;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  A base class for an observer that gets passed results of tests.
 
@@ -40,8 +37,6 @@ import java.util.Map;
  */
 public abstract class BaseResultsObserver implements Logged {
   protected Manager manager;
-  private final Map<String, BaseResultsObserver> calls =
-          new HashMap<>();
 
   BaseResultsObserver() {
   }
@@ -49,8 +44,8 @@ public abstract class BaseResultsObserver implements Logged {
   public abstract void process(final String message, final KeyVals args);
 
   /**
-   * Called immediately after creation. Shoudlbe overridden.
-   * @param manager
+   * Called immediately after creation.
+   * @param manager for output
    */
   public void init(final Manager manager) {
     this.manager = manager;
@@ -58,19 +53,6 @@ public abstract class BaseResultsObserver implements Logged {
 
   Manager manager() {
     return manager;
-  }
-
-  void addCall(final String msg, final BaseResultsObserver bro) {
-    calls.put(msg, bro);
-  }
-
-  void message(final String message, final KeyVals args) {
-
-    var callit = calls.get(message);
-
-    if (callit != null) {
-      callit.process(message, args);
-    }
   }
 
   /* ====================================================================

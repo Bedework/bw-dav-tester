@@ -953,3 +953,7 @@ Each path segment can now have its own test and "../" can be used to move up to
 			<value>{DAV:}response/{DAV:}getetag</value>
 		</arg>
 	</verify>
+
+## Example
+     -s src/main/rsrc/server/bwserverinfo.xml --always-print-request --always-print-response --print-details-onfail -o cdt.txt CalDAV/reports.xml
+

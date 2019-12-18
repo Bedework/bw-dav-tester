@@ -16,13 +16,11 @@
 package org.bedework.davtester.observers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.davtester.Manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static org.bedework.davtester.Utils.throwException;
@@ -35,16 +33,6 @@ public class Jsondump extends BaseResultsObserver {
   private ObjectMapper om = new ObjectMapper();
 
   public Jsondump() {
-  }
-
-  @Override
-  public void init(final Manager manager) {
-    super.init(manager);
-
-    addCall("protocol", this);
-    addCall("testSuite", this);
-    addCall("testResult", this);
-    addCall("finish", this);
   }
 
   public void process(final String message, final KeyVals args) {
@@ -71,7 +59,7 @@ public class Jsondump extends BaseResultsObserver {
   }
 
   public void testResult(final KeyVals args) {
-    args.put("time", new Date());
+    args.put("time", System.currentTimeMillis());
     if (currentProtocol != null) {
       args.put("protocol", currentProtocol);
       currentProtocol = null;
@@ -79,7 +67,7 @@ public class Jsondump extends BaseResultsObserver {
   }
 
   public void testSuite(final KeyVals args) {
-    args.put("time", new Date());
+    args.put("time", System.currentTimeMillis());
   }
 
   public void finish() {

@@ -31,16 +31,22 @@ import static org.bedework.davtester.Utils.throwException;
  *
  * User: mike Date: 11/21/19 Time: 17:54
  */
-public class KeyVals extends HashMap<String, List<Object>> {
+public class KeyVals extends HashMap<String, List<?>> {
   public KeyVals() {
     super();
   }
 
-  public KeyVals(final Map<String, List<Object>> val) {
+  public KeyVals(final Map<String, List<?>> val) {
     super(val);
   }
 
-  public KeyVals(final String key, final Object val) {
+  public KeyVals(final String key, final String val) {
+    super();
+
+    put(key, val);
+  }
+
+  public KeyVals(final String key, final Integer val) {
     super();
 
     put(key, val);
@@ -91,16 +97,13 @@ public class KeyVals extends HashMap<String, List<Object>> {
 
     var len = val.size();
     List<String> res = new ArrayList<>(len);
-    ListIterator<String> di = res.listIterator();
     ListIterator si = val.listIterator();
     for (int i = 0; i < len; i++) {
-      di.next();
-
       var snext = si.next();
       if (!(snext instanceof String)) {
         throwException("Not a string: " + snext);
       }
-      di.set((String)snext);
+      res.add((String)snext);
     }
 
     return res;
@@ -119,33 +122,16 @@ public class KeyVals extends HashMap<String, List<Object>> {
 
     var len = val.size();
     List<Integer> res = new ArrayList<>(len);
-    ListIterator<Integer> di = res.listIterator();
     ListIterator si = val.listIterator();
     for (int i = 0; i < len; i++) {
-      di.next();
-
       var snext = si.next();
       if (!(snext instanceof Integer)) {
         throwException("Not an Integer: " + snext);
       }
-      di.set((Integer)snext);
+      res.add((Integer)snext);
     }
 
     return res;
-  }
-
-  public KeyVals addAll(final Map<String, Object> src) {
-    for (var nm: src.keySet()) {
-      var val = src.get(nm);
-      if (val == null) {
-        remove(nm);
-        continue;
-      }
-
-      put(nm, val);
-    }
-
-    return this;
   }
 
   public KeyVals addAll(final KeyVals src) {
@@ -166,14 +152,59 @@ public class KeyVals extends HashMap<String, List<Object>> {
    *
    * @param val single string to set or replace current value
    */
-  public void put(final String name, final Object val) {
+  public void put(final String name, final String val) {
     if (val == null) {
       return;
     }
-    List<Object> vals = new ArrayList<>(1);
+    List<String> vals = new ArrayList<>(1);
 
     vals.add(val);
 
-    put(name, vals);
+    super.put(name, vals);
+  }
+
+  /**
+   *
+   * @param val single Integer to set or replace current value
+   */
+  public void put(final String name, final Integer val) {
+    if (val == null) {
+      return;
+    }
+    List<Integer> vals = new ArrayList<>(1);
+
+    vals.add(val);
+
+    super.put(name, vals);
+  }
+
+  /**
+   *
+   * @param val single Integer to set or replace current value
+   */
+  public void put(final String name, final Long val) {
+    if (val == null) {
+      return;
+    }
+    List<Long> vals = new ArrayList<>(1);
+
+    vals.add(val);
+
+    super.put(name, vals);
+  }
+
+  /**
+   *
+   * @param val single Integer to set or replace current value
+   */
+  public void put(final String name, final KeyVals val) {
+    if (val == null) {
+      return;
+    }
+    List<KeyVals> vals = new ArrayList<>(1);
+
+    vals.add(val);
+
+    super.put(name, vals);
   }
 }
