@@ -115,13 +115,15 @@ public class MultistatusItems extends Verifier {
                                    StandardCharsets.UTF_8);
 
       // Verify status
-      ok = response.propstats.size() > 0;
-      code = 0;
+      ok = !Util.isEmpty(response.propstats);
 
       if (ok) {
         okStatusHrefs.add(href);
+        // This seems bogus
+        code = response.propstats.get(0).status;
       } else {
         badStatusHrefs.add(href);
+        code = response.status;
       }
       statusCodeHrefs.computeIfAbsent(code, s -> new TreeSet<>()).add(href);
     }

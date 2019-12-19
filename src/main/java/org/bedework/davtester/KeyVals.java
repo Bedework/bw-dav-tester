@@ -70,18 +70,38 @@ public class KeyVals extends HashMap<String, List<?>> {
   }
 
   public Integer getInt(final String key) {
-    return (Integer)getOnly(key);
+    var val = getOnly(key);
+    if (val == null) {
+      return null;
+    }
+
+    if (val instanceof Integer) {
+      return (Integer)val;
+    }
+
+    return Integer.parseInt((String)val);
   }
 
   public int getOnlyInt(final String key) {
-    return (Integer)getOnly(key);
+    var val = getOnly(key);
+    if (val instanceof Integer) {
+      return (Integer)val;
+    }
+
+    return Integer.parseInt((String)val);
   }
 
   public boolean getOnlyBool(final String key) {
     if (!containsKey(key)) {
       return false;
     }
-    return (Boolean)getOnly(key);
+
+    var val = getOnly(key);
+    if (val instanceof Boolean) {
+      return (Boolean)val;
+    }
+
+    return Boolean.parseBoolean((String)val);
   }
 
   public List<String> getStrings(final String key,
@@ -126,9 +146,10 @@ public class KeyVals extends HashMap<String, List<?>> {
     for (int i = 0; i < len; i++) {
       var snext = si.next();
       if (!(snext instanceof Integer)) {
-        throwException("Not an Integer: " + snext);
+        res.add(Integer.parseInt((String)snext));
+      } else {
+        res.add((Integer)snext);
       }
-      res.add((Integer)snext);
     }
 
     return res;
