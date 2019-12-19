@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.w3c.dom.Element;
 
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -44,7 +43,7 @@ Verifier that checks a propfind response for regex matches to property values.
 public class PropfindValues extends Verifier {
 
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,

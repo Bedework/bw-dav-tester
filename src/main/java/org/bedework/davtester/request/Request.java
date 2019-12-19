@@ -427,10 +427,10 @@ public class Request extends DavTesterBase {
     return data;
   }
 
-  public VerifyResult verifyRequest(final URI uri,
-                                             final List<Header> responseHeaders,
-                                             final int status,
-                                             final String respdata) {
+  public VerifyResult verifyRequest(final String ruri,
+                                    final List<Header> responseHeaders,
+                                    final int status,
+                                    final String respdata) {
     var res = new VerifyResult();
 
     // check for response
@@ -446,7 +446,7 @@ public class Request extends DavTesterBase {
         continue;
       }
 
-      var ires = verifier.doVerify(uri, responseHeaders,
+      var ires = verifier.doVerify(ruri, responseHeaders,
                                               status, respdata);
       if (!ires.ok) {
         res.ok = false;
@@ -454,7 +454,8 @@ public class Request extends DavTesterBase {
         res.append(format("Failed Verifier: %s\n", verifier.name));
         res.append(ires.getText());
       } else {
-        res.append(format("Passed Verifier: %s\n", verifier.name));
+        res.appendOK(format("Passed Verifier: %s\n", verifier.name),
+                     false);
       }
     }
 
@@ -964,7 +965,7 @@ public class Request extends DavTesterBase {
     }
 
     if (doverify && (drr.responseData != null)) {
-      var vres = verifyRequest(uri,
+      var vres = verifyRequest(ruri,
                                drr.responseHeaders,
                                drr.status,
                                drr.responseData);

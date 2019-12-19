@@ -38,7 +38,6 @@ import org.bedework.davtester.verifiers.XmlElementMatch;
 import org.apache.http.Header;
 import org.w3c.dom.Element;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -89,7 +88,7 @@ public class Verify extends DavTesterBase {
     }
   }
 
-  public VerifyResult doVerify(final URI uri,
+  public VerifyResult doVerify(final String ruri,
                                final List<Header> responseHeaders,
                                final int status,
                                String respdata) {
@@ -115,7 +114,7 @@ public class Verify extends DavTesterBase {
     // Always clone the args as this verifier may be called multiple times
     var newargs = new KeyVals(args);
 
-    return verifier.doVerify(uri, responseHeaders, status, respdata, newargs);
+    return verifier.doVerify(ruri, responseHeaders, status, respdata, newargs);
   }
 
   @Override
@@ -132,6 +131,7 @@ public class Verify extends DavTesterBase {
         parseFeatures(child, false);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CALLBACK)) {
         callback = contentUtf8(child);
+        name = callback;
       } else if (nodeMatches(child, XmlDefs.ELEMENT_ARG)) {
         parseArgXML(child);
       }

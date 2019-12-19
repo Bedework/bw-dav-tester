@@ -19,7 +19,6 @@ import org.bedework.davtester.KeyVals;
 
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.List;
 
 /**
@@ -27,7 +26,7 @@ import java.util.List;
  */
 public class DataString extends Verifier {
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,

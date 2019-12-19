@@ -18,7 +18,6 @@ package org.bedework.davtester.verifiers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.util.misc.Util;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -62,7 +61,7 @@ public class Header extends Verifier {
   }
 
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<org.apache.http.Header> responseHeaders,
                              final int status,
                              final String respdata,

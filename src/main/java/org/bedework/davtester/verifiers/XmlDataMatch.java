@@ -19,7 +19,6 @@ import org.bedework.davtester.KeyVals;
 
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class XmlDataMatch extends FileDataMatch {
   }
 
   @Override
-  public void compare(final URI uri,
+  public void compare(final String ruri,
                       final List<Header> responseHeaders,
                       final int status,
                       final String respdata,

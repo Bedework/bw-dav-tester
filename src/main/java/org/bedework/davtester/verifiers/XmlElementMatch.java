@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.w3c.dom.Element;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +41,7 @@ import static org.bedework.davtester.XmlUtils.getQName;
  */
 public class XmlElementMatch extends Verifier {
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,
@@ -131,7 +130,7 @@ public class XmlElementMatch extends Verifier {
     var m = rootPathsPattern.matcher(actualPath);
     List<Element> nodes;
 
-    if (m.group(2) != null) {
+    if (m.matches() && m.group(2) != null) {
       var rootPath = m.group(1);
       var childPath = m.group(2).substring(1);
       if (!getQName(root).toString().equals(rootPath)) {
@@ -364,7 +363,7 @@ public class XmlElementMatch extends Verifier {
 
     List<Element> nodes;
 
-    if (m.group(2) != null) {
+    if (m.matches() && m.group(2) != null) {
       var rootPath = Util.buildPath(false, m.group(1));
       var childPath = m.group(2).substring(1);
       if (!rootPath.equals(".") &&

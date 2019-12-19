@@ -21,7 +21,6 @@ import org.bedework.util.misc.Util;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.List;
 
 import static org.bedework.davtester.Utils.fileToString;
@@ -32,7 +31,7 @@ import static org.bedework.davtester.Utils.fileToString;
 public abstract class FileDataMatch extends Verifier {
   public abstract List<Integer> expectedStatus(final KeyVals args);
 
-  public abstract void compare(final URI uri,
+  public abstract void compare(final String ruri,
                                final List<Header> responseHeaders,
                                final int status,
                                final String respdata,
@@ -42,7 +41,7 @@ public abstract class FileDataMatch extends Verifier {
                                final String data);
 
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,
@@ -87,7 +86,7 @@ public abstract class FileDataMatch extends Verifier {
     data = manager.serverInfo.subs(data);
     data = manager.serverInfo.extrasubs(data);
 
-    compare(uri, responseHeaders, status, respdata, args,
+    compare(ruri, responseHeaders, status, respdata, args,
             filepath, filters, data);
 
     return result;

@@ -22,7 +22,6 @@ import org.bedework.util.misc.Util;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ import static org.bedework.davtester.Utils.intersection;
  */
 public class MultistatusItems extends Verifier {
   @Override
-  protected VerifyResult verify(final URI uri,
+  protected VerifyResult verify(final String ruri,
                                 final List<Header> responseHeaders,
                                 final int status,
                                 final String respdata,
@@ -69,7 +68,7 @@ public class MultistatusItems extends Verifier {
         prefix = "";
       }
     } else {
-      prefix = uri.toString();
+      prefix = ruri;
     }
 
     okhrefs = processHrefSubstitutions(okhrefs, prefix);
@@ -191,27 +190,27 @@ public class MultistatusItems extends Verifier {
       }
 
       if (okMissing.size() != 0) {
-        badHrefs("        %d Items not returned in report (OK):",
+        badHrefs("        %s Items not returned in report (OK):",
                  okMissing);
       }
 
       if (okExtras.size() != 0) {
-        badHrefs("        %d Unexpected items returned in report (OK):",
+        badHrefs("        %s Unexpected items returned in report (OK):",
                  okExtras);
       }
 
       if (noExtras.size() != 0) {
-        badHrefs("        %d Unwanted items returned in report (OK):",
+        badHrefs("        %s Unwanted items returned in report (OK):",
                  noExtras);
       }
 
       if (badMissing.size() != 0) {
-        badHrefs("        %d Items not returned in report (BAD):",
+        badHrefs("        %s Items not returned in report (BAD):",
                  badMissing);
       }
 
       if (badExtras.size() != 0) {
-        badHrefs("        %d Unexpected items returned in report (BAD):",
+        badHrefs("        %s Unexpected items returned in report (BAD):",
                  badExtras);
       }
     }
@@ -220,13 +219,13 @@ public class MultistatusItems extends Verifier {
       var l = diff(statusHrefs.keySet(),
               statusCodeHrefs.keySet());
       if (!Util.isEmpty(l)) {
-        badHrefs("        %d Status Codes not returned in report:", l);
+        badHrefs("        %s Status Codes not returned in report:", l);
       }
 
       l = diff(statusCodeHrefs.keySet(),
                statusHrefs.keySet());
       if (!Util.isEmpty(l)) {
-        badHrefs("        %d Unexpected Status Codes returned in report:",
+        badHrefs("        %s Unexpected Status Codes returned in report:",
                  l);
       }
 
@@ -235,13 +234,13 @@ public class MultistatusItems extends Verifier {
       for (var key: allKeys) {
         var kl = diff(statusHrefs.get(key), statusCodeHrefs.get(key));
         if (!Util.isEmpty(kl)) {
-          badHrefs("        %d Items not returned in report for %d:",
+          badHrefs("        %s Items not returned in report for %s:",
                    kl, key);
         }
 
         kl = diff(statusCodeHrefs.get(key), statusHrefs.get(key));
         if (!Util.isEmpty(kl)) {
-          badHrefs("        %d Unexpected items returned in report for %d:",
+          badHrefs("        %s Unexpected items returned in report for %s:",
                    kl, key);
         }
       }
@@ -265,9 +264,39 @@ public class MultistatusItems extends Verifier {
     var results = new ArrayList<String>();
 
     for (var href : hrefs) {
-      results.add(Util.buildPath(false, prefix, href));
+      results.add(prefix(href, prefix));
     }
 
     return results;
+  }
+
+  private String prefix(final String href,
+                        final String prefix) {
+    if (prefix == null) {
+      return href;
+    }
+
+    String res;
+
+    if (href.startsWith(prefix)) {
+      res = href;
+    } else {
+      res = prefix;
+      if (!res.endsWith("/")) {
+        res += "/";
+      }
+
+      if (href.startsWith("/")) {
+        res += href.substring(1);
+      } else {
+        res += href;
+      }
+    }
+
+    if (res.endsWith("/")) {
+      return res.substring(0, res.length() - 1);
+    }
+
+    return res;
   }
 }

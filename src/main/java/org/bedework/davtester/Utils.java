@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -39,21 +40,37 @@ public class Utils {
    * @return val - other
    */
   public static <T> List<T> diff(final Collection<T> val, final Collection<T> other) {
+    if (Util.isEmpty(val)) {
+      return Collections.emptyList();
+    }
+
     final Set<T> valSet = new TreeSet<>(val);
 
-    valSet.removeAll(other);
+    if (!Util.isEmpty(other)) {
+      valSet.removeAll(other);
+    }
 
     return new ArrayList<>(valSet);
   }
 
   public static <T> List<T> symmetricDiff(final Collection<T> val, final Collection<T> other) {
-    Set<T> symmetricDiff = new HashSet<>(val);
-    symmetricDiff.addAll(other);
+    Set<T> symmetricDiff;
+    if (Util.isEmpty(val)) {
+      symmetricDiff = new HashSet<>();
+    } else {
+      symmetricDiff = new HashSet<>(val);
+    }
 
-    Set<T> tmp = new HashSet<>(val);
-    tmp.retainAll(other);
+    if (!Util.isEmpty(other)) {
+      symmetricDiff.addAll(other);
+    }
 
-    symmetricDiff.removeAll(tmp);
+    if (!Util.isEmpty(val)) {
+      Set<T> tmp = new HashSet<>(val);
+      tmp.retainAll(other);
+
+      symmetricDiff.removeAll(tmp);
+    }
 
     return new ArrayList<>(symmetricDiff);
   }
@@ -65,7 +82,12 @@ public class Utils {
    * @param <T> type of elements - must be comparable
    * @return intersection of val and other
    */
-  public static <T> List<T> intersection(final Collection<T> val, final Collection<T> other) {
+  public static <T> List<T> intersection(final Collection<T> val,
+                                         final Collection<T> other) {
+    if (Util.isEmpty(val) || Util.isEmpty(other)) {
+      return Collections.emptyList();
+    }
+
     final Set<T> valSet = new TreeSet<>(val);
 
     valSet.retainAll(other);

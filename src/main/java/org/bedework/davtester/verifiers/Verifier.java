@@ -33,7 +33,6 @@ import org.apache.http.Header;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.net.URI;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
@@ -132,6 +131,18 @@ public abstract class Verifier implements Logged {
       }
       text.append(val);
     }
+
+    public void appendOK(final String val,
+                         final boolean addnl) {
+      if ((val == null) || (val.length() == 0)) {
+        return;
+      }
+
+      if (addnl && (text.length() > 0)) {
+        text.append("\n");
+      }
+      text.append(val);
+    }
   }
 
   protected Manager manager;
@@ -149,7 +160,7 @@ public abstract class Verifier implements Logged {
     return manager.featureSupported(feature);
   }
 
-  public VerifyResult doVerify(final URI uri,
+  public VerifyResult doVerify(final String ruri,
                                final List<Header> responseHeaders,
                                final int status,
                                final String respdata,
@@ -158,10 +169,10 @@ public abstract class Verifier implements Logged {
     doc = null;
     result = new VerifyResult();
 
-    return verify(uri, responseHeaders, status, respdata, args);
+    return verify(ruri, responseHeaders, status, respdata, args);
   }
 
-  protected abstract VerifyResult verify(final URI uri,
+  protected abstract VerifyResult verify(final String ruri,
                                          final List<Header> responseHeaders,
                                          final int status,
                                          final String respdata,

@@ -20,7 +20,6 @@ import org.bedework.util.xml.tagdefs.WebdavTags;
 
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +39,7 @@ public class Prepostcondition extends Verifier {
                     "error-description");
 
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,

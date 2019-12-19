@@ -23,7 +23,6 @@ import org.bedework.util.xml.XmlUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ import static org.bedework.davtester.XmlUtils.getQName;
  */
 public class PropfindItems extends Verifier {
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,

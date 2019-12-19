@@ -28,7 +28,6 @@ import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.model.parameter.XParameter;
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -45,7 +44,7 @@ public class IcalendarDataMatch extends FileDataMatch {
   }
 
   @Override
-  public void compare(final URI uri,
+  public void compare(final String ruri,
                       final List<Header> responseHeaders,
                       final int status,
                       final String respdata,

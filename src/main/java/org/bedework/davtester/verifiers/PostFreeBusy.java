@@ -26,7 +26,6 @@ import net.fortuna.ical4j.model.component.VFreeBusy;
 import net.fortuna.ical4j.model.parameter.FbType;
 import org.apache.http.Header;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +40,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  */
 public class PostFreeBusy extends Verifier {
   @Override
-  public VerifyResult verify(final URI uri,
+  public VerifyResult verify(final String ruri,
                              final List<Header> responseHeaders,
                              final int status,
                              final String respdata,
