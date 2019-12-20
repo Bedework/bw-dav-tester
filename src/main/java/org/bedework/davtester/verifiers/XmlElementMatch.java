@@ -177,8 +177,8 @@ public class XmlElementMatch extends Verifier {
           res.addAll(nodes);
         }
       }
-    } else {
-      res = Collections.singletonList(root);
+    } else if (getQName(root).toString().equals(actualPath)) {
+      res.add(root);
     }
 
     return res;
@@ -304,7 +304,7 @@ public class XmlElementMatch extends Verifier {
   }
 
   private boolean testNode(final Element node, 
-                           final String node_path, 
+                           final String nodePath,
                            final String testPar) {
     var nodeText = content(node); 
     if (StringUtils.isEmpty(nodeText)) {
@@ -336,47 +336,47 @@ public class XmlElementMatch extends Verifier {
 
         if (!node.hasAttribute(attr)) {
           fmsg("        Missing attribute returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
 
         if ((value != null) && !node.getAttribute(attr).equals(value)) {
           fmsg("        Incorrect attribute value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
       case '=':
         if ((nodeText == null) || !nodeText.equals(test)) {
           fmsg("        Incorrect value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
       case '!':
         if ((nodeText != null) && nodeText.equals(test)) {
           fmsg("        Incorrect value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
       case '*':
         if ((nodeText == null) || !nodeText.contains(test)) {
           fmsg("        Incorrect value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
       case '$':
         if ((nodeText == null) || nodeText.contains(test)) {
           fmsg("        Incorrect value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
       case '+':
         if ((nodeText == null) || (!nodeText.startsWith(test))) {
           fmsg("        Incorrect value returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
@@ -404,7 +404,7 @@ public class XmlElementMatch extends Verifier {
 
         if (!found) {
           fmsg("        Missing child returned in XML for %s\n",
-               node_path);
+               nodePath);
         }
         return result.ok;
 
@@ -412,12 +412,12 @@ public class XmlElementMatch extends Verifier {
         if ((test.length() == 1) && (test.equals("|"))) {
           if ((nodeText == null) && Util.isEmpty(children(node))) {
             fmsg("        Empty element returned in XML for %s\n",
-                 node_path);
+                 nodePath);
           }
         } else {
           if ((nodeText != null) || !Util.isEmpty(children(node))) {
             fmsg("        Non-empty element returned in XML for %s\n",
-                 node_path);
+                 nodePath);
           }
         }
         return result.ok;
@@ -429,7 +429,7 @@ public class XmlElementMatch extends Verifier {
             Icalendar.parseText(content(node));
           } catch (final Throwable t) {
             fmsg("        Incorrect value returned in iCalendar for %s\n",
-                 node_path);
+                 nodePath);
           }
 
           return result.ok;
@@ -441,7 +441,7 @@ public class XmlElementMatch extends Verifier {
             new ObjectMapper().readTree(content(node));
           } catch (final Throwable t) {
             fmsg("        Incorrect value returned in json for %s\n",
-                 node_path);
+                 nodePath);
           }
 
           return result.ok;
