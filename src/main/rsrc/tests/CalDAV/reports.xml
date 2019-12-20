@@ -3799,6 +3799,10 @@
 					<callback>statusCode</callback>
 				</verify>
 			</request>
+      <request>
+        <method>DELAY</method>
+        <ruri>5</ruri>
+      </request>
 			<request>
 				<method>REPORT</method>
 				<ruri>$calendarpath1:/</ruri>
