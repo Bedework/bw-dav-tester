@@ -67,24 +67,24 @@ public class Prepostcondition extends Verifier {
       return result;
     }
 
-    if (nodeMatches(docRoot, WebdavTags.error)) {
+    if (!nodeMatches(docRoot, WebdavTags.error)) {
       append("        Missing <DAV:error> element in response");
       return result;
     }
 
     // Make a set of expected pre/post condition elements
 
-    var expected = new ArrayList<QName>();
+    var expected = new ArrayList<String>();
 
     for (var ts: teststatus) {
-      expected.add(QName.valueOf(ts));
+      expected.add(QName.valueOf(ts).toString());
     }
 
-    var got = new ArrayList<QName>();
+    var got = new ArrayList<String>();
     for (var child: children(docRoot)) {
-      if (nodeMatches(child, twistedDescription)) {
+      if (!nodeMatches(child, twistedDescription)) {
         got.add(new QName(child.getNamespaceURI(),
-                          child.getLocalName()));
+                          child.getLocalName()).toString());
       }
     }
 

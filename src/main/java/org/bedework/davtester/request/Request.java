@@ -756,7 +756,7 @@ public class Request extends DavTesterBase {
 
       case "DELAY":
         // ruri contains a numeric delay in seconds
-        var delay = Integer.parseInt(ruri);
+        var delay = Integer.parseInt(this.ruri);
         synchronized (this) {
           try {
             Thread.sleep(delay * 1000);
