@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
 
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
-import static org.bedework.davtester.XmlUtils.findAll;
 import static org.bedework.davtester.XmlUtils.getQName;
 
 /**
@@ -107,10 +106,8 @@ public class XmlElementMatch extends Verifier {
   private final static Pattern rootPathsPattern =
           Pattern.compile("(\\{[^}]+}[^/]+)(.*)");
 
-  private List<Element> nodesForPath(final Element root,
-                                     final String path) {
-    final List<Element> res = new ArrayList<>();
-
+  private List<Element> parentNodesForPath(final Element root,
+                                           final String path) {
     String actualPath;
     String tests;
     if (path.contains("[")) {
@@ -122,28 +119,12 @@ public class XmlElementMatch extends Verifier {
       tests = null;
     }
 
-    // Handle absolute root element
-    if (actualPath.startsWith("/")) {
-      actualPath = actualPath.substring(1);
+    final List<Element> nodes = nodesForPath(root, actualPath);
+    if (Util.isEmpty(nodes)) {
+      return nodes;
     }
 
-    var m = rootPathsPattern.matcher(actualPath);
-    List<Element> nodes;
-
-    if (m.matches() && m.group(2) != null) {
-      var rootPath = m.group(1);
-      var childPath = m.group(2).substring(1);
-      if (!getQName(root).toString().equals(rootPath)) {
-        return res;
-      }
-      nodes = findAll(root, childPath);
-    } else {
-      nodes = Collections.singletonList(root);
-    }
-
-    if (nodes.size() == 0) {
-      return res;
-    }
+    final List<Element> res = new ArrayList<>();
 
     if (tests != null) {
       var split = tests.split("\\[");
@@ -160,6 +141,166 @@ public class XmlElementMatch extends Verifier {
     }
 
     return res;
+  }
+
+  /**
+   * @param root where we start
+   * @param path path with no tests
+   * @return matching nodes.
+   */
+  private List<Element> nodesForPath(final Element root,
+                                     final String path) {
+    String actualPath;
+
+    // Handle absolute root element
+    if (path.startsWith("/")) {
+      actualPath = path.substring(1);
+    } else {
+      actualPath = path;
+    }
+
+    var m = rootPathsPattern.matcher(actualPath);
+    List<Element> res = new ArrayList<>();
+
+    if (m.matches() && !StringUtils.isEmpty(m.group(2))) {
+      var rootPath = m.group(1);
+      var childPath = m.group(2).substring(1);
+
+      if (!rootPath.equals(".") &&
+          !getQName(root).toString().equals(rootPath)) {
+        return Collections.emptyList();
+      }
+
+      for (var child: children(root)) {
+        final List<Element> nodes = nodesForPath(child, childPath);
+        if (!Util.isEmpty(nodes)) {
+          res.addAll(nodes);
+        }
+      }
+    } else {
+      res = Collections.singletonList(root);
+    }
+
+    return res;
+  }
+
+  private final static Pattern pathsPattern =
+          Pattern.compile("(/?\\{[^}]+}[^/]+|\\.)(.*)");
+
+  private boolean matchNode(final Element rootEl,
+                            final String xpath,
+                            Map<Element, Element> parentMapPar,
+                            final String theTitle) {
+    var root = rootEl;
+    String title;
+
+    if (theTitle == null) {
+      title = xpath;
+    } else {
+      title = theTitle;
+    }
+
+    String actualXpath;
+    String tests;
+
+    // Find the first test in the xpath
+    if (xpath.contains("[")) {
+      var splits = xpath.split("\\[", 2);
+      actualXpath = splits[0];
+      tests = splits[1];
+    } else {
+      actualXpath = xpath;
+      tests = null;
+    }
+
+    final Map<Element, Element> parentMap;
+
+    if (parentMapPar == null) {
+      parentMap = new HashMap<>();
+
+      for (var ch: children(root)) {
+        parentMap.put(ch, root);
+      }
+    } else {
+      parentMap = parentMapPar;
+    }
+
+    // Handle parents
+    if (actualXpath.startsWith("../")) {
+      root = parentMap.get(root);
+      actualXpath = "./" + actualXpath.substring(3);
+    }
+
+    // Handle absolute root element and find all matching nodes
+    var m = pathsPattern.matcher(actualXpath);
+
+    List<Element> nodes = nodesForPath(root, actualXpath);
+
+    /*
+    if (m.matches() && m.group(2) != null) {
+      var rootPath = Util.buildPath(false, m.group(1));
+      if (rootPath.startsWith("/")) {
+        rootPath = rootPath.substring(1);
+      }
+      var childPath = m.group(2).substring(1);
+      if (!rootPath.equals(".") &&
+              (!getQName(root).toString().equals(rootPath))) {
+        fmsg("        Items not returned in XML for %s\n",
+             title);
+        return false;
+      }
+      nodes = findAll(root, childPath);
+    } else {
+      nodes = Collections.singletonList(root);
+    }
+     */
+
+    if (nodes.size() == 0) {
+      fmsg("        Items not returned in XML for %s\n",
+           title);
+      return false;
+    }
+
+    if (tests != null) {
+      // Split the tests into tests plus additional path
+      final String nodeTestsSeg;
+      final String nextPath;
+      var pos = tests.indexOf("]/");
+      if (pos != -1) {
+        nodeTestsSeg = tests.substring(0, pos + 1);
+        nextPath = tests.substring(pos + 1);
+      } else {
+        nodeTestsSeg = tests;
+        nextPath = null;
+      }
+
+      var split = nodeTestsSeg.split("\\[");
+      var nodeTests = new ArrayList<String>();
+
+      for (var s: split) {
+        nodeTests.add(s.substring(0, s.length() - 1));
+      }
+
+      for (var test: nodeTests) {
+        for (var node : nodes) {
+          if (!testNode(node, title, test)) {
+            return false;
+          }
+          if (nextPath == null) {
+            break;
+          }
+
+          matchNode(node, nextPath.substring(1), parentMap, title);
+          break;
+        }
+
+        if (!result.ok) {
+          break;
+        }
+      }
+    }
+
+    return result.ok;
   }
 
   private boolean testNode(final Element node, 
@@ -309,120 +450,6 @@ public class XmlElementMatch extends Verifier {
 
     fmsg("        Bad test %s\n", testPar);
     return false;
-  }
-
-  private final static Pattern pathsPattern =
-          Pattern.compile("(/?\\{[^}]+}[^/]+|\\.)(.*)");
-
-  private boolean matchNode(final Element rootEl,
-                            final String xpath,
-                            Map<Element, Element> parentMapPar,
-                            final String theTitle) {
-    var root = rootEl;
-    String title;
-
-    if (theTitle == null) {
-      title = xpath;
-    } else {
-      title = theTitle;
-    }
-
-    String actualXpath;
-    String tests;
-    
-    // Find the first test in the xpath
-    if (xpath.contains("[")) {
-      var splits = xpath.split("\\[", 2);
-      actualXpath = splits[0];
-      tests = splits[1];
-    } else {
-      actualXpath = xpath;
-      tests = null;
-    }
-
-    final Map<Element, Element> parentMap;
-    
-    if (parentMapPar == null) {
-      parentMap = new HashMap<>();
-      
-      for (var ch: children(root)) {
-        parentMap.put(ch, root);
-      }
-    } else {
-      parentMap = parentMapPar;
-    }
-
-    // Handle parents
-    if (actualXpath.startsWith("../")) {
-      root = parentMap.get(root);
-      actualXpath = "./" + actualXpath.substring(3);
-    }
-
-    // Handle absolute root element and find all matching nodes
-    var m = pathsPattern.matcher(actualXpath);
-
-    List<Element> nodes;
-
-    if (m.matches() && m.group(2) != null) {
-      var rootPath = Util.buildPath(false, m.group(1));
-      var childPath = m.group(2).substring(1);
-      if (!rootPath.equals(".") &&
-              (!getQName(root).toString().equals(rootPath))) {
-        fmsg("        Items not returned in XML for %s\n",
-             title);
-        return false;
-      }
-      nodes = findAll(root, childPath);
-    } else {
-      nodes = Collections.singletonList(root);
-    }
-
-    if (nodes.size() == 0) {
-      fmsg("        Items not returned in XML for %s\n",
-           title);
-      return false;
-    }
-
-    if (tests != null) {
-      // Split the tests into tests plus additional path
-      final String nodeTestsSeg;
-      final String nextPath;
-      var pos = tests.indexOf("]/");
-      if (pos != -1) {
-        nodeTestsSeg = tests.substring(0, pos + 1);
-        nextPath = tests.substring(pos + 1);
-      } else {
-        nodeTestsSeg = tests;
-        nextPath = null;
-      }
-
-      var split = nodeTestsSeg.split("\\[");
-      var nodeTests = new ArrayList<String>();
-
-      for (var s: split) {
-        nodeTests.add(s.substring(0, s.length() - 1));
-      }
-
-      for (var test: nodeTests) {
-        for (var node : nodes) {
-          if (!testNode(node, title, test)) {
-            return false;
-          }
-          if (nextPath == null) {
-            break;
-          }
-
-          matchNode(node, nextPath.substring(1), parentMap, title);
-          break;
-        }
-
-        if (!result.ok) {
-          break;
-        }
-      }
-    }
-
-    return result.ok;
   }
 }
 

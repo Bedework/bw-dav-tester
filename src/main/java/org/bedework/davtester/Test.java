@@ -115,7 +115,7 @@ class Test extends DavTesterBase {
     // POSTGRES postgresCount = postgresInit();
     var reqstats = new RequestStats();
 
-    for (var ctr = 0; ctr <= count; ctr++) {
+    for (var ctr = 0; ctr < count; ctr++) {
       var failed = false;
       var reqCount = 1;
       for (var req : requests) {
@@ -139,7 +139,7 @@ class Test extends DavTesterBase {
             while (req.getNextData()) {
               var reqres = req.run(details, true, false,
                                    reqstats, etags,
-                                   format("%s | #%s", label, reqCount + 1),
+                                   format("%s | #%s", label, reqCount),
                                    ctr + 1);
               if (!reqres.ok) {
                 failed = true;
@@ -151,7 +151,7 @@ class Test extends DavTesterBase {
           } else {
             var reqres = req.run(details, true, false,
                                  reqstats, etags,
-                                 format("%s | #%s", label, reqCount + 1),
+                                 format("%s | #%s", label, reqCount),
                                  ctr + 1);
             if (!reqres.ok) {
               failed = true;
@@ -163,6 +163,8 @@ class Test extends DavTesterBase {
           if (!failed || !req.waitForSuccess) {
             break;
           }
+
+          reqCount++;
         }
         if (failed) {
           result = false;
