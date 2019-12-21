@@ -58,6 +58,8 @@ public class Testcaldav extends DavTesterBase {
     String pretest = null;
     String posttest = null;
 
+    manager.setDataDir(Util.buildPath(true, base));
+
     /*
         options, args = getopt.getopt(
             sys.argv[1:],

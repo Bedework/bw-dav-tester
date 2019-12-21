@@ -285,11 +285,7 @@ public class Request extends DavTesterBase {
       return null;
     }
 
-    if (manager.dataDir == null) {
-      return data.filepath;
-    }
-
-    return Util.buildPath(false, manager.dataDir, "/", data.filepath);
+    return data.filepath;
   }
 
   public void setDataVal(final String val,
