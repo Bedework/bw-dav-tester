@@ -20,11 +20,13 @@ import org.bedework.davtester.ical.Icalendar;
 import org.bedework.util.misc.Util;
 
 import com.github.difflib.DiffUtils;
-import com.github.difflib.patch.AbstractDelta;
+import com.github.difflib.UnifiedDiffUtils;
 import com.github.difflib.patch.Patch;
 import net.fortuna.ical4j.model.Component;
+import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.Parameter;
-import net.fortuna.ical4j.model.component.VTimeZone;
+import net.fortuna.ical4j.model.Property;
+import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.parameter.XParameter;
 import org.apache.http.Header;
 
@@ -69,6 +71,7 @@ public class IcalendarDataMatch extends FileDataMatch {
       filters.remove(afilter);
     }
 
+    /*
     final boolean doTimezones;
 
     if (!args.containsKey("doTimezones")) {
@@ -76,15 +79,20 @@ public class IcalendarDataMatch extends FileDataMatch {
     } else {
       doTimezones = args.getOnlyBool("doTimezones");
     }
-
+*/
     try {
       var respCalendar = Icalendar.parseText(respdata);
-      removePropertiesParameters(respCalendar, doTimezones, filters);
+      removePropertiesParameters(respCalendar,
+                                 filters);
 
       var dataCalendar = Icalendar.parseText(data);
-      removePropertiesParameters(dataCalendar, doTimezones, filters);
+      removePropertiesParameters(dataCalendar,
+                                 filters);
 
-      // Why is this being done?
+      respCalendar.removeTimeZones();
+      dataCalendar.removeTimeZones();
+
+      // Why was this being done?
       //reconcileRecurrenceOverrides(respCalendar, dataCalendar);
 
       var respLines = respCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
@@ -96,25 +104,14 @@ public class IcalendarDataMatch extends FileDataMatch {
         return;
       }
 
-      /*var result = respCalendar == dataCalendar;
-      if (!result) {
-        var respdata2 = respdata.replace("\r\n ", "");
-        var data2 = data
-                .replace("\r\n ", "")
-                .replace("urn:x-uid:",
-                         "urn:uuid:");
-        result = respdata2.equals(data2);
-      }
-
-      if (result) {
-        return new VerifyResult();
-      }
-*/
+      List<String> unifiedDiff = UnifiedDiffUtils
+              .generateUnifiedDiff("Response",
+                                   "Expected", dataLines, patch, 0);
 
       var errorDiff = new StringBuilder();
 
-      for (AbstractDelta<String> delta : patch.getDeltas()) {
-        errorDiff.append(delta.toString());
+      for (var s: unifiedDiff) {
+        errorDiff.append(s);
         errorDiff.append('\n');
       }
 
@@ -122,6 +119,7 @@ public class IcalendarDataMatch extends FileDataMatch {
                    "exactly match file data%s",
            errorDiff);
     } catch (final Throwable t) {
+      t.printStackTrace();
       fmsg("        Response data is not calendar data: %s",
            t.getMessage());
     }
@@ -204,25 +202,8 @@ public class IcalendarDataMatch extends FileDataMatch {
           new TreeSet<>(Arrays.asList("ATTENDEE",
                         "X-CALENDARSERVER-ATTENDEE-COMMENT"));
 
-  private void removePropertiesParameters(final Component component,
-                                          final boolean doTimezones,
+  private void removePropertiesParameters(final Object comp,
                                           final List<String> filters) {
-    if (!doTimezones) {
-      var toRemove = new ArrayList<Component>();
-
-      for (var subcomponent: component.getComponents()) {
-        if (subcomponent instanceof VTimeZone) {
-          toRemove.add(subcomponent);
-          continue;
-        }
-        removePropertiesParameters(subcomponent, doTimezones, filters);
-      }
-
-      for (var c: toRemove) {
-        component.getComponents().remove(c);
-      }
-    }
-
     /* why are we setting it to duration - are servers changing the
        representation?
     if (component.getType() == "VEVENT") {
@@ -235,20 +216,33 @@ public class IcalendarDataMatch extends FileDataMatch {
     }
      */
 
-    var allProps = new ArrayList<>(component.getProperties());
+    var newProps = new ArrayList<Property>();
+    final PropertyList pl;
+    Icalendar ical = null;
+    Component component = null;
 
-    for (var property : allProps) {
+    if (comp instanceof Icalendar) {
+      ical = (Icalendar)comp;
+      pl = ical.cal.getProperties();
+    } else {
+      component = (Component)comp;
+      pl = component.getProperties();
+    }
+
+    for (var property: pl) {
       // Always reset DTSTAMP on these properties
       if (attendeeProps.contains(property.getName())) {
-        Parameter par = property.getParameter("X-CALENDARSERVER-DTSTAMP");
+        Parameter par = property
+                .getParameter("X-CALENDARSERVER-DTSTAMP");
         if (par != null) {
           property.getParameters().remove(par);
-          property.getParameters().add(new XParameter("X-CALENDARSERVER-DTSTAMP",
-                                                      "20080101T000000Z"));
+          property.getParameters()
+                  .add(new XParameter("X-CALENDARSERVER-DTSTAMP",
+                                      "20080101T000000Z"));
         }
       }
 
-      for (var filter: filters) {
+      for (var filter : filters) {
         if (filter.contains(":")) {
           var split = filter.split(":");
           if (property.getName().equals(split[0])) {
@@ -257,6 +251,8 @@ public class IcalendarDataMatch extends FileDataMatch {
               property.getParameters().remove(par);
             }
           }
+
+          newProps.add(property);
           continue;
         }
 
@@ -264,15 +260,35 @@ public class IcalendarDataMatch extends FileDataMatch {
           var split = filter.split("=");
           if (property.getName().equals(split[0]) &&
                   property.getValue().equals(split[1])) {
-            component.getProperties().remove(property);
+            continue; // don't preserve
           }
+
+          newProps.add(property);
           continue;
         }
 
         if (property.getName().equals(filter)) {
-          component.getProperties().remove(property);
+          continue; // don't preserve
         }
+
+        newProps.add(property);
       }
+    }
+
+    final ComponentList<? extends Component> comps;
+
+    if (ical != null) {
+      ical.cal.getProperties().clear();
+      ical.cal.getProperties().addAll(newProps);
+      comps = ical.cal.getComponents();
+    } else {
+      component.getProperties().clear();
+      component.getProperties().addAll(newProps);
+      comps = component.getComponents();
+    }
+
+    for (var c: comps) {
+      removePropertiesParameters(c, filters);
     }
   }
 }

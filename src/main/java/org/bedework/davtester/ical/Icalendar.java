@@ -3,6 +3,7 @@
 */
 package org.bedework.davtester.ical;
 
+import org.bedework.util.calendar.XcalUtil;
 import org.bedework.util.timezones.Timezones;
 
 import net.fortuna.ical4j.data.CalendarBuilder;
@@ -13,6 +14,9 @@ import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
+import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
+import net.fortuna.ical4j.model.component.CalendarComponent;
+import net.fortuna.ical4j.model.component.VTimeZone;
 import net.fortuna.ical4j.util.Strings;
 import net.fortuna.ical4j.validate.ValidationException;
 
@@ -81,7 +85,20 @@ public class Icalendar extends Component {
     }
   }
 
-  private Calendar cal;
+  public static final TimeZoneRegistry tzreg =
+          TimeZoneRegistryFactory.getInstance().createRegistry();
+
+  private static class TimezoneGetter implements XcalUtil.TzGetter {
+
+    @Override
+    public TimeZone getTz(final String s) throws Throwable {
+      return tzreg.getTimeZone(s);
+    }
+  }
+
+  public static final TimezoneGetter tzGetter = new TimezoneGetter();
+
+  public Calendar cal;
 
   private Icalendar() {
     super("Icalendar");
@@ -90,7 +107,7 @@ public class Icalendar extends Component {
   public static Icalendar parseText(final String val) {
     CalendarBuilder bldr =
             new CalendarBuilder(new CalendarParserImpl(),
-                                new TzReg());
+                                TimeZoneRegistryFactory.getInstance().createRegistry());
 
     final Reader rdr = new StringReader(val);
 
@@ -105,6 +122,25 @@ public class Icalendar extends Component {
     }
 
     return ical;
+  }
+
+  public void removeTimeZones() {
+    if (cal == null) {
+      return;
+    }
+
+    var res = new ComponentList<CalendarComponent>();
+
+    for (var comp: cal.getComponents()) {
+      if (comp instanceof VTimeZone) {
+        continue;
+      }
+
+      res.add(comp);
+    }
+
+    cal.getComponents().clear();
+    cal.getComponents().addAll(res);
   }
 
   public ComponentList<Component> getComponents() {
