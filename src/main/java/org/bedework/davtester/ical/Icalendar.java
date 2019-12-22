@@ -3,7 +3,6 @@
 */
 package org.bedework.davtester.ical;
 
-import org.bedework.util.calendar.XcalUtil;
 import org.bedework.util.timezones.Timezones;
 
 import net.fortuna.ical4j.data.CalendarBuilder;
@@ -87,16 +86,6 @@ public class Icalendar extends Component {
 
   public static final TimeZoneRegistry tzreg =
           TimeZoneRegistryFactory.getInstance().createRegistry();
-
-  private static class TimezoneGetter implements XcalUtil.TzGetter {
-
-    @Override
-    public TimeZone getTz(final String s) throws Throwable {
-      return tzreg.getTimeZone(s);
-    }
-  }
-
-  public static final TimezoneGetter tzGetter = new TimezoneGetter();
 
   public Calendar cal;
 
