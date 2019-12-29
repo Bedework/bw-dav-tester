@@ -56,7 +56,6 @@ import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.Utils.uuid;
 import static org.bedework.davtester.XmlUtils.attrUtf8;
 import static org.bedework.davtester.XmlUtils.children;
-import static org.bedework.davtester.XmlUtils.childrenMatching;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
 import static org.bedework.davtester.XmlUtils.findNodes;
@@ -1302,32 +1301,28 @@ public class Request extends DavTesterBase {
           for (var propstat: response.propstats) {
             var status = (propstat.status / 100) == 2;
 
-            if (status) {
-              // Get properties for this propstat
-
-              for (var prop: propstat.props) {
-
-                // Get properties for this propstat
-                var glm = childrenMatching(prop, WebdavTags.getlastmodified);
-                if (glm.size() != 1) {
-                  continue;
-                }
-
-                var value = content(glm.get(0));
-                var fmt = DateTimeFormatter.RFC_1123_DATE_TIME;
-                ZonedDateTime zdt = fmt.parse (value , ZonedDateTime :: from);
-                long tval = Date.from(zdt.toInstant()).getTime();
-
-                if (tval > latest) {
-                  possibleMatches.clear();
-                  possibleMatches.add(response.href);
-                  latest = tval;
-                } else if (tval == latest) {
-                  possibleMatches.add(response.href);
-                }
-              }
-            } else {
+            if (!status) {
               possibleMatches.add(response.href);
+              continue;
+            }
+
+            for (var prop: propstat.props) {
+              if (!nodeMatches(prop, WebdavTags.getlastmodified)) {
+                continue;
+              }
+
+              var value = content(prop);
+              var fmt = DateTimeFormatter.RFC_1123_DATE_TIME;
+              ZonedDateTime zdt = fmt.parse (value , ZonedDateTime :: from);
+              long tval = Date.from(zdt.toInstant()).getTime();
+
+              if (tval > latest) {
+                possibleMatches.clear();
+                possibleMatches.add(response.href);
+                latest = tval;
+              } else if (tval == latest) {
+                possibleMatches.add(response.href);
+              }
             }
           }
         }
