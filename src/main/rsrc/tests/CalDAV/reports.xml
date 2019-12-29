@@ -2527,6 +2527,10 @@
 					<callback>statusCode</callback>
 				</verify>
 			</request>
+      <request>
+        <method>DELAY</method>
+        <ruri>2</ruri>
+      </request>
 			<request>
 				<method>REPORT</method>
 				<ruri>$calendarpath1:/</ruri>
@@ -3801,7 +3805,7 @@
 			</request>
       <request>
         <method>DELAY</method>
-        <ruri>3</ruri>
+        <ruri>2</ruri>
       </request>
 			<request>
 				<method>REPORT</method>
@@ -3856,7 +3860,7 @@
 			</request>
       <request>
         <method>DELAY</method>
-        <ruri>3</ruri>
+        <ruri>2</ruri>
       </request>
 			<request>
 				<method>REPORT</method>
