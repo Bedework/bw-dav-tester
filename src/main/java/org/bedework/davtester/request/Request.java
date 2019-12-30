@@ -721,8 +721,6 @@ public class Request extends DavTesterBase {
     }
 
     // Handle special methods
-    String ruri = null;
-
     String methodPar = null;
 
     var split = method.split(" ");

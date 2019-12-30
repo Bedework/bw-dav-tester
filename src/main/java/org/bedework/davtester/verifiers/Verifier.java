@@ -224,15 +224,6 @@ public abstract class Verifier implements Logged {
     }
   }
 
-  protected List<Element> findNodes(final String testPath) {
-    return XmlUtils.findNodes(doc, false, testPath);
-  }
-
-  protected List<Element> findNodes(final Element el,
-                                    final String testPath) {
-    return XmlUtils.findNodes(el, false, testPath);
-  }
-
   protected String normalizeXMLData(final String data,
                                   final List<String> filters) {
     var doc = XmlUtils.parseXmlString(data);
@@ -244,7 +235,7 @@ public abstract class Verifier implements Logged {
         var qn = QName.valueOf(filter);
         var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
                                              qn.getLocalPart());
-        for (var i = 0; i <= nl.getLength(); i++) {
+        for (var i = 0; i < nl.getLength(); i++) {
           var node = nl.item(i);
 
           XmlUtil.clear(node);

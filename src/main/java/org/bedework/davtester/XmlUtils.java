@@ -23,14 +23,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -92,20 +89,15 @@ public class XmlUtils {
 
       final DocumentBuilder builder = factory.newDocumentBuilder();
 
-      builder.setEntityResolver(new EntityResolver() {
-        @Override
-        public InputSource resolveEntity(final String publicId,
-                                         final String systemId)
-                throws SAXException, IOException {
-          Path s = Paths.get(systemId);
-          final String sname = s.getFileName().toString();
-          if (sname.equals("serverinfo.dtd") || sname.equals("caldavtest.dtd")) {
-            // One of ours
-            return new InputSource(dtdPath.resolve(sname).toAbsolutePath().toString());
-          }
-          // If no match, returning null makes process continue normally
-          return null;
+      builder.setEntityResolver((publicId, systemId) -> {
+        Path s = Paths.get(systemId);
+        final String sname = s.getFileName().toString();
+        if (sname.equals("serverinfo.dtd") || sname.equals("caldavtest.dtd")) {
+          // One of ours
+          return new InputSource(dtdPath.resolve(sname).toAbsolutePath().toString());
         }
+        // If no match, returning null makes process continue normally
+        return null;
       });
 /*
 public class CopyrightResolver implements EntityResolver {
@@ -269,7 +261,7 @@ public class CopyrightResolver implements EntityResolver {
         return def;
       }
 
-      return Integer.valueOf(val);
+      return Integer.parseInt(val);
     } catch (final Throwable t) {
       return throwException(t);
     }
@@ -425,8 +417,8 @@ public void readOneStringElement(node, ename) {
       return new XmlSplit(xpath, null);
     }
 
-    return new XmlSplit(xpath.substring(0, pos),
-                        xpath.substring(pos + 1));
+    return new XmlSplit(xpath.substring(0, npos),
+                        xpath.substring(npos + 1));
   }
 
   public static String testPathToXpath(final String testPath) {
@@ -453,7 +445,7 @@ public void readOneStringElement(node, ename) {
     return split.rootPath + "/" + testPathToXpath(split.childPath);
   }
 
-  public static List<Element> findNodes(final Object context,
+  public static List<Element> findNodes(final Document doc,
                                         final boolean atRoot,
                                         final String testPath) {
     var xp = testPathToXpath(testPath);
@@ -472,7 +464,8 @@ public void readOneStringElement(node, ename) {
       XPathExpression expr = xpath.compile(xp);
 
       //Search XPath expression
-      Object result = expr.evaluate(context, XPathConstants.NODESET);
+      Object result = expr.evaluate(doc.getDocumentElement(),
+                                    XPathConstants.NODESET);
 
       var nodes = (NodeList)result;
       var res = new ArrayList<Element>(nodes.getLength());
