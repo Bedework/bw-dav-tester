@@ -25,6 +25,15 @@
 	</require-feature>
 
 	<start>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarhome1:/synccalendar1/</ruri>
+    </request>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarhome1:/synccalendar2/</ruri>
+    </request>
+
 		<request end-delete="yes">
 			<method>MKCALENDAR</method>
 			<ruri>$calendarhome1:/synccalendar1/</ruri>
