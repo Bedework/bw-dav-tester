@@ -50,10 +50,7 @@ import java.util.UUID;
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.Utils.encodeUtf8;
-import static org.bedework.davtester.Utils.fileToString;
-import static org.bedework.davtester.Utils.getDtParts;
 import static org.bedework.davtester.Utils.throwException;
-import static org.bedework.davtester.Utils.uuid;
 import static org.bedework.davtester.XmlUtils.attrUtf8;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
@@ -298,44 +295,11 @@ public class Request extends DavTesterBase {
   }
 
   public String getDataVal() {
-    String dataStr = null;
-
     if (data == null) {
       return null;
     }
 
-    if (data.value != null) {
-      dataStr = data.value;
-    } else if (data.filepath != null) {
-      // read in the file data
-      String fname;
-      if (data.nextpath != null) {
-        fname = data.nextpath;
-      } else {
-        fname = getFilePath();
-      }
-
-      dataStr = fileToString(fname);
-    }
-
-    dataStr = String.valueOf(manager.serverInfo.subs(dataStr));
-    manager.serverInfo.addextrasubs(new KeyVals("$request_count:",
-                                                String.valueOf(count)));
-    dataStr = manager.serverInfo.extrasubs(dataStr);
-
-    if (!data.substitutions.isEmpty()) {
-      dataStr = manager.serverInfo.subs(dataStr, data.substitutions);
-    }
-
-    if (data.generate) {
-      if (data.contentType.startsWith("text/calendar")) {
-        dataStr = generateCalendarData(dataStr);
-      }
-    //} else if (data.generator != null) {
-      //dataStr = data.generator.doGenerate();
-    }
-
-    return dataStr;
+    return data.getValue(count);
   }
 
   private static LinkedList<String> dataList;
@@ -397,29 +361,6 @@ public class Request extends DavTesterBase {
     }
 
     return Result.ok();
-  }
-
-  public String generateCalendarData(final String dataVal) {
-    // FIXME: does not work for events with recurrence overrides.
-
-    // Change the following iCalendar data values:
-    // DTSTART, DTEND, RECURRENCE-ID, UID
-
-    // This was re.sub(...
-    var data = dataVal.replaceAll("UID:.*", "UID:" + uuid());
-    data = data.replaceAll("SUMMARY:(.*)", "SUMMARY:\\1 #" + count);
-
-    var now = getDtParts(new Date());
-
-    data = data.replaceAll("(DTSTART;[^:]*) [0-9]{8,8}",
-                           format("\\1:%04d%02d%02d",
-                                  now.year, now.month, now.dayOfMonth));
-
-    data = data.replaceAll("(DTEND;[^:]*) [0-9]{8,8}",
-                           format("\\1:%04d%02d%02d",
-                                  now.year, now.month, now.dayOfMonth));
-
-    return data;
   }
 
   public VerifyResult verifyRequest(final String ruri,

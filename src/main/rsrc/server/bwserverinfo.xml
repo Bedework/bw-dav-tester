@@ -78,7 +78,7 @@
     <!-- NOTBW <feature>resource-id</feature> -->					<!-- WebDAV BIND DAV:resource-id property -->
 		<feature>sync-report</feature>					<!-- WebDAV collection sync REPORT -->
 		<!-- <feature>sync-report-limit</feature> -->	<!-- WebDAV collection sync REPORT DAV:limit support -->
-    <feature>sync-report-home</feature>				<!-- WebDAV collection sync REPORT on Homes -->
+    <!-- NOTBW<feature>sync-report-home</feature> -->				<!-- WebDAV collection sync REPORT on Homes -->
     <!-- NOTBW <feature>sync-report-config-token</feature> -->		<!-- Sync REPORT token includes configuration component -->
 		<feature>well-known</feature>					<!-- well-known feature -->
 
@@ -149,7 +149,7 @@
     <!-- BW - don't support that -->
     <substitution>
       <key>$infinite-depth-value:</key>
-      <value>infinity</value>
+      <value>infinite</value>
     </substitution>
 		<!-- Useful xpath shortcuts for verifiers -->
 		<substitution>
@@ -252,7 +252,7 @@
 		<!-- relative path to calendars collection-->
 		<substitution>
 			<key>$calendars:</key>
-			<value>$root:users/calendars/</value>
+			<value>$root:users</value>
 		</substitution>
 
 		<!-- relative path to record type calendar collections-->

@@ -419,7 +419,7 @@
 			<require-feature>
 				<feature>sync-report-home</feature>
 			</require-feature>
-			<description>sync-level:infinity, depth:infinity</description>
+			<description>sync-level:infinite, depth:infinity</description>
 			<request>
 				<method>REPORT</method>
 				<ruri>$calendarhome1:/</ruri>

@@ -3947,7 +3947,7 @@
 			<require-feature>
 				<feature>sync-report-home</feature>
 			</require-feature>
-			<description>sync-level:infinity, depth:0</description>
+			<description>sync-level:infinite, depth:0</description>
 			<request>
 				<method>REPORT</method>
 				<ruri>$addressbookhome1:/</ruri>
@@ -3979,7 +3979,7 @@
 			<require-feature>
 				<feature>sync-report-home</feature>
 			</require-feature>
-			<description>sync-level:infinity, depth:1</description>
+			<description>sync-level:infinite, depth:1</description>
 			<request>
 				<method>REPORT</method>
 				<ruri>$addressbookhome1:/</ruri>
@@ -4011,7 +4011,7 @@
 			<require-feature>
 				<feature>sync-report-home</feature>
 			</require-feature>
-			<description>sync-level:infinity, depth:infinity</description>
+			<description>sync-level:infinite, depth:infinity</description>
 			<request>
 				<method>REPORT</method>
 				<ruri>$addressbookhome1:/</ruri>

@@ -23,8 +23,13 @@ import org.bedework.davtester.XmlDefs;
 import org.w3c.dom.Element;
 
 import java.nio.file.Paths;
+import java.util.Date;
 
+import static java.lang.String.format;
+import static org.bedework.davtester.Utils.fileToString;
+import static org.bedework.davtester.Utils.getDtParts;
 import static org.bedework.davtester.Utils.throwException;
+import static org.bedework.davtester.Utils.uuid;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
@@ -94,5 +99,67 @@ public class Data extends DavTesterBase {
         substitutions.put(name, value);
       }
     }
+  }
+
+  public String getValue(final int count) {
+    String dataStr = null;
+
+    manager.serverInfo.addextrasubs(new KeyVals("$request_count:",
+                                                String.valueOf(count)));
+
+    if (value != null) {
+      dataStr = value;
+    } else if (filepath != null) {
+      // read in the file data
+      String fname;
+      if (nextpath != null) {
+        fname = nextpath;
+      } else {
+        fname = filepath;
+      }
+
+      dataStr = fileToString(fname);
+    }
+
+    dataStr = manager.serverInfo.subs(dataStr);
+    dataStr = manager.serverInfo.extrasubs(dataStr);
+
+    if (!substitutions.isEmpty()) {
+      dataStr = manager.serverInfo.subs(dataStr, substitutions);
+    }
+
+    if (generate) {
+      if (contentType.startsWith("text/calendar")) {
+        dataStr = generateCalendarData(dataStr, count);
+      }
+      //} else if (generator != null) {
+      //dataStr = generator.doGenerate();
+    }
+
+    return dataStr;
+  }
+
+  private String generateCalendarData(final String dataVal,
+                                      final int count) {
+    // FIXME: does not work for events with recurrence overrides.
+
+    // Change the following iCalendar data values:
+    // DTSTART, DTEND, RECURRENCE-ID, UID
+
+    // This was re.sub(...
+    var data = dataVal.replaceAll("UID:.*", "UID:" + uuid());
+    data = data.replaceAll("SUMMARY:(.*)", "SUMMARY:\\1 #" + count);
+
+    var now = getDtParts(new Date());
+
+    data = data.replaceAll("(DTSTART;[^:]*) [0-9]{8,8}",
+                           format("\\1:%04d%02d%02d",
+                                  now.year, now.month, now.dayOfMonth));
+
+    data = data.replaceAll("(DTEND;[^:]*) [0-9]{8,8}",
+                           format("\\1:%04d%02d%02d",
+                                  now.year, now.month, now.dayOfMonth));
+
+    return data;
   }
 }
