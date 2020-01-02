@@ -262,7 +262,7 @@
 		</substitution>
 		<substitution>
 			<key>$calendars_users:</key>
-			<value>$calendars:</value>
+			<value>/users/</value>
 		</substitution>
 		<substitution>
 			<key>$calendars_resources:</key>
@@ -644,7 +644,7 @@
 			<!-- relative path to user calendar-->
 			<substitution>
 				<key>$publiccalendarpath%d:</key>
-				<value>$calendars_uids:$publicuserguid%d:/$calendar:</value>
+				<value>/public/cals/maincal</value>
 			</substitution>
 			<substitution>
 				<key>$publicemail%d:</key>
