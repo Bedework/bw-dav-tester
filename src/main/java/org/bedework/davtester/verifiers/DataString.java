@@ -62,7 +62,7 @@ public class DataString extends Verifier {
     }
 
     // Check each contains and not-contains (AND operation)
-    for (var item : equals) {
+    for (var item: equals) {
       item = manager.serverInfo.subs(item);
       if (!newrespdata.equals(item)) {
         fmsg("        Response data does not equal \"%s\"",
@@ -71,7 +71,7 @@ public class DataString extends Verifier {
       }
     }
 
-    for (var item : contains) {
+    for (var item: contains) {
       item = manager.serverInfo.subs(item);
       if (!newrespdata.contains(item.replace("\n", "\r\n"))
               && (!newrespdata.contains(item))) {
@@ -81,7 +81,7 @@ public class DataString extends Verifier {
       }
     }
 
-    for (var item : notcontains) {
+    for (var item: notcontains) {
       item = manager.serverInfo.subs(item);
       if (newrespdata.contains(item.replace("\n", "\r\n"))
               || newrespdata.contains(item)) {

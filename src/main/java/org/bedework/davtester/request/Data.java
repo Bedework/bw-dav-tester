@@ -88,8 +88,7 @@ public class Data extends DavTesterBase {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {
-        value = manager.serverInfo.subs(contentUtf8(child),
-                                        null);
+        value = manager.serverInfo.subs(contentUtf8(child));
       }
       if ((name != null) && (value != null)) {
         substitutions.put(name, value);

@@ -85,7 +85,7 @@ public class Header extends Verifier {
       }
 
       if (p.contains("$")) {
-        var split = p.split("$");
+        var split = p.split("\\$");
         testInfo.add(new TestInfo(split[0],
                                   split[1],
                                   present,

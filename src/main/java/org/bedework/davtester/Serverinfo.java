@@ -408,6 +408,20 @@ public class Serverinfo {
       return null;
     }
 
+    var res = val;
+
+    while (true) {
+      var newval = replace1Pass(res, props);
+      if (newval.equals(res)) {
+        return res;
+      }
+
+      res = newval;
+    }
+  }
+
+  private static String replace1Pass(final String val,
+                                     final KeyVals props) {
     int pos = val.indexOf("$");
 
     if (pos < 0) {
@@ -430,15 +444,22 @@ public class Serverinfo {
         break;
       }
 
-      final String pval =
-              props.getOnlyString(val.substring(pos, end + 1).trim());
+      var remPos = end + 1;
+      final String matched = val.substring(pos, remPos).trim();
+
+      final String pval = props.getOnlyString(matched);
 
       if (pval != null) {
         sb.append(pval);
+        sb.append(val.substring(remPos));
+        break;
       }
 
-      segStart = end + 1;
-      if (segStart > val.length()) {
+      // No match - just append the unmatched key.
+      sb.append(matched);
+      segStart = remPos;
+
+      if (segStart >= val.length()) {
         break;
       }
 

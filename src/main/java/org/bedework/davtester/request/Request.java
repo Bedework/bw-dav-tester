@@ -645,7 +645,7 @@ public class Request extends DavTesterBase {
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VARIABLE)) {
         ge.variables.add(manager.serverInfo.subs(contentUtf8(child)));
       } else {
-        throwException("Unknown grap element: " + child);
+        throwException("Unknown grab element: " + child);
       }
     }
 
