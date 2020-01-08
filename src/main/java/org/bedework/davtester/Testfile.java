@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.servlet.http.HttpServletResponse;
+
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.Utils.throwException;
@@ -88,7 +90,7 @@ public class Testfile extends DavTesterBase {
 
   private List<Request> startRequests = new ArrayList<>();
   private List<Request> endRequests = new ArrayList<>();
-  public List<RequestPars> endDeletes = new ArrayList<>();
+  private Map<String, RequestPars> endDeletes = new HashMap<>();
 
   private List<Testsuite> suites = new ArrayList<>();
   private Testsuite currentSuite;
@@ -143,10 +145,10 @@ public class Testfile extends DavTesterBase {
       }
 
       final TestResult res;
-      var doReqres = doRequests("Start Requests...", startRequests, false,
+      var doReqres = doRequests("Start Requests...", startRequests,
                           true,
                           format("%s | %s", name,
-                                        "START_REQUESTS"), 1);
+                                        "START_REQUESTS"));
 
       if (!doReqres) {
         manager.testFile(testPath.toString(),
@@ -158,8 +160,8 @@ public class Testfile extends DavTesterBase {
       }
       doEnddelete("Deleting Requests...", format("%s | %s", name,
                   "END_DELETE"));
-      doRequests("End Requests...", endRequests, false, false,
-                 format("%s | %s", name, "END_REQUESTS"), 1);
+      doRequests("End Requests...", endRequests, false,
+                 format("%s | %s", name, "END_REQUESTS"));
       return res;
     } catch (final Throwable t) {
       manager.testFile(testPath.toString(),
@@ -191,12 +193,12 @@ public class Testfile extends DavTesterBase {
     return res;
   }
 
-  public boolean doRequests(final String description,
-                            final List<Request> requests,
-                            final boolean doverify,
-                            final boolean forceverify,
-                            final String label,
-                            final int count) {
+  private boolean doRequests(final String description,
+                             final List<Request> requests,
+                             final boolean forceverify,
+                             final String label) {
+    /* This method is only used for start and end requests
+     */
     if (Util.isEmpty(requests)) {
       return true;
     }
@@ -209,21 +211,25 @@ public class Testfile extends DavTesterBase {
     var resulttxt = "";
 
     for (var req: requests) {
-      var resreq = req.run(false, doverify, forceverify,
+      var resreq = req.run(false,
+                           false, // doverify,
+                           forceverify,
                            null, // stats
                            null, // etags
-                           format("%s | #%s", label, String.valueOf(reqCount)),
-                           count);
+                           format("%s | #%s", label, reqCount),
+                           1);  // count
       if (resreq.message != null) {
         resulttxt += resreq.message;
       }
 
-      if (!resreq.ok) {
+      if (!resreq.ok &&
+         (!req.method.equals("DELETE") ||
+                (resreq.status != HttpServletResponse.SC_NOT_FOUND))) {
         resulttxt += format(
                 "\nFailure during multiple requests " +
                         "#%d out of %d, request=%s",
                 reqCount, requests.size(),
-                String.valueOf(req));
+                req);
         result = false;
         break;
       }
@@ -258,13 +264,22 @@ public class Testfile extends DavTesterBase {
     return content(href.get(0));
   }
 
+  public void addEndDelete(final String uri,
+                           final Request req) {
+    if (endDeletes.containsKey(uri)) {
+      return;
+    }
+
+    endDeletes.put(uri, new RequestPars(uri, req));
+  }
+
   public void doEnddelete(final String description,
                           final String label) {
-    if (Util.isEmpty(endDeletes)) {
+    if (endDeletes.isEmpty()) {
       return;
     }
     manager.trace("Start: " + description);
-    for (var delReq: endDeletes) {
+    for (var delReq: endDeletes.values()) {
       var req = delReq.makeRequest("DELETE", manager);
       req.run(false, false, false, null, null, label, 0);
     }

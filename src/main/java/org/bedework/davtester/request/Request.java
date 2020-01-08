@@ -6,7 +6,6 @@ import org.bedework.davtester.Manager;
 import org.bedework.davtester.RequestStats;
 import org.bedework.davtester.Result;
 import org.bedework.davtester.Serverinfo.KeyVal;
-import org.bedework.davtester.Testfile.RequestPars;
 import org.bedework.davtester.UriIdPw;
 import org.bedework.davtester.Utils;
 import org.bedework.davtester.XmlDefs;
@@ -804,7 +803,7 @@ public class Request extends DavTesterBase {
 
     // Cache delayed delete
     if (endDelete) {
-      manager.currentTestfile.endDeletes.add(new RequestPars(ruri, this));
+      manager.currentTestfile.addEndDelete(ruri, this);
     }
 
     if (details) {

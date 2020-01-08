@@ -34,6 +34,7 @@
     <diff-utils.version>4.5</diff-utils.version>
     <http-client.version>4.5.3</http-client.version>
     <http-core.version>4.4.8</http-core.version>
+    <servlet-api.version>4.0.0</servlet-api.version>
 
 		<log4j.version>1.2.15</log4j.version>
 	</properties>
@@ -192,6 +193,12 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>${servlet-api.version}</version>
+    </dependency>
 	</dependencies>
 
 	<build>

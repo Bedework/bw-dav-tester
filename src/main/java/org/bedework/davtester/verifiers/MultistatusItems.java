@@ -266,7 +266,19 @@ public class MultistatusItems extends Verifier {
     var results = new ArrayList<String>();
 
     for (var href : hrefs) {
-      results.add(prefix(href, prefix));
+      if (href.startsWith("[")) {
+        var split = href.substring(1, href.length() - 1).split(",");
+
+        for (var ch: split) {
+          if (ch.equals("-")) {
+            results.add(prefix);
+          } else {
+            results.add(prefix(ch, prefix));
+          }
+        }
+      } else {
+        results.add(prefix(href, prefix));
+      }
     }
 
     return results;
