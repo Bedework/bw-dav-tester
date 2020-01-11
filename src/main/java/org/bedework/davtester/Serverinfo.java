@@ -29,7 +29,6 @@ import org.w3c.dom.Node;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -78,7 +77,6 @@ public class Serverinfo {
   final KeyVals extrasubsKvs = new KeyVals();
   public List<String> calendardatafilters = new ArrayList<>();
   List<String> addressdatafilters = new ArrayList<>();
-  Date dtnow = new Date();
 
   public static class KeyVal {
     public final String key;
@@ -373,11 +371,7 @@ public class Serverinfo {
       } else if (nodeMatches(schild, XmlDefs.ELEMENT_VALUE)) {
         var str = contentUtf8(schild);
 
-        if (str == null) {
-          value = "";
-        } else {
-          value = contentUtf8(schild);
-        }
+        value = Objects.requireNonNullElse(str, "");
       }
     }
 

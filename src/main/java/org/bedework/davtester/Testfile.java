@@ -208,7 +208,7 @@ public class Testfile extends DavTesterBase {
     manager.trace("Start: " + description);
 
     var reqCount = 1;
-    var resulttxt = "";
+    StringBuilder resulttxt = new StringBuilder();
 
     for (var req: requests) {
       var resreq = req.run(false,
@@ -219,17 +219,17 @@ public class Testfile extends DavTesterBase {
                            format("%s | #%s", label, reqCount),
                            1);  // count
       if (resreq.message != null) {
-        resulttxt += resreq.message;
+        resulttxt.append(resreq.message);
       }
 
       if (!resreq.ok &&
          (!req.method.equals("DELETE") ||
                 (resreq.status != HttpServletResponse.SC_NOT_FOUND))) {
-        resulttxt += format(
+        resulttxt.append(format(
                 "\nFailure during multiple requests " +
                         "#%d out of %d, request=%s",
                 reqCount, requests.size(),
-                req);
+                req));
         result = false;
         break;
       }
@@ -242,14 +242,14 @@ public class Testfile extends DavTesterBase {
       s = "[OK]";
     } else {
       s = "[FAILED]";
-      manager.logit(resulttxt);
+      manager.logit(resulttxt.toString());
     }
 
     manager.trace(format("%s60%s5",
                          "End: " + description,
                          s));
     if (resulttxt.length() > 0) {
-      manager.trace(resulttxt);
+      manager.trace(resulttxt.toString());
     }
     return result;
   }

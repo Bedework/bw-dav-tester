@@ -117,7 +117,7 @@ public class KeyVals extends HashMap<String, List<?>> {
 
     var len = val.size();
     List<String> res = new ArrayList<>(len);
-    ListIterator si = val.listIterator();
+    ListIterator<?> si = val.listIterator();
     for (int i = 0; i < len; i++) {
       var snext = si.next();
       if (!(snext instanceof String)) {
@@ -142,7 +142,7 @@ public class KeyVals extends HashMap<String, List<?>> {
 
     var len = val.size();
     List<Integer> res = new ArrayList<>(len);
-    ListIterator si = val.listIterator();
+    ListIterator<?> si = val.listIterator();
     for (int i = 0; i < len; i++) {
       var snext = si.next();
       if (!(snext instanceof Integer)) {

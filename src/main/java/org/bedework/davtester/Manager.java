@@ -15,23 +15,6 @@
 */
 package org.bedework.davtester;
 
-/**
-Class to manage the testing process.
-
-from src.serverinfo import serverinfo
-from xml.etree.cElementTree import ElementTree
-from xml.parsers.expat import ExpatError
-import getopt
-import os
-import random
-import XmlDefs
-import sys
-import time
-
-# Exceptions
-
- */
-
 import org.bedework.davtester.observers.BaseResultsObserver;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
@@ -80,10 +63,8 @@ public class Manager implements Logged {
   public String dataDir;
   private Path dataDirPath;
 
-  private String testsDir;
   private Path testsDirPath;
 
-  private String resDir;
   public Path resDirPath;
 
   Path pretestFile;
@@ -93,11 +74,8 @@ public class Manager implements Logged {
   private List<Testfile> testFiles = new ArrayList<>();
   public Testfile currentTestfile;
 
-  private boolean textMode;
-  private int pid;
   boolean memUsage;
   String randomSeed;
-  private String digestCache;
   String postgresLog;
   String logFileName;
   FileWriter logFile;
@@ -112,10 +90,6 @@ public class Manager implements Logged {
   public boolean printRequest = false;
   public boolean printResponse = false;
   public boolean printRequestResponseOnError = false;
-
-  public void Manager(final boolean textMode) {
-    this.textMode = textMode;
-  }
 
   public CloseableHttpClient getHttpClient(final String user,
                                            final String pw) {
@@ -178,12 +152,10 @@ public class Manager implements Logged {
   }
 
   public void setTestsDir(final String path) {
-    testsDir = path;
     testsDirPath = Paths.get(path);
   }
 
   public void setResDir(final String path) {
-    resDir = path;
     resDirPath = Paths.get(path);
   }
 

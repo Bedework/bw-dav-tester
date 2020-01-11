@@ -19,27 +19,27 @@ public class Result<T> {
     this.val = val;
   }
 
-  public static Result ok() {
-    return new Result();
+  public static Result<?> ok() {
+    return new Result<>();
   }
 
-  public static Result ok(final String val) {
-    var res = new Result();
+  public static Result<?> ok(final String val) {
+    var res = new Result<>();
     res.message = val;
 
     return res;
   }
 
-  public static Result fail(final String message) {
-    var res = new Result();
+  public static <T extends Result<?>> T fail(final T res,
+                                             final String message) {
     res.ok = false;
     res.message = message;
 
     return res;
   }
 
-  public static Result fail(final Result from) {
-    var res = new Result();
+  public static <T extends Result<?>> T fail(final T res,
+                                             final Result<?> from) {
     res.ok = false;
     res.message = from.message;
 

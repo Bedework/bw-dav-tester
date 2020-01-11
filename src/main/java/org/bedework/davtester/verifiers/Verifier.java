@@ -27,20 +27,16 @@ import org.bedework.util.xml.XmlUtil;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.Patch;
-import net.fortuna.ical4j.model.Period;
-import net.fortuna.ical4j.model.PeriodList;
 import org.apache.http.Header;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.namespace.QName;
 
 import static java.lang.String.format;
-import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.davtester.XmlUtils.multiStatusResponse;
 
 /** Base class for verifiers
@@ -177,20 +173,6 @@ public abstract class Verifier implements Logged {
                                          final int status,
                                          final String respdata,
                                          final KeyVals args);
-
-  protected PeriodList getPeriods(final List<String> vals) {
-    final PeriodList pl = new PeriodList();
-
-    for (final var val: vals) {
-      try {
-        pl.add(new Period(val));
-      } catch (final ParseException pe) {
-        throwException(pe);
-      }
-    }
-
-    return pl;
-  }
 
   protected void errorDiff(final String msg,
                            final String actual,

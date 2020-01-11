@@ -51,7 +51,7 @@ public class Testcaldav extends DavTesterBase {
     var excludes = new TreeSet<String>();
     String subdir = null;
     String baseDir = null;
-    var pidfile = "target/CalendarServer/logs/caldavd.pid";
+    // mem var pidfile = "target/CalendarServer/logs/caldavd.pid";
     var randomOrder = false;
     //var random_seed = String.valueOf(new Random.randint(0, 1000000));
     var observerNames = new ArrayList<String>();
@@ -166,7 +166,7 @@ public class Testcaldav extends DavTesterBase {
         }
 
         if (pargs.ifMatch("--pid")) {
-          pidfile = pargs.next();
+          // mem pidfile = pargs.next();
           continue;
         }
 

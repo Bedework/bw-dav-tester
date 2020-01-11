@@ -480,6 +480,7 @@ public void readOneStringElement(node, ename) {
     }
   }
 
+  /*
   public static List<Element> findAll(final Element root,
                                       final String tag) {
     final QName qn = QName.valueOf(tag);
@@ -493,4 +494,5 @@ public void readOneStringElement(node, ename) {
 
     return res;
   }
+   */
 }

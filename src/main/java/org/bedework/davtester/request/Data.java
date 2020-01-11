@@ -24,6 +24,7 @@ import org.w3c.dom.Element;
 
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Objects;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.fileToString;
@@ -111,12 +112,8 @@ public class Data extends DavTesterBase {
       dataStr = value;
     } else if (filepath != null) {
       // read in the file data
-      String fname;
-      if (nextpath != null) {
-        fname = nextpath;
-      } else {
-        fname = filepath;
-      }
+      final String fname =
+              Objects.requireNonNullElseGet(nextpath, () -> filepath);
 
       dataStr = fileToString(fname);
     }

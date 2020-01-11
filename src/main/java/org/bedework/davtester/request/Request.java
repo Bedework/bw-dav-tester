@@ -222,7 +222,9 @@ public class Request extends DavTesterBase {
     }
   }
 
-  public final static Request pause = new PauseRequest();
+  public static class PauseClass {
+    public final static Request pause = new PauseRequest();
+  }
 
   public Request(final Manager manager) {
     super(manager);
@@ -319,10 +321,11 @@ public class Request extends DavTesterBase {
     return getDataList().ok;
   }
 
-  private Result getDataList() {
+  private Result<?> getDataList() {
     if (dataList != null) {
       if (dataList.size() > 0) {
-        return Result.fail("No files in list for " + getFilePath());
+        return Result.fail(new Result<>(),
+                           "No files in list for " + getFilePath());
       }
 
       return Result.ok();
@@ -331,12 +334,14 @@ public class Request extends DavTesterBase {
     dataList = new LinkedList<>();
     File folder = new File(getFilePath());
     if (!folder.isDirectory()) {
-      return Result.fail("Not a directory: " + getFilePath());
+      return Result.fail(new Result<>(),
+                         "Not a directory: " + getFilePath());
     }
 
     var fl = folder.listFiles();
     if (fl == null) {
-      return Result.fail("No files in list for " + getFilePath());
+      return Result.fail(new Result<>(),
+                         "No files in list for " + getFilePath());
     }
     Arrays.sort(fl);
 
@@ -356,7 +361,8 @@ public class Request extends DavTesterBase {
     }
 
     if (dataList.size() > 0) {
-      return Result.fail("No files in list for " + getFilePath());
+      return Result.fail(new Result<>(),
+                         "No files in list for " + getFilePath());
     }
 
     return Result.ok();
@@ -547,7 +553,7 @@ public class Request extends DavTesterBase {
         req.parseXML(child);
         requests.add(req);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_PAUSE)) {
-        requests.add(pause);
+        requests.add(PauseClass.pause);
       }
     }
 
@@ -1143,7 +1149,8 @@ public class Request extends DavTesterBase {
               getMultiStatusResponse(reqres.responseData);
 
       if (!msr.ok) {
-        return Result.fail(msr);
+        return Result.fail(new Result<>(),
+                           msr);
       }
 
       for (var response : msr.val.responses) {
@@ -1229,7 +1236,7 @@ public class Request extends DavTesterBase {
               getMultiStatusResponse(reqres.responseData);
 
       if (!msr.ok) {
-        return Result.fail(msr);
+        return Result.fail(new Result<>(), msr);
       }
 
       for (var response : msr.val.responses) {
@@ -1311,7 +1318,7 @@ public class Request extends DavTesterBase {
               getMultiStatusResponse(reqres.responseData);
 
       if (!msr.ok) {
-        return Result.fail(msr);
+        return Result.fail(new Result<>(), msr);
       }
 
       for (var response : msr.val.responses) {
@@ -1331,9 +1338,9 @@ public class Request extends DavTesterBase {
     return new Result<>(href);
   }
 
-  public Result doWaitcount(final UriIdPw uip,
-                            final int hrefCount,
-                            final String label) {
+  public Result<?> doWaitcount(final UriIdPw uip,
+                               final int hrefCount,
+                               final String label) {
     var hrefs = new ArrayList<String>();
 
     for (var ignore = 0; ignore < manager.serverInfo.waitcount; ignore++) {
@@ -1389,7 +1396,8 @@ public class Request extends DavTesterBase {
     }
 
     if (!manager.debug() || Util.isEmpty(hrefs)) {
-      return Result.fail(String.valueOf(hrefs.size()));
+      return Result.fail(new Result<>(),
+                         String.valueOf(hrefs.size()));
     }
     // Get the content of each resource
     var rdata = new StringBuilder();
@@ -1407,7 +1415,8 @@ public class Request extends DavTesterBase {
           }
 
           if (end < 0) {
-            return Result.fail("No UID end found in\n" + rdata.toString());
+            return Result.fail(new Result<>(),
+                               "No UID end found in\n" + rdata.toString());
           }
           var uid = rd.substring(uidpos + 4, end);
           test = manager.currentTestfile.uidmaps
@@ -1418,7 +1427,8 @@ public class Request extends DavTesterBase {
                           href, test, getDrr.responseData));
     }
 
-    return Result.fail(rdata.toString());
+    return Result.fail(new Result<>(),
+                       rdata.toString());
   }
 
   public boolean doWaitchanged(final UriIdPw uip,
@@ -1459,7 +1469,8 @@ public class Request extends DavTesterBase {
             getMultiStatusResponse(respdata);
 
     if (!msr.ok) {
-      return Result.fail(msr);
+      return Result.fail(new Result<>(),
+                         msr);
     }
 
     for (var response : msr.val.responses) {
@@ -1470,7 +1481,8 @@ public class Request extends DavTesterBase {
 
         // Get properties for this propstat
         if (propstat.props.size() != 1) {
-          return Result.fail("           Wrong number of DAV:prop elements");
+          return Result.fail(new Result<>(),
+                             "           Wrong number of DAV:prop elements");
         }
 
         for (var child: children(propstat.props.get(0))) {
@@ -1496,7 +1508,8 @@ public class Request extends DavTesterBase {
       }
     }
 
-    return Result.fail((String)null);
+    return Result.fail(new Result<>(),
+                       (String)null);
   }
 
   private List<Element> extractElements (final String elementpath,
@@ -1729,11 +1742,13 @@ public class Request extends DavTesterBase {
   private Result<MultiStatusResponse> getMultiStatusResponse(
           final String data) {
     try {
-      return new Result(multiStatusResponse(data));
+      return new Result<>(multiStatusResponse(data));
     } catch (final Throwable t) {
-      return Result.fail(format(
-              "Bad multi-staus response. Message was %s\n" +
-                      "Data was %s", t.getMessage(), data));
+      return Result.fail(new Result<>(),
+                         format("Bad multi-staus response. " +
+                                        "Message was %s\n" +
+                                        "Data was %s",
+                                t.getMessage(), data));
     }
   }
 }

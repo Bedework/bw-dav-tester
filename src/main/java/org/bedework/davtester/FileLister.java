@@ -63,7 +63,7 @@ public class FileLister  extends SimpleFileVisitor<Path> {
   @Override
   public FileVisitResult visitFileFailed(Path file,
                                          IOException exc) {
-    System.err.println(exc);
+    System.err.println(exc.toString());
     return CONTINUE;
   }
 }

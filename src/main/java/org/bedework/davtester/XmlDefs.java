@@ -19,6 +19,7 @@ package org.bedework.davtester;
 
 import javax.xml.namespace.QName;
 
+@SuppressWarnings("unused")
 public interface XmlDefs {
   QName ELEMENT_ADDRESSDATAFILTER = new QName("addressdatafilter");
   QName ELEMENT_ARG = new QName("arg");

@@ -36,8 +36,7 @@ public class Namespaces {
       return fullToAbbrev.get(namespaceURI);
     }
 
-    @SuppressWarnings("rawtypes")
-    public Iterator getPrefixes(String namespaceURI) {
+    public Iterator<String> getPrefixes(String namespaceURI) {
       return null;
     }
   }

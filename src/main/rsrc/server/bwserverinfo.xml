@@ -252,7 +252,7 @@
 		<!-- relative path to calendars collection-->
 		<substitution>
 			<key>$calendars:</key>
-			<value>$root:users</value>
+			<value>$root:user</value>
 		</substitution>
 
 		<!-- relative path to record type calendar collections-->
