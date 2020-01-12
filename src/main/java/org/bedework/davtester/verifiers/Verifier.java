@@ -250,7 +250,8 @@ public abstract class Verifier implements Logged {
     result.append(val, addnl);
   }
 
-  protected void badHrefs(final String msg, final List hrefs,
+  protected void badHrefs(final String msg,
+                          final List<?> hrefs,
                           final Object... args) {
     fmsg(msg, hrefs.size(), args);
     for (var i: hrefs) {
