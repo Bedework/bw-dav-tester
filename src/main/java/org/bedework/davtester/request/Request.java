@@ -812,6 +812,10 @@ public class Request extends DavTesterBase {
       manager.currentTestfile.addEndDelete(ruri, this);
     }
 
+    if (ruri == null) {
+      return DoRequestResult.fail("Null uri");
+    }
+
     if (details) {
       drr.append(format("        %s: %s\n", method, ruri));
     }
