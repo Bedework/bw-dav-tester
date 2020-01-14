@@ -232,6 +232,8 @@ public class Testcaldav extends DavTesterBase {
         XmlUtils.dtdPath = Paths.get("scripts/dtds");
       }
 
+      setSystemProperties();
+
       manager.setTestsDir(dname);
       manager.setResDir(resname);
 
@@ -290,5 +292,11 @@ public class Testcaldav extends DavTesterBase {
   @Override
   public String getKind() {
     return "Testdav";
+  }
+
+  private static void setSystemProperties() {
+    System.setProperty("ical4j.unfolding.relaxed", "true");
+    System.setProperty("ical4j.parsing.relaxed", "true");
+    System.setProperty("ical4j.compatibility.outlook", "true");
   }
 }
