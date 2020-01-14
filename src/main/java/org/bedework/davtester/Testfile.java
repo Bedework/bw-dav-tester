@@ -167,10 +167,7 @@ public class Testfile extends DavTesterBase {
       manager.testFile(testPath.toString(),
                        format("FATAL ERROR: %s", t.getMessage()),
                        Manager.RESULT_ERROR);
-
-      if (manager.debug()) {
-        manager.error(t);
-      }
+      manager.error(t);
 
       return TestResult.failed();
     } finally {
