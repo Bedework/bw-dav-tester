@@ -50,12 +50,12 @@ class Testsuite extends DavTesterBase {
   }
 
   public List<KeyVal> aboutToRun() {
-        /*
-        Typically we need the calendar/contact data for a test file to have a common set
-        of UIDs, and for each overall test file to have unique UIDs. Occasionally, within
-        a test file we also need test suites to have unique UIDs. The "change-uid" attribute
-        can be used to reset the active UIDs for a test suite.
-        */
+    /*
+      Typically we need the calendar/contact data for a test file to have a common set
+      of UIDs, and for each overall test file to have unique UIDs. Occasionally, within
+      a test file we also need test suites to have unique UIDs. The "change-uid" attribute
+      can be used to reset the active UIDs for a test suite.
+    */
 
     if (changeuid) {
       return manager.serverInfo.newUIDs();

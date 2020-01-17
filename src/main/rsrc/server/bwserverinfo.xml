@@ -25,7 +25,7 @@
 	<authtype>basic</authtype>
 	<!-- <unix>/tmp/caldavd_requests/unsecured.sock</unix> -->
 
-	<waitcount>120</waitcount>
+	<waitcount>40</waitcount>
 	<waitdelay>0.25</waitdelay>
 	<waitsuccess>30</waitsuccess>
 
