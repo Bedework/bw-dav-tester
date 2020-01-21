@@ -1,0 +1,19 @@
+== Server Features
+
+These are used to include or exclude tests. they are turned on by adding a feature element to the server info file - for example
+
+[source]
+----
+<feature>schedule-changes</feature>
+----
+
+Tests, test suites or test files can be include or excluded based on the presence of a feature.
+
+A number of features are vendor specific and may be excluded from the tests.
+
+=== Apple specific features
+These may be used by other than Apple but they are often there to support their client. Turning these on may help with compatability but the server shoudl be fine if it doesn't support them.
+
+=== schedule-changes
+Used to indicate what changed in a scheduling operation. Allows the client to display a detailed notification to the user.
+

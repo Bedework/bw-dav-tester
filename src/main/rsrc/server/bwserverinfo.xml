@@ -120,7 +120,7 @@
     <!-- NOTBW <feature>share-calendars-to-groups</feature> -->	<!-- Share calendars to groups extension -->
     <!-- NOTBW <feature>external-sharees-disallowed</feature> --> <!-- Don't allow sharees that are not in system -->
     <!-- NOTBW <feature>shared-no-scheduling</feature> --> <!-- Don't allow scheduling in shared calendars -->
-		<feature>schedule-changes</feature>				<!-- schedule-changes property extension -->
+    <!-- NOTBW <feature>schedule-changes</feature>  -->				<!-- schedule-changes property extension -->
 		<feature>split-calendars</feature>				<!-- Calendars are split by component type -->
 		<feature>supported-component-sets</feature>		<!-- CALDAV:supported-calendar-component-sets on calendar homes -->
     <!-- NOTBW <feature>supported-component-sets-one</feature> -->	<!-- Only single component calendars allowed to be created -->

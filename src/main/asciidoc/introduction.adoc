@@ -1,0 +1,11 @@
+== Introduction
+
+The tester is a java app that will run a series of scripted tests
+against a CalDAV or CardDAV server and verify the output, and optionally measure
+the time taken to complete one or more repeated requests. The tests are
+defined by XML files and ancillary HTTP request body files. A number of
+different verification options are provided.
+
+Many tests are included in this package.
+
+The DAV tester can be extended to run tests against almost any type of HTTP server protocol by simply defining a new set of XML files.
