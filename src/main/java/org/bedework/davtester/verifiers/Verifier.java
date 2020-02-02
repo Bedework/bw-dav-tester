@@ -22,7 +22,6 @@ import org.bedework.util.dav.DavUtil.MultiStatusResponse;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
-import org.bedework.util.xml.XmlUtil;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
@@ -37,7 +36,10 @@ import java.util.List;
 import javax.xml.namespace.QName;
 
 import static java.lang.String.format;
+import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.multiStatusResponse;
+import static org.bedework.util.xml.XmlUtil.hasChildren;
+import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /** Base class for verifiers
  *
@@ -184,7 +186,7 @@ public abstract class Verifier implements Logged {
       Patch<String> patch = DiffUtils.diff(expLines, actLines);
       var errorDiff = new StringBuilder();
 
-      for (AbstractDelta<String> delta : patch.getDeltas()) {
+      for (AbstractDelta<String> delta: patch.getDeltas()) {
         errorDiff.append(delta.toString());
         errorDiff.append('\n');
       }
@@ -213,19 +215,58 @@ public abstract class Verifier implements Logged {
 
     if (!Util.isEmpty(filters)) {
       // Apply filters
-      for (var filter : filters) {
-        var qn = QName.valueOf(filter);
-        var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
-                                             qn.getLocalPart());
-        for (var i = 0; i < nl.getLength(); i++) {
-          var node = nl.item(i);
+      for (var filterVal: filters) {
+        var fvals = filterVal.split(",");
 
-          XmlUtil.clear(node);
+        for (var filter: fvals) {
+          var qn = QName.valueOf(filter);
+          removeElement(root, qn);
+          /*
+          var nl = root.getElementsByTagNameNS(qn.getNamespaceURI(),
+                                               qn.getLocalPart());
+          for (var i = 0; i < nl.getLength(); i++) {
+            var node = nl.item(i);
+
+            XmlUtil.clear(node);
+          }
+           */
         }
       }
     }
 
     return XmlUtils.docToString(doc);
+  }
+
+  private boolean removeElement(final Element root,
+                                final QName qn) {
+    if (!hasChildren(root)) {
+      return false;
+    }
+
+    boolean res = false;
+    boolean removed;
+    do {
+      removed = false;
+
+      for (final var node: children(root)) {
+        if (nodeMatches(node, qn)) {
+          root.removeChild(node);
+          removed = true;
+          break;
+        }
+
+        if (removeElement(node, qn)) {
+          removed = true;
+          break;
+        }
+      }
+
+      if (removed) {
+        res = true;
+      }
+    } while (removed);
+
+    return res;
   }
 
   protected String normalizeXML(final String val) {

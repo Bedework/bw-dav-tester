@@ -39,6 +39,8 @@ import static org.bedework.davtester.Utils.getDtParts;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
+import static org.bedework.davtester.XmlUtils.floatVal;
+import static org.bedework.davtester.XmlUtils.intVal;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 //from uuid
@@ -75,6 +77,7 @@ public class Serverinfo {
   int waitsuccess = 10;
   final KeyVals subsKvs = new KeyVals();
   final KeyVals extrasubsKvs = new KeyVals();
+  final KeyVals defaultFilters = new KeyVals();
   public List<String> calendardatafilters = new ArrayList<>();
   List<String> addressdatafilters = new ArrayList<>();
 
@@ -278,15 +281,17 @@ public class Serverinfo {
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CERTDIR)) {
         certdir = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITCOUNT)) {
-        waitcount = Integer.parseInt(contentUtf8(child));
+        waitcount = intVal(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITDELAY)) {
-        waitdelay = (long)(Float.parseFloat(contentUtf8(child)) * 1000);
+        waitdelay = (long)(floatVal(child) * 1000);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_WAITSUCCESS)) {
         waitsuccess = Integer.parseInt(content(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_FEATURES)) {
         parseFeatures(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTIONS)) {
         parseSubstitutionsXML(child);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_DEFAULTFILTERS)) {
+        parseDefaultFilters(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_CALENDARDATAFILTER)) {
         calendardatafilters.add(contentUtf8(child));
       } else if (nodeMatches(child, XmlDefs.ELEMENT_ADDRESSDATAFILTER)) {
@@ -344,7 +349,9 @@ public class Serverinfo {
     var count = XmlUtils.getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
 
     for (var child: children(node)) {
-      parseSubstitutionXML(child, count);
+      if(nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTION)) {
+        parseSubstitutionXML(child, count);
+      }
     }
   }
 
@@ -352,17 +359,34 @@ public class Serverinfo {
     for (var child: children(node)) {
       if(nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTION)){
         parseSubstitutionXML(child, 0);
-      }else if(nodeMatches(child, XmlDefs.ELEMENT_REPEAT)){
+      } else if(nodeMatches(child, XmlDefs.ELEMENT_REPEAT)){
         parseRepeatXML(child);
       }
     }
   }
 
-  public void parseSubstitutionXML(final Node node, final int repeat) {
-    if (!nodeMatches(node, XmlDefs.ELEMENT_SUBSTITUTION)) {
-      return;
+  public void parseDefaultFilters(final Node node){
+    String name = null;
+    List<String> values = new ArrayList<>();
+
+    for (var child: children(node)) {
+      if(nodeMatches(child, XmlDefs.ELEMENT_NAME)){
+        name = contentUtf8(child);
+      } else if(nodeMatches(child, XmlDefs.ELEMENT_VALUE)){
+        if (content(child) != null) {
+          values.add(subs(contentUtf8(child), null));
+        } else {
+          values.add("");
+        }
+      }
     }
 
+    if (name != null) {
+      defaultFilters.put(name, values);
+    }
+  }
+
+  public void parseSubstitutionXML(final Node node, final int repeat) {
     String key = null;
     String value = null;
     for (var schild : children(node)) {

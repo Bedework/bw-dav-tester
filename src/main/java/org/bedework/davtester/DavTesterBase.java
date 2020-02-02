@@ -18,10 +18,17 @@ package org.bedework.davtester;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.ToString;
+import org.bedework.util.misc.Util;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
@@ -49,6 +56,8 @@ public abstract class DavTesterBase implements Logged {
 
   private Set<String> requireFeatures = new TreeSet<>();
   private Set<String> excludeFeatures = new TreeSet<>();
+
+  private Map<String, String> defaultFiltersApplied = new HashMap<>();
 
   public DavTesterBase(final Manager manager) {
     this.manager = manager;
@@ -94,6 +103,46 @@ public abstract class DavTesterBase implements Logged {
         }
       }
     }
+  }
+
+  public void parseDefaultFiltersApplied(final Node node) {
+    String callback = null;
+    String name = null;
+
+    for (var schild : children(node)) {
+      if (nodeMatches(schild, XmlDefs.ELEMENT_CALLBACK)) {
+        callback = contentUtf8(schild);
+      } else if (nodeMatches(schild, XmlDefs.ELEMENT_NAME)) {
+        var str = contentUtf8(schild);
+
+        name = Objects.requireNonNullElse(str, "");
+      }
+    }
+
+    if ((callback == null) || (name == null)) {
+      return;
+    }
+
+    defaultFiltersApplied.put(callback, name);
+  }
+
+  public void applyDefaultFilters(final String callback,
+                                  final KeyVals args) {
+    final String name = defaultFiltersApplied.get(callback);
+
+    if (name == null) {
+      return;
+    }
+
+    final List<String> defaults =
+            manager.serverInfo.defaultFilters.getStrings(name);
+
+    if (Util.isEmpty(defaults)) {
+      return;
+    }
+
+    args.computeIfAbsent("filters", s -> new ArrayList<String>());
+    args.getStrings("filters").addAll(defaults);
   }
 
   protected void httpTraceOn() {

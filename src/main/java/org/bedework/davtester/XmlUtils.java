@@ -187,6 +187,32 @@ public class CopyrightResolver implements EntityResolver {
     }
   }
 
+  public static int intVal(final Element nd) {
+    try {
+      var str = XmlUtil.getElementContent(nd);
+      if (str == null) {
+        return throwException("integer value expected for " + nd);
+      }
+
+      return Integer.parseInt(str);
+    } catch (final Throwable t) {
+      return throwException(t);
+    }
+  }
+
+  public static float floatVal(final Element nd) {
+    try {
+      var str = XmlUtil.getElementContent(nd);
+      if (str == null) {
+        return throwException("float value expected for " + nd);
+      }
+
+      return Float.parseFloat(str);
+    } catch (final Throwable t) {
+      return throwException(t);
+    }
+  }
+
   public static String contentUtf8(final Element nd) {
     try {
       var str = XmlUtil.getElementContent(nd);

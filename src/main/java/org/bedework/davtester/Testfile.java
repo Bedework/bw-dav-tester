@@ -299,6 +299,9 @@ public class Testfile extends DavTesterBase {
       } else if (nodeMatches(child,
                              XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
         parseFeatures(child, false);
+      } else if (nodeMatches(child,
+                             XmlDefs.ELEMENT_DEFAULTFILTERSAPPLIED)) {
+        parseDefaultFiltersApplied(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_START)) {
         startRequests = Request.parseList(manager, child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE)) {

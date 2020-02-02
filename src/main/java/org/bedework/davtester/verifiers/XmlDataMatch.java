@@ -47,7 +47,7 @@ public class XmlDataMatch extends FileDataMatch {
     if (!nrespdata.equals(ndata)) {
       errorDiff("        Response data does not " +
                         "exactly match file data%s",
-                respdata, data);
+                nrespdata, ndata);
     }
   }
 }

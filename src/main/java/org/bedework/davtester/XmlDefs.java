@@ -32,6 +32,8 @@ public interface XmlDefs {
   QName ELEMENT_CLIENTS = new QName("clients");
   QName ELEMENT_CONTENTTYPE = new QName("content-type");
   QName ELEMENT_DATA = new QName("data");
+  QName ELEMENT_DEFAULTFILTERS = new QName("default-filters");
+  QName ELEMENT_DEFAULTFILTERSAPPLIED = new QName("default-filters-applied");
   QName ELEMENT_DESCRIPTION = new QName("description");
   QName ELEMENT_END = new QName("end");
   QName ELEMENT_EXCLUDE_FEATURE = new QName("exclude-feature");

@@ -842,7 +842,7 @@ public class Request extends DavTesterBase {
               .setPort(port)
               .build();
     } catch (final Throwable t) {
-      return throwException(t);
+      return DoRequestResult.fail("Bad uri " + t.getMessage());
     }
 
     HttpRequestBase meth = HttpUtil.findMethod(method, uri);

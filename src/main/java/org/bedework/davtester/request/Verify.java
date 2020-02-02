@@ -116,6 +116,8 @@ public class Verify extends DavTesterBase {
     // Always clone the args as this verifier may be called multiple times
     var newargs = new KeyVals(args);
 
+    manager.currentTestfile.applyDefaultFilters(callback, newargs);
+
     return verifier.doVerify(ruri, responseHeaders, status, respdata, newargs);
   }
 
