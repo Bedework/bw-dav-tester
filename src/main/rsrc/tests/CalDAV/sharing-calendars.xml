@@ -26,6 +26,11 @@
 		<feature>shared-calendars</feature>
 	</require-feature>
 
+  <default-filters-applied>
+    <callback>xmlDataMatch</callback>
+    <name>sharing-xmldata</name>
+  </default-filters-applied>
+
 	<start>
 		<request user="$userid1:" pswd="$pswd1:">
 			<method>DELETEALL</method>
@@ -84,7 +89,7 @@
 					</arg>
 					<arg>
 						<name>filter</name>
-						<value>{http://calendarserver.org/ns/}dtstamp</value>
+						<!-- <value>{http://calendarserver.org/ns/}dtstamp</value> -->
 						<value>{http://calendarserver.org/ns/}uid</value>
 					</arg>
 				</verify>
@@ -565,8 +570,6 @@
 			<method>DELETEALL</method>
 			<ruri>$notificationpath1:/</ruri>
 			<ruri>$notificationpath2:/</ruri>
-			<ruri>$notificationpath3:/</ruri>
-			<ruri>$notificationpath4:/</ruri>
 		</request>
 	</end>
 	

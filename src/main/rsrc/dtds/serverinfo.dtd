@@ -19,6 +19,7 @@
 					  authtype?, certdir?,
 					  waitcount?, waitdelay?, waitsuccess?,
 					  features?, substitutions,
+            default-filters*,
 					  calendardatafilter*, addressdatafilter*)? >
 
 	<!ELEMENT host					(#PCDATA)>
@@ -42,5 +43,10 @@
 		<!ELEMENT substitution		(key, value)>
 			<!ELEMENT key			(#PCDATA)>
 			<!ELEMENT value			(#PCDATA)>
+
+  <!ELEMENT default-filters	(name, value*)>
+      <!ELEMENT name			(#PCDATA)>
+
 	<!ELEMENT calendardatafilter	(#PCDATA)>
+
 	<!ELEMENT addressdatafilter		(#PCDATA)>

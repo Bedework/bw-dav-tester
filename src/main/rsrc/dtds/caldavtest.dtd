@@ -14,7 +14,7 @@
  limitations under the License.
  -->
 
-<!ELEMENT caldavtest (description?, require-feature?, start, test-suite*, end) >
+<!ELEMENT caldavtest (description?, require-feature?, default-filters-applied*, start, test-suite*, end) >
 	<!ATTLIST caldavtest ignore-all (yes|no) "no"
           http-trace (yes|no) "no">
 
@@ -22,8 +22,10 @@
 
 	<!ELEMENT require-feature (feature*)>
 		<!ELEMENT feature (#PCDATA)>
+
 	<!ELEMENT exclude-feature (feature*)>
-		<!ELEMENT feature (#PCDATA)>
+
+  <!ELEMENT default-filters-applied (callback, name)>
 
 	<!ELEMENT start (request*)>
 	<!ELEMENT end (request*)>

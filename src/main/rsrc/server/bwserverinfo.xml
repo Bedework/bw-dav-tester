@@ -883,6 +883,13 @@
 
 	</substitutions>
 
+  <default-filters>
+    <name>sharing-xmldata</name>
+    <value>{http://calendarserver.org/ns/}dtstamp</value>
+    <value>{http://bedework.org/ns/}processors</value>
+    <value>{http://bedeworkcalserver.org/ns/}name</value>
+  </default-filters>
+
     <calendardatafilter>ATTENDEE:X-CALENDARSERVER-DTSTAMP</calendardatafilter>
     <calendardatafilter>ATTENDEE:X-CALENDARSERVER-AUTO</calendardatafilter>
     <calendardatafilter>ATTENDEE:X-CALENDARSERVER-RESET-PARTSTAT</calendardatafilter>
