@@ -27,6 +27,7 @@ python testcaldav.py $@ --print-details-onfail -s bwserverinfo.xml -o cdt.txt \
 	CalDAV/propfind.xml \
 	CalDAV/put.xml \
 	CalDAV/reports.xml \
+	CalDAV/freebusy.xml \
 	CalDAV/sharing-calendars.xml \
 	CalDAV/sharing-create.xml \
 	CalDAV/sharing-feature.xml \

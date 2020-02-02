@@ -7,6 +7,15 @@ CalDAV/get.xml
 CalDAV/propfind.xml
 CalDAV/put.xml
 CalDAV/reports.xml
+freebusy.xml
+
+# Next set - slightly more advanced
+
+# Full CalDAV feature set but simple data
+
+# Complex data issues - single recurrence instances - per user data etc
+
+# Apple sharing feature
 
 # These cause errors because they are very apple specific
 
@@ -39,9 +48,8 @@ dropbox.xml
 duplicate_uids.xml
 encodedURIs.xml
 expandproperty.xml
-extended-freebusy.xml
+extended-freebusy.xml  -- features: caldav, proxy, extended-freebusy
 floating.xml
-freebusy.xml
 freebusy-url.xml
 ical-client.xml
 implicit-traveltime.xml
