@@ -18,11 +18,13 @@ package org.bedework.davtester.verifiers;
 import org.bedework.davtester.KeyVals;
 import org.bedework.davtester.ical.Icalendar;
 import org.bedework.util.misc.Util;
+import org.bedework.util.misc.response.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +36,7 @@ import java.util.regex.Pattern;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getQName;
+import static org.bedework.util.xml.XmlUtil.hasContent;
 
 /**
  * Verifier that checks the response body for an exact match to data in a file.
@@ -104,44 +107,11 @@ public class XmlElementMatch extends Verifier {
   private final static Pattern rootPathsPattern =
           Pattern.compile("(\\{[^}]+}[^/]+)(.*)");
 
-  private List<Element> parentNodesForPath(final Element root,
-                                           final String path) {
-    String actualPath;
-    String tests;
-    if (path.contains("[")) {
-      var split = path.split("\\[", 2);
-      actualPath = split[0];
-      tests = split[1];
-    } else{
-      actualPath = path;
-      tests = null;
-    }
+  private final static Pattern pathsPattern =
+          Pattern.compile("(/?\\{[^}]+}[^/]+|\\.)(.*)");
 
-    final List<Element> nodes = nodesForPath(root, actualPath);
-    if (Util.isEmpty(nodes)) {
-      return nodes;
-    }
-
-    final List<Element> res = new ArrayList<>();
-
-    if (tests != null) {
-      var split = tests.split("\\[");
-
-      for (var test: split) {
-        for (var node : nodes) {
-          if (testNode(node, path, test)) {
-            res.add(node);
-          }
-        }
-      }
-    } else {
-      res.addAll(nodes);
-    }
-
-    return res;
-  }
-
-  /**
+  /** Only used to locate parent
+   *
    * @param root where we start
    * @param path path with no tests
    * @return matching nodes.
@@ -149,16 +119,24 @@ public class XmlElementMatch extends Verifier {
   private List<Element> nodesForPath(final Element root,
                                      final String path) {
     String actualPath;
+    String tests;
+
+    if (path.contains("[")) {
+      var splits = path.split("\\[", 2);
+      actualPath = splits[0];
+      tests = splits[1];
+    } else {
+      actualPath = path;
+      tests = null;
+    }
 
     // Handle absolute root element
     if (path.startsWith("/")) {
-      actualPath = path.substring(1);
-    } else {
-      actualPath = path;
+      actualPath = actualPath.substring(1);
     }
 
     var m = rootPathsPattern.matcher(actualPath);
-    List<Element> res = new ArrayList<>();
+    List<Element> nodes = new ArrayList<>();
 
     if (m.matches() && !StringUtils.isEmpty(m.group(2))) {
       var rootPath = m.group(1);
@@ -170,20 +148,34 @@ public class XmlElementMatch extends Verifier {
       }
 
       for (var child: children(root)) {
-        final List<Element> nodes = nodesForPath(child, childPath);
-        if (!Util.isEmpty(nodes)) {
-          res.addAll(nodes);
+        final List<Element> ns = nodesForPath(child, childPath);
+        if (!Util.isEmpty(ns)) {
+          nodes.addAll(ns);
         }
       }
     } else if (getQName(root).toString().equals(actualPath)) {
-      res.add(root);
+      nodes.add(root);
+    }
+
+    if (tests == null) {
+      return nodes;
+    }
+
+    final List<Element> res = new ArrayList<>();
+
+    var split = tests.split("\\[");
+
+    for (var t1: split) {
+      var test = t1.substring(0, t1.length() - 1);
+      for (var node : nodes) {
+        if (testNode(node, path, test).isOk()) {
+          res.add(node);
+        }
+      }
     }
 
     return res;
   }
-
-  private final static Pattern pathsPattern =
-          Pattern.compile("(/?\\{[^}]+}[^/]+|\\.)(.*)");
 
   private boolean matchNode(final Element rootEl,
                             final String xpath,
@@ -233,7 +225,8 @@ public class XmlElementMatch extends Verifier {
     // Handle absolute root element and find all matching nodes
     var m = pathsPattern.matcher(actualXpath);
 
-    List<Element> nodes = nodesForPath(root, actualXpath);
+    //List<Element> nodes = nodesForPath(root, actualXpath);
+    List<Element> nodes = new ArrayList<>();
 
     /*
     if (m.matches() && m.group(2) != null) {
@@ -253,6 +246,29 @@ public class XmlElementMatch extends Verifier {
       nodes = Collections.singletonList(root);
     }
      */
+
+    if (m.matches() && !StringUtils.isEmpty(m.group(2))) {
+      var rootPath = m.group(1);
+      if (rootPath.startsWith("/")) {
+        rootPath = rootPath.substring(1);
+      }
+
+      var childPath = m.group(2).substring(1);
+
+      if (!rootPath.equals(".") &&
+              !getQName(root).toString().equals(rootPath)) {
+        return false;
+      }
+
+      for (var child: children(root)) {
+        final List<Element> ns = nodesForPath(child, childPath);
+        if (!Util.isEmpty(ns)) {
+          nodes.addAll(ns);
+        }
+      }
+    } else {
+      nodes.add(root);
+    }
 
     if (nodes.size() == 0) {
       if (exists) {
@@ -285,17 +301,18 @@ public class XmlElementMatch extends Verifier {
     }
 
     var split = nodeTestsSeg.split("\\[");
-    var nodeTests = new ArrayList<String>();
 
-    for (var s: split) {
-      nodeTests.add(s.substring(0, s.length() - 1));
-    }
+    for (var t1: split) {
+      var test = t1.substring(0, t1.length() - 1);
+      Response resp = null;
 
-    for (var test: nodeTests) {
       for (var node : nodes) {
-        if (!testNode(node, title, test)) {
-          return false;
+        resp = testNode(node, title, test);
+        if (!resp.isOk()) {
+          continue;
         }
+
+        // Found a match
         if (nextPath == null) {
           break;
         }
@@ -304,7 +321,8 @@ public class XmlElementMatch extends Verifier {
         break;
       }
 
-      if (!result.ok) {
+      if ((resp != null) && !resp.isOk()) {
+        fmsg(resp.getMessage());
         break;
       }
     }
@@ -312,18 +330,28 @@ public class XmlElementMatch extends Verifier {
     return result.ok;
   }
 
-  private boolean testNode(final Element node, 
-                           final String nodePath,
-                           final String testPar) {
-    var nodeText = content(node); 
-    if (StringUtils.isEmpty(nodeText)) {
-      nodeText = null;
+  private String contentFor(final Node n) {
+    if (!hasContent(n)) {
+      return null;
     }
 
+    var nodeText = content(n);
+    if (StringUtils.isEmpty(nodeText)) {
+      return null;
+    }
+
+    return nodeText;
+  }
+
+  private Response testNode(final Element node,
+                            final String nodePath,
+                            final String testPar) {
+    var resp = new Response();
+
     if ((testPar == null) || (testPar.length() < 2)) {
-      fmsg("        Bad test %s\n",
-           testPar);
-      return false;
+      return Response.error(resp,
+                            String.format("        Bad test %s\n",
+                                          testPar));
     }
 
     var test = testPar.substring(1);
@@ -344,50 +372,67 @@ public class XmlElementMatch extends Verifier {
         }
 
         if (!node.hasAttribute(attr)) {
-          fmsg("        Missing attribute returned in XML for %s\n",
-               nodePath);
+          return Response.error(
+                  resp,
+                  String.format("        Missing attribute returned in XML for %s\n",
+                                nodePath));
         }
 
         if ((value != null) && !node.getAttribute(attr).equals(value)) {
-          fmsg("        Incorrect attribute value returned in XML for %s\n",
-               nodePath);
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect attribute value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '=':
-        if ((nodeText == null) || !nodeText.equals(test)) {
-          fmsg("        Incorrect value returned in XML for %s\n",
-               nodePath);
+        if (!test.equals(contentFor(node))) {
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '!':
-        if ((nodeText != null) && nodeText.equals(test)) {
-          fmsg("        Incorrect value returned in XML for %s\n",
-               nodePath);
+        if (test.equals(contentFor(node))) {
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '*':
-        if ((nodeText == null) || !nodeText.contains(test)) {
-          fmsg("        Incorrect value returned in XML for %s\n",
-               nodePath);
+        var n1 = contentFor(node);
+        if ((n1 == null) || !n1.contains(test)) {
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '$':
-        if ((nodeText == null) || nodeText.contains(test)) {
-          fmsg("        Incorrect value returned in XML for %s\n",
-               nodePath);
+        var n2 = contentFor(node);
+        if ((n2 == null) || n2.contains(test)) {
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '+':
-        if ((nodeText == null) || (!nodeText.startsWith(test))) {
-          fmsg("        Incorrect value returned in XML for %s\n",
-               nodePath);
+        var n3 = contentFor(node);
+        if ((n3 == null) || (!n3.startsWith(test))) {
+          return Response.error(
+                  resp,
+                  String.format("        Incorrect value returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '^':
         String element;
@@ -404,32 +449,43 @@ public class XmlElementMatch extends Verifier {
 
         var found = false;
         for (var child: children(node)) {
-          if (getQName(child).toString().equals(element) &&
-                  (elval == null) || (content(child).equals(elval))) {
+          if (!getQName(child).toString().equals(element)) {
+            continue;
+          }
+
+          if ((elval == null) ||
+                  (elval.equals(contentFor(child)))) {
             found = true;
             break;
           }
         }
 
         if (!found) {
-          fmsg("        Missing child returned in XML for %s\n",
-               nodePath);
+          return Response.error(
+                  resp,
+                  String.format("        Missing child returned in XML for %s\n",
+                                nodePath));
         }
-        return result.ok;
+        break;
 
       case '|':
+        var n4 = contentFor(node);
         if ((test.length() == 1) && (test.equals("|"))) {
-          if ((nodeText == null) && Util.isEmpty(children(node))) {
-            fmsg("        Empty element returned in XML for %s\n",
-                 nodePath);
+          if ((n4 == null) && Util.isEmpty(children(node))) {
+            return Response.error(
+                    resp,
+                    String.format("        Empty element returned in XML for %s\n",
+                                  nodePath));
           }
         } else {
-          if ((nodeText != null) || !Util.isEmpty(children(node))) {
-            fmsg("        Non-empty element returned in XML for %s\n",
-                 nodePath);
+          if ((n4 != null) || !Util.isEmpty(children(node))) {
+            return Response.error(
+                    resp,
+                    String.format("        Non-empty element returned in XML for %s\n",
+                                  nodePath));
           }
         }
-        return result.ok;
+        break;
 
       default:
         if (testPar.equals("icalendar")) {
@@ -437,11 +493,13 @@ public class XmlElementMatch extends Verifier {
           try {
             Icalendar.parseText(content(node));
           } catch (final Throwable t) {
-            fmsg("        Incorrect value returned in iCalendar for %s\n",
-                 nodePath);
+            return Response.error(
+                    resp,
+                    String.format("        Incorrect value returned in iCalendar for %s\n",
+                                  nodePath));
           }
 
-          return result.ok;
+          break;
         }
 
         if (testPar.equals("json")) {
@@ -449,16 +507,21 @@ public class XmlElementMatch extends Verifier {
           try {
             new ObjectMapper().readTree(content(node));
           } catch (final Throwable t) {
-            fmsg("        Incorrect value returned in json for %s\n",
-                 nodePath);
+            return Response.error(
+                    resp,
+                    String.format("        Incorrect value returned in json for %s\n",
+                                  nodePath));
           }
 
-          return result.ok;
+          break;
         }
+
+        return Response.error(
+                resp,
+                String.format("        Bad test %s\n", testPar));
     }
 
-    fmsg("        Bad test %s\n", testPar);
-    return false;
+    return Response.ok(resp);
   }
 }
 

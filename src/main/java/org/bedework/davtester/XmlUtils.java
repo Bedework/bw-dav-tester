@@ -179,7 +179,7 @@ public class CopyrightResolver implements EntityResolver {
     return new QName(el.getNamespaceURI(), el.getLocalName());
   }
 
-  public static String content(Element nd) {
+  public static String content(Node nd) {
     try {
       return XmlUtil.getElementContent(nd);
     } catch (final Throwable t) {
