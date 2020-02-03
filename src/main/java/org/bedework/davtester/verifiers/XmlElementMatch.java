@@ -91,13 +91,11 @@ public class XmlElementMatch extends Verifier {
     }
 
     for (var path: exists) {
-      matchNode(root, path, null, null);
+      matchNode(root, path, null, null, true);
     }
 
     for (var path : notexists) {
-      if (matchNode(root, path, null, null)) {
-        fmsg("        Items returned in XML for %s\n", path);
-      }
+      matchNode(root, path, null, null, false);
     }
 
     return result;
@@ -190,7 +188,8 @@ public class XmlElementMatch extends Verifier {
   private boolean matchNode(final Element rootEl,
                             final String xpath,
                             Map<Element, Element> parentMapPar,
-                            final String theTitle) {
+                            final String theTitle,
+                            final boolean exists) {
     var root = rootEl;
     String title;
 
@@ -256,47 +255,57 @@ public class XmlElementMatch extends Verifier {
      */
 
     if (nodes.size() == 0) {
-      fmsg("        Items not returned in XML for %s\n",
-           title);
-      return false;
+      if (exists) {
+        fmsg("        Items not returned in XML for %s\n",
+             title);
+        return false;
+      }
+      return result.ok;
     }
 
-    if (tests != null) {
-      // Split the tests into tests plus additional path
-      final String nodeTestsSeg;
-      final String nextPath;
-      var pos = tests.indexOf("]/");
-      if (pos != -1) {
-        nodeTestsSeg = tests.substring(0, pos + 1);
-        nextPath = tests.substring(pos + 1);
-      } else {
-        nodeTestsSeg = tests;
-        nextPath = null;
+
+    if (tests == null) {
+      if (!exists) {
+        fmsg("        Items returned in XML for %s\n", title);
+        return false;
       }
+      return result.ok;
+    }
 
-      var split = nodeTestsSeg.split("\\[");
-      var nodeTests = new ArrayList<String>();
+    // Split the tests into tests plus additional path
+    final String nodeTestsSeg;
+    final String nextPath;
+    var pos = tests.indexOf("]/");
+    if (pos != -1) {
+      nodeTestsSeg = tests.substring(0, pos + 1);
+      nextPath = tests.substring(pos + 1);
+    } else {
+      nodeTestsSeg = tests;
+      nextPath = null;
+    }
 
-      for (var s: split) {
-        nodeTests.add(s.substring(0, s.length() - 1));
-      }
+    var split = nodeTestsSeg.split("\\[");
+    var nodeTests = new ArrayList<String>();
 
-      for (var test: nodeTests) {
-        for (var node : nodes) {
-          if (!testNode(node, title, test)) {
-            return false;
-          }
-          if (nextPath == null) {
-            break;
-          }
+    for (var s: split) {
+      nodeTests.add(s.substring(0, s.length() - 1));
+    }
 
-          matchNode(node, nextPath.substring(1), parentMap, title);
+    for (var test: nodeTests) {
+      for (var node : nodes) {
+        if (!testNode(node, title, test)) {
+          return false;
+        }
+        if (nextPath == null) {
           break;
         }
 
-        if (!result.ok) {
-          break;
-        }
+        matchNode(node, nextPath.substring(1), parentMap, title, exists);
+        break;
+      }
+
+      if (!result.ok) {
+        break;
       }
     }
 
