@@ -40,6 +40,10 @@
 			<method>DELETEALL</method>
 			<ruri>$notificationpath2:/</ruri>
 		</request>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarhome1:/shared/</ruri>
+    </request>
 		<request end-delete="yes">
 			<method>MKCALENDAR</method>
 			<ruri>$calendarhome1:/shared/</ruri>
