@@ -79,7 +79,7 @@ public class PropfindItems extends Verifier {
 
     for (var p : okprops) {
       if (p.contains("$")) {
-        var split = p.split("$");
+        var split = p.split("\\$");
         if (p.indexOf("$") != p.length() - 1) {
           okPropsMatch.add(new NameVal(split[0],
                                        normalizeXML(split[1])));
@@ -105,7 +105,7 @@ public class PropfindItems extends Verifier {
 
     for (var bp: badpropsStr) {
       if (bp.contains("$")) {
-        var split = bp.split("$");
+        var split = bp.split("\\$");
         badprops.add(new NameVal(split[0],
                                  normalizeXML(split[1])));
       } else {

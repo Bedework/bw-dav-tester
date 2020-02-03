@@ -57,7 +57,7 @@ public class PropfindValues extends Verifier {
     var propsMatch = new ArrayList<NameVal>();
     for (var p : testprops) {
       if (p.contains("$")) {
-        var split = p.split("$");
+        var split = p.split("\\$");
         if (p.indexOf("$") != p.length() - 1) {
           propsMatch.add(new NameVal(split[0],
                                      normalizeXML(split[1]),

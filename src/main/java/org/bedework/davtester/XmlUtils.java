@@ -366,7 +366,7 @@ public void readOneStringElement(node, ename) {
       return nodes;
     }
 
-    tests = [item[:-1] for item in tests.split("[")];
+    tests = [item[:-1] for item in tests.split("\\[")];
 
     for (var test: tests) {
       for (var node in nodes) {
