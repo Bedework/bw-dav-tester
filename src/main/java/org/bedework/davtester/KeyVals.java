@@ -31,12 +31,12 @@ import static org.bedework.davtester.Utils.throwException;
  *
  * User: mike Date: 11/21/19 Time: 17:54
  */
-public class KeyVals extends HashMap<String, List<?>> {
+public class KeyVals extends HashMap<String, List<Object>> {
   public KeyVals() {
     super();
   }
 
-  public KeyVals(final Map<String, List<?>> val) {
+  public KeyVals(final Map<String, List<Object>> val) {
     super(val);
   }
 
@@ -155,6 +155,25 @@ public class KeyVals extends HashMap<String, List<?>> {
     return res;
   }
 
+  /** Add the supplied values.
+   *
+   * @param vals list of values
+   * @return this
+   */
+  public KeyVals addAll(final String name,
+                        final List<Object> vals) {
+    final List<Object> entry = computeIfAbsent(name, s -> new ArrayList<>());
+
+    entry.addAll(vals);
+    return this;
+  }
+
+  /** Update according to the supplied KeyVals. For each entry if the
+   * value is null we remove from this. Otherwise we replace.
+   *
+   * @param src map of values
+   * @return this
+   */
   public KeyVals addAll(final KeyVals src) {
     for (var nm: src.keySet()) {
       var val = src.get(nm);
@@ -177,7 +196,7 @@ public class KeyVals extends HashMap<String, List<?>> {
     if (val == null) {
       return;
     }
-    List<String> vals = new ArrayList<>(1);
+    List<Object> vals = new ArrayList<>(1);
 
     vals.add(val);
 
@@ -192,7 +211,7 @@ public class KeyVals extends HashMap<String, List<?>> {
     if (val == null) {
       return;
     }
-    List<Integer> vals = new ArrayList<>(1);
+    List<Object> vals = new ArrayList<>(1);
 
     vals.add(val);
 
@@ -207,7 +226,7 @@ public class KeyVals extends HashMap<String, List<?>> {
     if (val == null) {
       return;
     }
-    List<Long> vals = new ArrayList<>(1);
+    List<Object> vals = new ArrayList<>(1);
 
     vals.add(val);
 
@@ -222,7 +241,7 @@ public class KeyVals extends HashMap<String, List<?>> {
     if (val == null) {
       return;
     }
-    List<KeyVals> vals = new ArrayList<>(1);
+    List<Object> vals = new ArrayList<>(1);
 
     vals.add(val);
 

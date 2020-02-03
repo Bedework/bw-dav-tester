@@ -99,7 +99,7 @@ public class Verify extends DavTesterBase {
     if (manager.serverInfo.hasextrasubs()) {
       for (var name: args.keySet()) {
         var values = args.getStrings(name);
-        var newvalues = new ArrayList<String>();
+        var newvalues = new ArrayList<>();
         for (var value: values) {
           newvalues.add(manager.serverInfo.extrasubs(value));
         }
@@ -144,7 +144,7 @@ public class Verify extends DavTesterBase {
 
   public void parseArgXML(final Element node) {
     String name = null;
-    List<String> values = new ArrayList<>();
+    List<Object> values = new ArrayList<>();
 
     for (var child : children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {

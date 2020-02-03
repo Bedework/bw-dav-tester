@@ -24,7 +24,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,15 +133,14 @@ public abstract class DavTesterBase implements Logged {
       return;
     }
 
-    final List<String> defaults =
-            manager.serverInfo.defaultFilters.getStrings(name);
+    final List<Object> defaults =
+            manager.serverInfo.defaultFilters.get(name);
 
     if (Util.isEmpty(defaults)) {
       return;
     }
 
-    args.computeIfAbsent("filters", s -> new ArrayList<String>());
-    args.getStrings("filters").addAll(defaults);
+    args.addAll("filter", defaults);
   }
 
   protected void httpTraceOn() {

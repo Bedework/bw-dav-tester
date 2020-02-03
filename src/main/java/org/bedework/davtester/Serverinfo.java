@@ -367,7 +367,7 @@ public class Serverinfo {
 
   public void parseDefaultFilters(final Node node){
     String name = null;
-    List<String> values = new ArrayList<>();
+    List<Object> values = new ArrayList<>();
 
     for (var child: children(node)) {
       if(nodeMatches(child, XmlDefs.ELEMENT_NAME)){

@@ -29,7 +29,7 @@ import static org.bedework.davtester.Utils.throwException;
  * A results observer that prints results to standard output.
  */
 public class Jsondump extends BaseResultsObserver {
-  private List<String> currentProtocol = new ArrayList<>();
+  private List<Object> currentProtocol = new ArrayList<>();
   private ObjectMapper om = new ObjectMapper();
 
   public Jsondump() {
