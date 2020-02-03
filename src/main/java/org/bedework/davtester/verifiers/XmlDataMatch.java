@@ -16,6 +16,8 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
+import org.bedework.util.misc.Util;
+import org.bedework.util.xml.diff.NodeDiff;
 
 import org.apache.http.Header;
 
@@ -44,10 +46,11 @@ public class XmlDataMatch extends FileDataMatch {
     var nrespdata = normalizeXMLData(respdata, filters);
     var ndata = normalizeXMLData(data, filters);
 
-    if (!nrespdata.equals(ndata)) {
-      errorDiff("        Response data does not " +
-                        "exactly match file data%s",
-                nrespdata, ndata);
+    var diffs = NodeDiff.diff(nrespdata.getDocumentElement(),
+                              ndata.getDocumentElement());
+
+    if (!Util.isEmpty(diffs)) {
+      errorDiff(diffs);
     }
   }
 }

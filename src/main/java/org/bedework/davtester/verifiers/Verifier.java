@@ -22,6 +22,7 @@ import org.bedework.util.dav.DavUtil.MultiStatusResponse;
 import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
+import org.bedework.util.xml.diff.NodeDiff;
 
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
@@ -197,6 +198,20 @@ public abstract class Verifier implements Logged {
            t.getMessage());
     }
   }
+
+  protected void errorDiff(final List<NodeDiff.DiffNode> diffs) {
+    var errorDiff = new StringBuilder();
+
+    for (var dn: diffs) {
+      errorDiff.append(dn.toString());
+      errorDiff.append("\n\n");
+    }
+
+    fmsg("        Response data does not " +
+                 "exactly match file data: \n%s",
+         errorDiff);
+  }
+
   protected boolean parseXml(final String str) {
     try {
       doc = XmlUtils.parseXmlString(str);
@@ -208,8 +223,13 @@ public abstract class Verifier implements Logged {
     }
   }
 
-  protected String normalizeXMLData(final String data,
-                                  final List<String> filters) {
+  protected String normalizeXMLDataToString(final String data,
+                                            final List<String> filters) {
+    return XmlUtils.docToString(normalizeXMLData(data, filters));
+  }
+
+  protected Document normalizeXMLData(final String data,
+                                      final List<String> filters) {
     var doc = XmlUtils.parseXmlString(data);
     var root = doc.getDocumentElement();
 
@@ -234,7 +254,7 @@ public abstract class Verifier implements Logged {
       }
     }
 
-    return XmlUtils.docToString(doc);
+    return doc;
   }
 
   private boolean removeElement(final Element root,
@@ -274,7 +294,7 @@ public abstract class Verifier implements Logged {
       return val;
     }
 
-    return normalizeXMLData(val, null);
+    return normalizeXMLDataToString(val, null);
   }
 
   protected void fmsg(final String fmt,
