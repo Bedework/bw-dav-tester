@@ -39,6 +39,7 @@ import javax.xml.namespace.QName;
 import static java.lang.String.format;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.multiStatusResponse;
+import static org.bedework.davtester.XmlUtils.normalizedString;
 import static org.bedework.util.xml.XmlUtil.hasChildren;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
@@ -223,9 +224,10 @@ public abstract class Verifier implements Logged {
     }
   }
 
-  protected String normalizeXMLDataToString(final String data,
-                                            final List<String> filters) {
-    return XmlUtils.docToString(normalizeXMLData(data, filters));
+  protected String normalizeXMLDataToString(final String data) {
+    var xml = XmlUtils.docToString(normalizeXMLData(data, null));
+    var pos = xml.indexOf('>');
+    return xml.substring(pos + 1);
   }
 
   protected Document normalizeXMLData(final String data,
@@ -294,7 +296,8 @@ public abstract class Verifier implements Logged {
       return val;
     }
 
-    return normalizeXMLDataToString(val, null);
+    var doc = normalizeXMLData(val, null);
+    return normalizedString(doc.getDocumentElement());
   }
 
   protected void fmsg(final String fmt,

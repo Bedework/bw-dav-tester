@@ -28,11 +28,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getQName;
+import static org.bedework.davtester.XmlUtils.normalizedString;
 
 /**
  * Verifier that checks a propfind response to make sure that the
@@ -113,8 +116,14 @@ public class PropfindItems extends Verifier {
       }
     }
 
-    //ok_test_set = set(ok_props_match)
-    //bad_test_set = set(badprops)
+    TreeSet<String> okTestSet;
+    TreeSet<String>  badTestSet;
+
+    okTestSet = okPropsMatch.stream().map(
+            s -> s.name).collect(Collectors.toCollection(TreeSet::new));
+
+    badTestSet = badprops.stream().map(
+            s -> s.name).collect(Collectors.toCollection(TreeSet::new));
 
     // Process the multistatus response, extracting all hrefs
     // and comparing with the set defined for this test. Report any
@@ -138,7 +147,7 @@ public class PropfindItems extends Verifier {
     }
 
     var ctr = 0;
-    for (var response : msr.responses) {
+    for (var response: msr.responses) {
       // Get href for this response
       var href = URLDecoder.decode(
               StringUtils.stripEnd(response.href, "/"),
@@ -157,48 +166,62 @@ public class PropfindItems extends Verifier {
         continue;
       }
 
-      String value = null;
-
       // Get all property status
       var okStatusProps = new ArrayList<NameVal>();
       var badStatusProps = new ArrayList<NameVal>();
 
       for (var propstat : response.propstats) {
+        String value;
+
         // Determine status for this propstat
         boolean isOkStatus = propstat.status / 100 == 2;
 
         for (var prop: propstat.props) {
           var fqname = getQName(prop).toString();
-          var testNv = new NameVal(fqname, null);
 
           if (XmlUtil.hasChildren(prop)) {
+            /* NOTE: I think this is wrong in general - it will only work if the
+              property has one child - e.g. href.
+              We should probably be looking for a child that matches the
+              condition in the test - e.g in:
+            <verify>
+              <callback>propfindItems</callback>
+              <arg>
+                <name>okprops</name>
+                <value><![CDATA[{urn:ietf:params:xml:ns:caldav}schedule-default-calendar-URL$<href xmlns="DAV:">$calendarpath2:</href>]]></value>
+              </arg>
+            </verify>
+            we should probably explicitly search for an href child.
+            */
             // Copy sub-element data as text into one long string and strip leading/trailing space
             var val = new StringBuilder();
             for (var p: children(prop)) {
-              val.append(p.toString().strip());
+              val.append(normalizedString(p));
             }
 
             value = val.toString();
 
             if (isOkStatus) {
-              if (okPropsMatch.contains(testNv)){
+              if (okTestSet.contains(fqname)){
                 value = null;
               }
-            } else if (badprops.contains(testNv)){
+            } else if (badTestSet.contains(fqname)) {
               value = null;
             }
           } else if (XmlUtil.hasContent(prop)) {
             value = content(prop);
             if (isOkStatus) {
-              if (okPropsMatch.contains(testNv)){
+              if (okTestSet.contains(fqname)){
                 value = null;
               }
-            } else if (badprops.contains(testNv)){
+            } else if (badTestSet.contains(fqname)){
               value = null;
             }
           } else {
             value = null;
           }
+
+          var testNv = new NameVal(fqname, value);
 
           if (isOkStatus) {
             okStatusProps.add(testNv);
@@ -208,17 +231,26 @@ public class PropfindItems extends Verifier {
         }
       }
 
+      TreeSet<String> okResultSet;
+      TreeSet<String>  badResultSet;
+
+      okResultSet = okStatusProps.stream().map(
+              s -> s.name).collect(Collectors.toCollection(TreeSet::new));
+
+      badResultSet = badStatusProps.stream().map(
+              s -> s.name).collect(Collectors.toCollection(TreeSet::new));
+
       // Now do set difference
-      var okMissing = diff(okPropsMatch, okStatusProps);
-      var okExtras = diff(okStatusProps, okPropsMatch);
-      var badMissing = diff(badprops, badStatusProps);
-      var badExtras = diff(badStatusProps, badprops);
+      var okMissing = diff(okTestSet, okResultSet);
+      var okExtras = diff(okResultSet, okTestSet);
+      var badMissing = diff(badTestSet, badResultSet);
+      var badExtras = diff(badResultSet, badTestSet);
 
       // Now remove extras that are in the no-match set
       for (var nv: okPropsMatch) {
         if (okpropsNomatch.containsKey(nv.name) &&
-                (Util.cmpObjval(okpropsNomatch.get(nv.name), value) != 0)) {
-          okExtras.remove(nv);
+                (Util.cmpObjval(okpropsNomatch.get(nv.name), nv.val) != 0)) {
+          okExtras.remove(nv.name);
         }
       }
 

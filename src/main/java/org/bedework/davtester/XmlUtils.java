@@ -50,6 +50,8 @@ import javax.xml.xpath.XPathFactory;
 
 import static org.bedework.davtester.Utils.throwException;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
+import static org.bedework.util.xml.XmlUtil.hasChildren;
+import static org.bedework.util.xml.XmlUtil.hasContent;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -114,7 +116,59 @@ public class CopyrightResolver implements EntityResolver {
     }
   }
 
-  public static String docToString(Document doc) {
+  public static String normalizedString(final Node node) {
+    if (node == null) {
+      return "";
+    }
+
+    var sb = new StringBuilder();
+
+    normalizedString(sb, node);
+
+    return sb.toString();
+  }
+
+  public static void normalizedString(final StringBuilder sb,
+                                      final Node node) {
+    if (node == null) {
+      return;
+    }
+
+    sb.append("<");
+    var qn = new QName(node.getNamespaceURI(), node.getLocalName());
+    sb.append(qn);
+
+    var attrs = node.getAttributes();
+    for (var i = 0; i < attrs.getLength(); i++) {
+      var attr = attrs.item(i);
+      var nm = attr.getLocalName();
+
+      if ("xmlns".equals(nm)) {
+        continue;
+      }
+
+      sb.append(" ");
+      sb.append(attr.getLocalName());
+      sb.append(" \"");
+      sb.append(content(attr).strip());
+      sb.append("\"");
+    }
+    sb.append(">");
+
+    if (hasContent(node)) {
+      sb.append(content(node).strip());
+    } else if (hasChildren(node)) {
+      for (var child : children(node)) {
+        normalizedString(sb, child);
+      }
+    }
+
+    sb.append("</");
+    sb.append(qn);
+    sb.append(">");
+  }
+
+  public static String docToString(final Document doc) {
     TransformerFactory tf = TransformerFactory.newInstance();
     Transformer transformer;
     try {
