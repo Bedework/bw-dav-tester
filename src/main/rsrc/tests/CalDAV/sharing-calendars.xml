@@ -412,6 +412,13 @@
 	</test-suite>
 
 	<test-suite name='Change to read-only calendar'>
+    <test name='0-cleanup'>
+      <description>Cleanup before tests</description>
+      <request user="$userid2:" pswd="$pswd2:">
+        <method>DELETEALL</method>
+        <ruri>$notificationpath2:/</ruri>
+      </request>
+    </test>
 		<test name='1'>
 			<description>POST invitation</description>
 			<request>
