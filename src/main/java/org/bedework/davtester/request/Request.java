@@ -863,7 +863,8 @@ public class Request extends DavTesterBase {
 
     if (!hasUserAgent && (label != null)) {
       meth.addHeader(new BasicHeader("User-Agent",
-                                     Utils.encodeUtf8(label)));
+                                     "Cal-Tester: " +
+                                             Utils.encodeUtf8(label)));
     }
 
     if (data != null) {
