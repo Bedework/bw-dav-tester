@@ -2,16 +2,19 @@
 
 Some notes made as working through tests.
 
+=== Change to User-Agent
+I've added a constant prefix to the value so it's easier to pick out requests coming directly from the tester.
+
 === XML data match
 The python version just did a string match of normalised data. By normalised - strip out some values - e.g dtstamp, parse the response and the test data and compare the resulting string representation.
 
 This will fail if one has fields in a different namespace - the XMLelement may have extra namespaces defined.
 
-Raises the question of how clients handle extra unknown elements. I woudl say they should ignore them but I'm not sure that's stated anywhere.
+Raises the question of how clients handle extra unknown elements. I would say they should ignore them but I'm not sure that's stated anywhere.
 
 Also need to say the same for json.
 
 === Absence of result tests
-Theer are some tests trying to ensure something does NOT show up, e.g. an invite in the inbox when a per-user value is changed.
+There are some tests trying to ensure something does NOT show up, e.g. an invite in the inbox when a per-user value is changed.
 
 These tests don't work or have little value - because there may be a delay before it does turn up.
