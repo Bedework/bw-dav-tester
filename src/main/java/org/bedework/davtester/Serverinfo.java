@@ -92,7 +92,8 @@ public class Serverinfo {
     }
   }
 
-  Serverinfo() {
+  Serverinfo(final String baseDir) {
+    subsKvs.put("$basedir:", baseDir);
   }
 
   public String getScheme() {

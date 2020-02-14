@@ -34,6 +34,7 @@
     <diff-utils.version>4.5</diff-utils.version>
     <http-client.version>4.5.3</http-client.version>
     <http-core.version>4.4.8</http-core.version>
+    <jackson.version>2.10.0</jackson.version>
     <servlet-api.version>4.0.0</servlet-api.version>
 
 		<log4j.version>1.2.15</log4j.version>
@@ -149,6 +150,18 @@
     </dependency>
 
 		<!-- Third Party Dependencies -->
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -291,7 +304,7 @@
           </platforms>
           <programs>
             <program>
-              <mainClass>org.bedework.davtester.Testcaldav</mainClass>
+              <mainClass>org.bedework.davtester.Tester</mainClass>
               <id>davtest</id>
             </program>
           </programs>

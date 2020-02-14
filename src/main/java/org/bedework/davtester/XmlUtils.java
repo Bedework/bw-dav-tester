@@ -28,6 +28,7 @@ import org.xml.sax.InputSource;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,8 @@ public class XmlUtils {
       final InputStream is = new FileInputStream(f);
 
       return parseXml(is);
+    } catch (final FileNotFoundException fnf) {
+      return null;
     } catch (final Throwable t) {
       return throwException(t);
     }

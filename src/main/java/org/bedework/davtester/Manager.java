@@ -20,6 +20,7 @@ import org.bedework.util.logging.BwLogger;
 import org.bedework.util.logging.Logged;
 import org.bedework.util.misc.Util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -30,10 +31,13 @@ import org.apache.http.impl.client.HttpClients;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +55,8 @@ public class Manager implements Logged {
   public static final int RESULT_ERROR = 2;
   public static final int RESULT_IGNORED = 3;
 
+  public Globals globals;
+
   // 1 for each of above
   public int[] totals = {0, 0, 0, 0};
   public long totalTime;
@@ -58,8 +64,7 @@ public class Manager implements Logged {
   public static final String EX_INVALID_CONFIG_FILE = "Invalid Config File";
   public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
 
-  public Serverinfo serverInfo = new Serverinfo();
-  private String baseDir = "";
+  public Serverinfo serverInfo;
   public String dataDir;
   private Path dataDirPath;
 
@@ -75,9 +80,7 @@ public class Manager implements Logged {
   public Testfile currentTestfile;
 
   boolean memUsage;
-  String randomSeed;
   String postgresLog;
-  String logFileName;
   FileWriter logFile;
 
   private CloseableHttpClient httpClient;
@@ -86,10 +89,89 @@ public class Manager implements Logged {
   private List<BaseResultsObserver> observers = new ArrayList<>();
   private KeyVals results = new KeyVals();
 
-  boolean stoponfail = false;
-  public boolean printRequest = false;
-  public boolean printResponse = false;
-  public boolean printRequestResponseOnError = false;
+  /**
+   * Call after settings are read.
+   *
+   * @return true for ok
+   */
+  public boolean init() {
+    try {
+      serverInfo = new Serverinfo(globals.getBasedir());
+
+      if (!StringUtils.isEmpty(globals.getOutputName())) {
+        logFile = new FileWriter(
+                new File(subs(globals.getOutputName())));
+      }
+
+      if (globals.getDtds() != null) {
+        XmlUtils.dtdPath = Paths.get(subs(globals.getDtds()));
+      } else {
+        XmlUtils.dtdPath = Paths.get("scripts/dtds");
+      }
+
+      setTestsDir(subs(globals.getTestsDir()));
+      setDataDir(subs(globals.getDataDir()));
+      setResDir(subs(globals.getResDir()));
+
+      if (globals.getPretest() != null) {
+        setPretest(subs(globals.getPretest()));
+      }
+
+      if (globals.getPosttest() != null) {
+        setPosttest(subs(globals.getPosttest()));
+      }
+
+      final List<String> testNames;
+
+      if (globals.getAll()) {
+        File f = new File(globals.getTestsDir());
+        Path stDir = Paths.get(f.getAbsolutePath());
+
+        testNames = new ArrayList<>();
+
+        FileLister fl = new FileLister(testNames,
+                                       globals.getExcludes(),
+                                       subs(globals.getSubdir()));
+        Files.walkFileTree(stDir, fl);
+      } else {
+        final var testsets = globals.getTestsets();
+        final var tests = globals.getTests();
+        if (testsets == null) {
+          testNames = null;
+        } else {
+          testNames = new ArrayList<>();
+
+          for (final var nm: tests) {
+            testNames.addAll(testsets.get(nm));
+          }
+        }
+      }
+
+      // Randomize file list
+      if (globals.getRandom() && !Util.isEmpty(testNames)) {
+        Collections.shuffle(testNames);
+      }
+
+      if (Util.isEmpty(globals.getObservers())) {
+        loadObserver("log");
+      } else {
+        for (var name : globals.getObservers()) {
+          loadObserver(name);
+        }
+      }
+
+      return readXML(subs(globals.getServerInfo()),
+                     normTestsPaths(testNames),
+                     globals.getSsl(),
+                     globals.getAll());
+    } catch (final Throwable t) {
+      return throwException(t);
+    }
+  }
+
+  public String subs(final String val) {
+    return serverInfo.subs(val);
+  }
 
   public CloseableHttpClient getHttpClient(final String user,
                                            final String pw) {
@@ -307,10 +389,10 @@ public class Manager implements Logged {
     message("testResult", testsuite);
   }
 
-  public void readXML(final String serverfile,
-                      final List<Path> testfilePaths,
-                      final boolean ssl,
-                      final boolean all) {
+  public boolean readXML(final String serverfile,
+                         final List<Path> testfilePaths,
+                         final boolean ssl,
+                         final boolean all) {
     trace(format("Reading Server Info from \"%s\"",
                  serverfile));
 
@@ -323,6 +405,12 @@ public class Manager implements Logged {
                    serverfile, t.getMessage()));
 
       throwException(t);
+    }
+
+    if (doc == null) {
+      error(format("Unable to parse file - probably not found '%s'",
+                   serverfile));
+      return false;
     }
 
     // Verify that top-level element is correct
@@ -408,6 +496,7 @@ public class Manager implements Logged {
     }
 
     load(null, ctr, testfilePaths.size());
+    return true;
   }
 
   public TestResult runAll() {
@@ -442,7 +531,7 @@ public class Manager implements Logged {
 
       res.add(testResult);
 
-      if ((testResult.failed != 0) && stoponfail) {
+      if ((testResult.failed != 0) && globals.getStopOnFail()) {
         break;
       }
 

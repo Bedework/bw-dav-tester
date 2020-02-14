@@ -1,0 +1,144 @@
+== Configuration
+
+Most configuration has been moved from the command line to yaml (v2).
+
+A single configuration parameter --conf specifies the file. The settings in the file are recognizable - sort of - but here's a table of old parameters, new names and meanings.
+
+[cols="1,1,2", options="header"]
+.YAML Configuration Options
+|===
+| Old
+| New
+| Description
+
+| --all
+| all: [true\|false]
+| true for run all tests
+
+| --basedir dirpath
+| basedir: path
+| Specifies a base for other paths. May be used in the usual way, e.g $basedir:file. Default is "src/main/rsrc/"
+
+|
+| dataDir: path
+| Specify the directory for the data. Default is "$basedir:data"
+
+| --dtds path
+| dtds: path
+| Specify the directory for the dtds. Default is "$basedir:dtds"
+
+| --exclude filename
+| exclude: <list>
+| Specify tests to exclude
+
+|
+| httptrace: [true\|false]
+| True to turn http traciong on.
+
+| --observer OBSERVER
+| observers: <list>
+| specify all the observers
+
+| --posttest file
+| posttest: file
+| Test to run after other tests
+
+| --pretest file
+| pretest: file
+| Test to run before other tests
+
+| --print-details-onfail
+| printDetailsOnFail: [true\|false]
+| provide details on failure
+
+| --always-print-request
+| printRequest: [true\|false]
+| print request for each test
+
+| --always-print-response
+| printResponse: [true\|false]
+| print response for each test
+
+| --random
+| random: [true\|false]
+| randomize the order in which the tests are run.
+
+#| --random-seed SEED
+#|
+#|
+#
+| --res path
+| resDir path
+| Specify the directory for the results. Default is "$basedir:"
+
+| -s filename
+| serverInfo: file
+| Specify the serverinfo document path. Default is "$basedir:server/serverinfo.xml".
+
+| --subdir path
+| subdir path
+| Specify a sub-directory for the tests.
+
+| --ssl
+| ssl: [true\|false]
+| True to use ssl
+
+| --stop
+| stopOnFail: [true\|false]
+| stop tests on any failure
+
+|
+| tests: name list
+| names of testsets to run in specified order (unless random: true).
+
+|
+| testsets: repeated name + list
+| Defines the testsets
+
+| -x dirpath
+| testsDir: path
+| Specify the directory for the tests. Default is "$basedir:tests"
+|===
+
+Testsets define the set we will run (unless "all" is specified). This is a map of named lists. The testset config proeprty specifies which to ru  and may be overridden by the runtime --testset parameter
+
+[source]
+----
+testsets:
+  quicklook:
+    - CalDAV/caldavIOP.xml
+    - CalDAV/errors.xml
+    - CalDAV/get.xml
+    - CalDAV/ical-client.xml
+    - CalDAV/propfind.xml
+    - CalDAV/put.xml
+    - CalDAV/reports.xml
+    - CalDAV/freebusy.xml
+    - CalDAV/sharing-calendars.xml
+    - CalDAV/sharing-create.xml
+    - CalDAV/sharing-feature.xml
+    - CalDAV/sharing-invites.xml
+    - CalDAV/sharing-notification-sync.xml
+    - CalDAV/sharing-sync.xml
+  verybrief:
+    - CalDAV/get.xml
+    - CalDAV/put.xml
+    - CalDAV/reports.xml
+----
+
+
+[cols="1,2", options="header"]
+.Runtime parameters
+|===
+| Parameter
+| Description
+
+| --conf <path>
+| Configuration file name
+
+| testset: name
+| name of testset - overrides config
+
+| <filename>
+| Anything else is treated as a test file name - these will create a testset with a null name and will override any settings in the config.
+|===

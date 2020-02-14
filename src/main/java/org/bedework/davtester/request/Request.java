@@ -460,10 +460,10 @@ public class Request extends DavTesterBase {
     cert = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_CERT));
     endDelete = getYesNoAttributeValue(node,
                                         XmlDefs.ATTR_END_DELETE);
-    printRequest = manager.printRequest || getYesNoAttributeValue(
-            node, XmlDefs.ATTR_PRINT_REQUEST);
-    printResponse = manager.printResponse || getYesNoAttributeValue(
-            node, XmlDefs.ATTR_PRINT_RESPONSE);
+    printRequest = manager.globals.getPrintRequest() ||
+            getYesNoAttributeValue(node, XmlDefs.ATTR_PRINT_REQUEST);
+    printResponse = manager.globals.getPrintResponse() ||
+            getYesNoAttributeValue(node, XmlDefs.ATTR_PRINT_RESPONSE);
     iterateData = getYesNoAttributeValue(node,
                                          XmlDefs.ATTR_ITERATE_DATA);
     waitForSuccess = getYesNoAttributeValue(node,
@@ -925,7 +925,7 @@ public class Request extends DavTesterBase {
     }
 
     if (printRequest ||
-            (manager.printRequestResponseOnError &&
+            (manager.globals.getPrintDetailsOnFail() &&
                      (!drr.ok && !waitForSuccess))) {
       var requesttxt = "\n-------BEGIN:REQUEST-------\n" +
               data +
@@ -934,7 +934,7 @@ public class Request extends DavTesterBase {
     }
 
     if (printResponse ||
-            (manager.printRequestResponseOnError &&
+            (manager.globals.getPrintDetailsOnFail() &&
                      (!drr.ok && (!waitForSuccess)))) {
       var responsetxt = "\n-------BEGIN:RESPONSE-------\n" +
               format("%s %s %s\n",

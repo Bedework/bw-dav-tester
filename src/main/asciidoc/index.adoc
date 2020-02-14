@@ -11,6 +11,8 @@ include::introduction.adoc[]
 
 :sectnums:
 
+include::config.adoc[]
+
 include::serverFeatures.adoc[]
 
 include::notes.adoc[]

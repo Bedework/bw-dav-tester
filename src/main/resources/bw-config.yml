@@ -1,0 +1,205 @@
+# YAML V2 config for tester
+
+# Runs a subset of tests as a quick check that the server is functional.
+#
+
+printDetailsOnFail: true
+serverInfo: $basedir:server/bwserverinfo.xml
+outputName: cdt.txt
+tests:
+  - quicklook
+
+testsets:
+  quicklook:
+    - CalDAV/caldavIOP.xml
+    - CalDAV/errors.xml
+    - CalDAV/get.xml
+    - CalDAV/ical-client.xml
+    - CalDAV/propfind.xml
+    - CalDAV/put.xml
+    - CalDAV/reports.xml
+    - CalDAV/freebusy.xml
+
+  # Following represent all tests subdivided into groups
+  # First some basic tests
+  basic:
+    - CalDAV/caldavIOP.xml
+    - CalDAV/get.xml
+    - CalDAV/propfind.xml
+    - CalDAV/put.xml
+    - CalDAV/reports.xml
+    - CalDAV/freebusy.xml
+
+  # Next set - slightly more advanced
+  # Full CalDAV feature set but simple data
+  # Complex data issues - single recurrence instances - per user data etc
+  # Apple sharing feature
+  sharing:
+    - CalDAV/sharing-calendars.xml
+    - CalDAV/sharing-create.xml
+    - CalDAV/sharing-feature.xml
+    - CalDAV/sharing-invites.xml
+    - CalDAV/sharing-notification-sync.xml
+    - CalDAV/sharing-sync.xml
+  # These cause errors because they are very apple specific
+  appleSpecific:
+    - CalDAV/errors.xml
+  # Alphabetic list of remaining
+  remaining:
+    - CalDAV/acl.xml
+    - CalDAV/aclreports.xml
+    - CalDAV/add-member.xml
+    - CalDAV/alarm-dismissal.xml
+    - CalDAV/attachments.xml
+    - CalDAV/availability.xml
+    - CalDAV/bad-ical.xml
+    - CalDAV/bad-json.xml
+    - CalDAV/brief.xml
+    - CalDAV/bulk.xml
+    - CalDAV/calendaruserproxy.xml
+    - CalDAV/collection-redirects.xml
+    - CalDAV/conditional.xml
+    - CalDAV/copymove.xml
+    - CalDAV/ctag.xml
+    - CalDAV/current-user-principal.xml
+    - CalDAV/default-alarms.xml
+    - CalDAV/delete.xml
+    - CalDAV/depthreports.xml
+    - CalDAV/depthreportsacl.xml
+    - CalDAV/directory.xml
+    - CalDAV/dropbox.xml
+    - CalDAV/duplicate_uids.xml
+    - CalDAV/encodedURIs.xml
+    - CalDAV/expandproperty.xml
+    - CalDAV/extended-freebusy.xml    # CalDAV/# features: caldav, proxy, extended-freebusy
+    - CalDAV/floating.xml
+    - CalDAV/freebusy-url.xml
+    - CalDAV/ical-client.xml
+    - CalDAV/implicit-traveltime.xml
+    - CalDAV/implicitacls.xml
+    - CalDAV/implicitallday.xml
+    - CalDAV/implicitattendeedelete.xml
+    - CalDAV/implicitauto1.xml
+    - CalDAV/implicitauto2.xml
+    - CalDAV/implicitauto3.xml
+    - CalDAV/implicitauto4.xml
+    - CalDAV/implicitauto5.xml
+    - CalDAV/implicitauto6.xml
+    - CalDAV/implicitauto7.xml
+    - CalDAV/implicitauto8.xml
+    - CalDAV/implicitauto9.xml
+    - CalDAV/implicitauto10.xml
+    - CalDAV/implicitauto11.xml
+    - CalDAV/implicitauto12.xml
+    - CalDAV/implicitautogroup.xml
+    - CalDAV/implicitautomodes.xml
+    - CalDAV/implicitautomultiple.xml
+    - CalDAV/implicitautopast.xml
+    - CalDAV/implicitbadclients.xml
+    - CalDAV/implicitbatchrefresh.xml
+    - CalDAV/implicitcalendartransp.xml
+    - CalDAV/implicitcancels.xml
+    - CalDAV/implicitclienttranspfix.xml
+    - CalDAV/implicitcompatibility.xml
+    - CalDAV/implicitcopymove.xml
+    - CalDAV/implicitdefaultcalendar.xml
+    - CalDAV/implicitdeletecalendar.xml
+    - CalDAV/implicitdropbox.xml
+    - CalDAV/impliciterrors.xml
+    - CalDAV/implicitfreebusy.xml
+    - CalDAV/implicitgroup.xml
+    - CalDAV/implicitimip.xml
+    - CalDAV/implicitlarge.xml
+    - CalDAV/implicitoptions.xml
+    - CalDAV/implicitpartstatchange.xml
+    - CalDAV/implicitpartstattimestamp.xml
+    - CalDAV/implicitprivateevents.xml
+    - CalDAV/implicitproxy.xml
+    - CalDAV/implicitpublicproperties.xml
+    - CalDAV/implicitrecur1.xml
+    - CalDAV/implicitrecur2.xml
+    - CalDAV/implicitreschedule.xml
+    - CalDAV/implicitscenario1.xml
+    - CalDAV/implicitscenario2.xml
+    - CalDAV/implicitscenario3.xml
+    - CalDAV/implicitscheduleagent.xml
+    - CalDAV/implicitschedulechanges.xml
+    - CalDAV/implicitscheduletag.xml
+    - CalDAV/implicitsecurity.xml
+    - CalDAV/implicitsequence.xml
+    - CalDAV/implicitsharing.xml
+    - CalDAV/implicittimezones.xml
+    - CalDAV/implicittodo.xml
+    - CalDAV/implicitxdash.xml
+    - CalDAV/json.xml
+    - CalDAV/limits.xml
+    - CalDAV/managed-attachments.xml
+    - CalDAV/managed-attachments-dropbox.xml
+    - CalDAV/managed-attachments-implicit.xml
+    - CalDAV/managed-attachments-quota.xml
+    - CalDAV/managed-attachments-recurrence.xml
+    - CalDAV/managed-attachments-sharing.xml
+    - CalDAV/mkcalendar.xml
+    - CalDAV/nonascii.xml
+    - CalDAV/options.xml
+    - CalDAV/partitioning-calendaruserproxy.xml
+    - CalDAV/partitioning-scheduleimplicit.xml
+    - CalDAV/partitioning-scheduleimplicitauto.xml
+    - CalDAV/partitioning-simple.xml
+    - CalDAV/polls.xml
+    - CalDAV/prefer.xml
+    - CalDAV/pretest.xml
+    - CalDAV/privatecomments.xml
+    - CalDAV/privateevents.xml
+    - CalDAV/proppatch.xml
+    - CalDAV/proxyauthz.xml
+    - CalDAV/quota.xml
+    - CalDAV/recurrence-splitting.xml
+    - CalDAV/recurrenceput.xml
+    - CalDAV/resourceid.xml
+    - CalDAV/rscale.xml
+    - CalDAV/scheduleimplicit-compatability.xml
+    - CalDAV/schedulenomore.xml
+    - CalDAV/schedulepost.xml
+    - CalDAV/schedulepostacl.xml
+    - CalDAV/schedulepostmaskuid.xml
+    - CalDAV/scheduleprops.xml
+    - CalDAV/server-info.xml
+    - CalDAV/servertoserverincoming.xml
+    - CalDAV/servertoserveroutgoing.xml
+    - CalDAV/sharing-cache.xml
+    - CalDAV/sharing-calendars.xml
+    - CalDAV/sharing-create.xml
+    - CalDAV/sharing-direct.xml
+    - CalDAV/sharing-dropbox.xml
+    - CalDAV/sharing-errors.xml
+    - CalDAV/sharing-feature.xml
+    - CalDAV/sharing-freebusy.xml
+    - CalDAV/sharing-groups.xml
+    - CalDAV/sharing-groups-changes.xml
+    - CalDAV/sharing-invites.xml
+    - CalDAV/sharing-moves.xml
+    - CalDAV/sharing-multiple.xml
+    - CalDAV/sharing-notification-sync.xml
+    - CalDAV/sharing-peruser-data.xml
+    - CalDAV/sharing-peruser-properties.xml
+    - CalDAV/sharing-proxies.xml
+    - CalDAV/sharing-quota.xml
+    - CalDAV/sharing-replies.xml
+    - CalDAV/sharing-sync.xml
+    - CalDAV/sharing-traveltime.xml
+    - CalDAV/sharing-unshare.xml
+    - CalDAV/sharing-unshare-groups.xml
+    - CalDAV/sharing-webcal.xml
+    - CalDAV/sync-report.xml
+    - CalDAV/sync-report-home.xml
+    - CalDAV/timezones.xml
+    - CalDAV/timezoneservice.xml
+    - CalDAV/timezonestdservice.xml
+    - CalDAV/trash.xml
+    - CalDAV/trash-implicitgroup.xml
+    - CalDAV/trash-sync-report.xml
+    - CalDAV/vtodos.xml
+    - CalDAV/webcal.xml
+    - CalDAV/well-known.xml
+

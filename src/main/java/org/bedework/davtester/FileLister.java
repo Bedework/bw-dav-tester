@@ -10,7 +10,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
 
@@ -19,11 +18,11 @@ import static java.nio.file.FileVisitResult.CONTINUE;
  */
 public class FileLister  extends SimpleFileVisitor<Path> {
   private final List<String> files;
-  private final Set<String> excludes;
+  private final List<String> excludes;
   private final String subdir;
 
   public FileLister(List<String> files,
-                    final Set<String> excludes,
+                    final List<String> excludes,
                     final String subdir) {
     this.files = files;
     this.excludes = excludes;

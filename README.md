@@ -50,13 +50,6 @@ CalDAVTester is run via the `testcaldav.py` script:
 	--basedir : directory path for serverinfo.xml, test/ and data/,
 		overrides -s and -x values
 	
-	-p : filename specifies the file to use to populate the server with
-	data. Server data population only occurs when this option is
-	present.
-	
-	-d : in conjunction with -p, if present specifies that the populated
-	data be removed after all tests have completed.
-	
 	--ssl : run tests using SSL/https connections to the server.
 	
 	--all : execute all tests found in the working directory. Each .xml
