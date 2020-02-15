@@ -141,8 +141,12 @@ public class Manager implements Logged {
         } else {
           testNames = new ArrayList<>();
 
-          for (final var nm: tests) {
-            testNames.addAll(testsets.get(nm));
+          if (Util.isEmpty(tests)) {
+            testNames.addAll(testsets.get(null));
+          } else {
+            for (final var nm : tests) {
+              testNames.addAll(testsets.get(nm));
+            }
           }
         }
       }
