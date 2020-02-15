@@ -12,7 +12,6 @@ tests:
 testsets:
   quicklook:
     - CalDAV/caldavIOP.xml
-    - CalDAV/errors.xml
     - CalDAV/get.xml
     - CalDAV/ical-client.xml
     - CalDAV/propfind.xml
