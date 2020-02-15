@@ -17,68 +17,22 @@ protocol by simply defining a new set of XML files.
 # INSTALL
 Get the tester from github, configure and run the application.
 
-	git clone https://github.com/apple/ccs-pycalendar.git
-	virtualenv venv
-	source venv/bin/activate
-	pip install -r requirements.txt
+	git clone https://github.com/Bedework/bw-dav-tester.git
+	cd bw-dav-tester
+	mvn install
 
 # COMMAND LINE OPTIONS
-CalDAVTester is run via the `testcaldav.py` script:
+CalDAVTester is run as follows:
 
-	testcaldav.py
-		[-s filename]
-		[-x dirpath]
-		[--basedir dirpath]
-		[--ssl]
-		[--all]
-		[--random]
-		[--random-seed SEED]
-		[--stop]
-		[--print-details-onfail]
-		[--always-print-request]
-		[--always-print-response]
-		[--exclude filename]
-		[--observer OBSERVER]
-		file1 file2 ...
+	cd bw-dav-tester
+	./target/davtest/bin/davtest
+		[--config filename]
+		[--tests testsetname]
+		[file1 file2 ...]
 
-	-s : filename specifies the file to use for server information
-	(default is 'serverinfo.xml').
+
+See the asciidoc documentation for information on configuration.
 	
-	-x : directory path for test scripts
-	(default is 'scripts/tests').
-	
-	--basedir : directory path for serverinfo.xml, test/ and data/,
-		overrides -s and -x values
-	
-	--ssl : run tests using SSL/https connections to the server.
-	
-	--all : execute all tests found in the working directory. Each .xml
-	file in that directory is examined and those corresponding to the
-	caldavtest.dtd are executed.
-	
-	--random : randomize the order in which the tests are run.
-	
-	--random-seed SEED : a specific random seed to use.
-	
-	--stop : stop running all tests after one test file fails.
-	
-	--print-details-onfail : print HTTP request/response when a test fails.
-	
-	--always-print-request : always print HTTP request.
-	
-	--always-print-response : always print HTTP response.
-	
-	--exclude FILE : when running with --all, exclude the file from the test run. 
-	
-	--observer OBSEREVER : specify one or more times to change which classes are
-	used to process log and trace messages during a test. The OBSERVER name must
-	be the name of a module in the observers package. The default observer is the
-	"log" observer. Available observers are:
-	
-		"log" - produces an output similar to Python unit tests.
-		"trace" - produces an output similar to the original output format.
-		"loadfiles" - prints each test file as it is loaded.
-		"jsondump" - prints a JSON representation of the test results.
 	
 	file1 file2 ...: a list of test files to execute tests from.
 

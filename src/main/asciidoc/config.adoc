@@ -98,6 +98,7 @@ A single configuration parameter --conf specifies the file. The settings in the 
 
 Testsets define the set we will run (unless "all" is specified). This is a map of named lists. The testset config proeprty specifies which to ru  and may be overridden by the runtime --testset parameter
 
+.Example testsets definition
 [source]
 ----
 testsets:
@@ -121,6 +122,13 @@ testsets:
     - CalDAV/put.xml
     - CalDAV/reports.xml
 ----
+
+Observers define which classes are used to process log and trace messages during a test. The observer name currently must be the name of a class in the observers package with the first character lower-case. The default observer is the log" observer. Available observers are:
+
+    * "log" - produces an output similar to Python unit tests.
+    * "trace" - produces an output similar to the original output format.
+    * "loadfiles" - prints each test file as it is loaded.
+    * "jsondump" - prints a JSON representation of the test results.
 
 
 [cols="1,2", options="header"]
