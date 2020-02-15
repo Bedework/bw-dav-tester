@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.servlet.http.HttpServletResponse;
+
 import static java.lang.String.format;
 import static org.bedework.davtester.Utils.diff;
 import static org.bedework.davtester.Utils.encodeUtf8;
@@ -762,7 +764,7 @@ public class Request extends DavTesterBase {
         break;
 
       case "WAITCOUNT":
-        var wcount = Integer.parseInt(methodPar);
+        var wcount = waitCount(methodPar);
         for (var wdruri: ruris) {
           var waitres = doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
                                     wcount,
@@ -778,7 +780,7 @@ public class Request extends DavTesterBase {
       case "WAITDELETEALL":
         for (var wdruri: ruris) {
           var waitres = doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
-                                    Integer.parseInt(methodPar),
+                                    waitCount(methodPar),
                                     label);
           if (!waitres.ok) {
             return DoRequestResult.fail(
@@ -832,6 +834,13 @@ public class Request extends DavTesterBase {
       method = "GET";
     }
 
+    boolean getWait = method.equals("GETWAIT");
+    int wcount = 0;
+    if (getWait) {
+      method = "GET";
+      wcount = waitCount(methodPar);
+    }
+
     if (stats != null) {
       stats.startTimer();
     }
@@ -877,31 +886,48 @@ public class Request extends DavTesterBase {
       httpTraceOn();
     }
 
-    try (CloseableHttpResponse resp = execute(meth)) {
-      final HttpEntity ent = resp.getEntity();
+    int ct = 0;
+    do { // So we can repeat for getwait
+      try (CloseableHttpResponse resp = execute(meth)) {
+        int status = HttpUtil.getStatus(resp);
+        if (getWait) {
+          ct++;
 
-      if (ent != null) {
-        final InputStream in = ent.getContent();
+          if (status == HttpServletResponse.SC_NOT_FOUND){
+            manager.delay();
+            continue;
+          }
+          getWait = (ct <= wcount) &&
+                  (status != HttpServletResponse.SC_OK);
+        }
 
-        if (in != null) {
-          drr.responseData = readContent(in, ent.getContentLength(),
-                                         ContentType.getOrDefault(ent)
-                                                    .getCharset());
+        final HttpEntity ent = resp.getEntity();
+
+        if (ent != null) {
+          final InputStream in = ent.getContent();
+
+          if (in != null) {
+            drr.responseData = readContent(in, ent.getContentLength(),
+                                           ContentType
+                                                   .getOrDefault(ent)
+                                                   .getCharset());
+          }
+        }
+
+        drr.reason = resp.getStatusLine().getReasonPhrase();
+        drr.protocolVersion = resp.getStatusLine()
+                                  .getProtocolVersion().toString();
+        drr.etag = HttpUtil.getFirstHeaderValue(resp, "etag");
+        drr.responseHeaders = Arrays.asList(resp.getAllHeaders());
+        drr.status = HttpUtil.getStatus(resp);
+      } catch (final Throwable t) {
+        throwException(t);
+      } finally {
+        if (httpTrace) {
+          httpTraceOff();
         }
       }
-
-      drr.reason = resp.getStatusLine().getReasonPhrase();
-      drr.protocolVersion = resp.getStatusLine().getProtocolVersion().toString();
-      drr.etag = HttpUtil.getFirstHeaderValue(resp, "etag");
-      drr.responseHeaders = Arrays.asList(resp.getAllHeaders());
-      drr.status = HttpUtil.getStatus(resp);
-    } catch (final Throwable t) {
-      throwException(t);
-    } finally {
-      if (httpTrace) {
-        httpTraceOff();
-      }
-    }
+    } while (getWait);
 
     if (stats != null) {
       // Stop request timer before verification
@@ -1110,6 +1136,18 @@ public class Request extends DavTesterBase {
     }
 
     return drr;
+  }
+
+  private int waitCount(final String val) {
+    if (val == null) {
+      return manager.serverInfo.waitcount;
+    }
+
+    try {
+      return Integer.parseInt(val);
+    } catch (final Throwable t) {
+      return manager.serverInfo.waitcount;
+    }
   }
 
   private CloseableHttpResponse execute(HttpRequestBase meth) {
@@ -1407,14 +1445,8 @@ public class Request extends DavTesterBase {
           return Result.ok();
         }
       }
-      var delay = manager.serverInfo.waitdelay;
-      synchronized (this) {
-        try {
-          Thread.sleep(delay);
-        } catch (final InterruptedException e) {
-          throwException(e);
-        }
-      }
+
+      manager.delay();
     }
 
     if (!manager.debug() || Util.isEmpty(hrefs)) {

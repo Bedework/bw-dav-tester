@@ -266,7 +266,7 @@ will print its progress through the tests.
 				2) DELAY - pause for the number of seconds specified by the <ruri> element.
 				3) GETNEW - get the data from the newest resource in the collection specified by the <ruri> element and put its URI
 						    into the $ variable for later use in an <ruri> element.
-				4) WAITCOUNT N - wait until at least a certain number of resources "N" appear in a collection.
+				4) WAITCOUNT [N] - wait until at least a certain number of resources "N" appear in a collection.
 				5) WAITDELETEALL - wait until at least a certain number of resources appear in a collection, then delete all child
 								   resources in that collection.
 				6) GETCHANGED - the tool tracks the Etags on resources retrieved via GET. This special method will poll the specified
@@ -274,6 +274,8 @@ will print its progress through the tests.
 								test.  
 				6) GETOTHER - the tool finds the newest sibling resource to the one specified in the <ruri> element.  
 				6) GETCONTAINS XXX - the tool finds the child resource whose content contains the supplied text "XXX".  
+				7) GETWAIT [N] - Try N times to GET resource. Terminate on anything other than 404 or 200
+				                This allows e.g. indexing to catch up.
 	
 		ELEMENT <ruri>
 			the URI of the request. Multiple <ruri>'s are allowed with DELETEALL only.

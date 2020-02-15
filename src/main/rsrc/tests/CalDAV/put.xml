@@ -49,7 +49,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/1.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -77,7 +77,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarhome1:/1.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -102,7 +102,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -130,7 +130,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$taskspath1:/1todo.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -155,7 +155,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$taskspath1:/2todo.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -180,7 +180,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$taskspath1:/3todo.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -205,7 +205,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$taskspath1:/4todo.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -230,7 +230,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$taskspath1:/5todo.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -589,7 +589,7 @@
 		<test name='2'>
 			<description>GET</description>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/1.ics</ruri>
 				<verify>
 					<callback>header</callback>
@@ -718,7 +718,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -750,7 +750,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -782,7 +782,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -814,7 +814,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -846,7 +846,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -878,7 +878,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/2r.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -906,7 +906,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/i1.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -931,7 +931,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/i2.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -959,7 +959,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/3X.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -987,7 +987,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/106.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -1018,7 +1018,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/107.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>
@@ -1043,7 +1043,7 @@
 				</verify>
 			</request>
 			<request>
-				<method>GET</method>
+				<method>GETWAIT 5</method>
 				<ruri>$calendarpath1:/108.ics</ruri>
 				<verify>
 					<callback>calendarDataMatch</callback>

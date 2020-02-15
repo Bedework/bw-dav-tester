@@ -393,6 +393,17 @@ public class Manager implements Logged {
     message("testResult", testsuite);
   }
 
+  public void delay() {
+    var delay = serverInfo.waitdelay;
+    synchronized (this) {
+      try {
+        Thread.sleep(delay);
+      } catch (final InterruptedException e) {
+        throwException(e);
+      }
+    }
+  }
+
   public boolean readXML(final String serverfile,
                          final List<Path> testfilePaths,
                          final boolean ssl,
