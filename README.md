@@ -30,21 +30,13 @@ CalDAVTester is run as follows:
 		[--tests testsetname]
 		[file1 file2 ...]
 
-
 See the asciidoc documentation for information on configuration.
-	
-	
-	file1 file2 ...: a list of test files to execute tests from.
 
 # QUICKSTART
 
 Edit the serverinfo.xml file to run the test against your server setup.
 
-Prior to running, make sure you are in the virtualenv:
-
-	source venv/bin/activate
-
-Run `testcaldav.py --all` on the command line to run the tests. The app
+Run `./target/davtest/bin/davtest` on the command line to run the tests. The app
 will print its progress through the tests.
 
 # EXECUTION PROCESS
@@ -903,6 +895,4 @@ Each path segment can now have its own test and "../" can be used to move up to
 		</arg>
 	</verify>
 
-## Example
-     -s src/main/rsrc/server/bwserverinfo.xml --always-print-request --always-print-response --print-details-onfail -o cdt.txt CalDAV/reports.xml
 

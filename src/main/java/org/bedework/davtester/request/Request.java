@@ -27,11 +27,13 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.w3c.dom.Element;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -875,9 +877,7 @@ public class Request extends DavTesterBase {
       httpTraceOn();
     }
 
-    try (CloseableHttpResponse resp =
-                 manager.getHttpClient(getUser(),
-                                       getPswd()).execute(meth)) {
+    try (CloseableHttpResponse resp = execute(meth)) {
       final HttpEntity ent = resp.getEntity();
 
       if (ent != null) {
@@ -1110,6 +1110,23 @@ public class Request extends DavTesterBase {
     }
 
     return drr;
+  }
+
+  private CloseableHttpResponse execute(HttpRequestBase meth) {
+    final CloseableHttpClient cl;
+
+    if (auth) {
+      cl = manager.getHttpClient(getUser(),
+                            getPswd());
+    } else {
+      cl = manager.getUnauthHttpClient();
+    }
+
+    try {
+      return cl.execute(meth);
+    } catch (IOException e) {
+      return throwException(e);
+    }
   }
 
   public DoRequestResult doGet(final UriIdPw uip,

@@ -174,6 +174,18 @@ public class Manager implements Logged {
     return serverInfo.subs(val);
   }
 
+  public CloseableHttpClient getUnauthHttpClient() {
+    if (httpClient == null) {
+      final HttpClientBuilder clb = HttpClients.custom();
+      clb.setDefaultCredentialsProvider(credsProvider);
+      httpClient = clb.build();
+    }
+
+    credsProvider.clear();
+
+    return httpClient;
+  }
+
   public CloseableHttpClient getHttpClient(final String user,
                                            final String pw) {
     if (httpClient == null) {
