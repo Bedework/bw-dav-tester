@@ -16,7 +16,6 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
-import org.bedework.util.misc.Util;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -49,10 +48,7 @@ public abstract class FileDataMatch extends Verifier {
     // Get arguments
     var filepath = args.getOnlyString("filepath");
     if (filepath != null) {
-      if (manager.dataDir != null) {
-        filepath = Util.buildPath(false, manager.dataDir,
-                                  "/", filepath);
-      }
+      filepath = manager.normResPath(filepath).toString();
     }
 
     var data = args.getOnlyString("data");

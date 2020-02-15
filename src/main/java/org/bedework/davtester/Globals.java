@@ -16,8 +16,6 @@ public class Globals {
 
   private String basedir = "src/main/rsrc/";
 
-  private String dataDir = "$basedir:data";
-
   private String dtds = "$basedir:dtds";
 
   private List<String> excludes;
@@ -40,7 +38,7 @@ public class Globals {
 
   private boolean random = true;
 
-  private String resDir = basedir;
+  private String resDir = "$basedir:";
 
   private String serverInfo = "$basedir:server/serverinfo.xml";
 
@@ -70,14 +68,6 @@ public class Globals {
 
   public String getBasedir() {
     return basedir;
-  }
-
-  public void setDataDir(final String val) {
-    dataDir = val;
-  }
-
-  public String getDataDir() {
-    return dataDir;
   }
 
   public void setDtds(final String val) {
@@ -237,7 +227,6 @@ public class Globals {
 
     return ts.append("all", getAll())
              .append("baseDir", getBasedir())
-             .append("dataDir", getDataDir())
              .append("dtds", getDtds())
              .append("excludes", getExcludes())
              .append("httptrace", getHttptrace())

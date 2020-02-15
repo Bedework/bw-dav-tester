@@ -19,10 +19,6 @@ A single configuration parameter --conf specifies the file. The settings in the 
 | basedir: path
 | Specifies a base for other paths. May be used in the usual way, e.g $basedir:file. Default is "src/main/rsrc/"
 
-|
-| dataDir: path
-| Specify the directory for the data. Default is "$basedir:data"
-
 | --dtds path
 | dtds: path
 | Specify the directory for the dtds. Default is "$basedir:dtds"

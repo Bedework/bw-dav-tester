@@ -22,7 +22,6 @@ import org.bedework.davtester.XmlDefs;
 
 import org.w3c.dom.Element;
 
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Objects;
 
@@ -71,8 +70,7 @@ public class Data extends DavTesterBase {
       if (nodeMatches(child, XmlDefs.ELEMENT_CONTENTTYPE)) {
         contentType = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_FILEPATH)) {
-        var fp = Paths.get(contentUtf8(child));
-        filepath = manager.resDirPath.resolve(fp).toAbsolutePath().toString();
+        filepath = manager.normResPath(contentUtf8(child)).toString();
 
       } else if (nodeMatches(child, XmlDefs.ELEMENT_GENERATOR)) {
         throwException("generator: unimplemented");

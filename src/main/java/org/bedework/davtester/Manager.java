@@ -65,8 +65,6 @@ public class Manager implements Logged {
   public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
 
   public Serverinfo serverInfo;
-  public String dataDir;
-  private Path dataDirPath;
 
   private Path testsDirPath;
 
@@ -110,7 +108,6 @@ public class Manager implements Logged {
       }
 
       setTestsDir(subs(globals.getTestsDir()));
-      setDataDir(subs(globals.getDataDir()));
       setResDir(subs(globals.getResDir()));
 
       if (globals.getPretest() != null) {
@@ -206,35 +203,26 @@ public class Manager implements Logged {
   }
 
   public void setPretest(final String path) {
-    pretestFile = normDataPath(path);
+    pretestFile = normTestsPath(path);
   }
 
   public void setPosttest(final String path) {
-    posttestFile = normDataPath(path);
+    posttestFile = normTestsPath(path);
   }
 
-  public void setDataDir(final String path) {
-    dataDir = path;
-    dataDirPath = Paths.get(path);
-  }
-
-  public Path normDataPath(final String path) {
+  public Path normResPath(final String path) {
     var p = Paths.get(path);
 
     Path np = null;
     try {
-      np = dataDirPath.resolve(p);
+      np = resDirPath.resolve(p);
     } catch (final Throwable t) {
-      throwException("Unable to resolve path " + path +
-                             " against " + dataDirPath +
-                             " exception " + t);
+      return throwException("Unable to resolve path " + path +
+                                    " against " + resDirPath +
+                                    " exception " + t);
     }
 
-    return np;
-  }
-
-  public List<Path> normDataPaths(final List<String> path) {
-    return path.stream().map(this::normDataPath).collect(Collectors.toList());
+    return np.toAbsolutePath();
   }
 
   public void setTestsDir(final String path) {
