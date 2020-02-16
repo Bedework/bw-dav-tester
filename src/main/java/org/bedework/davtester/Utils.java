@@ -170,7 +170,7 @@ public class Utils {
     var res = new DtParts();
 
     res.year = cal.get(Calendar.YEAR);
-    res.month = cal.get(Calendar.MONTH);
+    res.month = cal.get(Calendar.MONTH) + 1;
     res.dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
 
     res.hour = cal.get(Calendar.HOUR_OF_DAY);
