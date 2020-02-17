@@ -94,9 +94,13 @@ A single configuration parameter --conf specifies the file. The settings in the 
 | -x dirpath
 | testsDir: path
 | Specify the directory for the tests. Default is "$basedir:tests"
+
+|
+| waitCountDump: [true\|false]
+| Set true to dump the hrefs and contents of resourcs when WAITCOUNT fails.
 |===
 
-Testsets define the set we will run (unless "all" is specified). This is a map of named lists. The testset config proeprty specifies which to ru  and may be overridden by the runtime --testset parameter
+Testsets define the set we will run (unless "all" is specified). This is a map of named lists. The testset config property specifies which to run and may be overridden by the runtime --testset parameter
 
 .Example testsets definition
 [source]

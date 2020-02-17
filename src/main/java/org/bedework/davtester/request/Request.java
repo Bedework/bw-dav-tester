@@ -771,7 +771,7 @@ public class Request extends DavTesterBase {
                                     label);
           if (!waitres.ok) {
             return DoRequestResult.fail(format("Count did not change: %s",
-                                               waitres.val));
+                                               waitres.message));
           }
         }
 
@@ -965,9 +965,14 @@ public class Request extends DavTesterBase {
       var responsetxt = "\n-------BEGIN:RESPONSE-------\n" +
               format("%s %s %s\n",
                      drr.protocolVersion,
-                     drr.status, drr.reason) +
+                     drr.status, drr.reason);
+      if (drr.responseData != null) {
 //              String.valueOf(drr.response.message) +
-              drr.responseData +
+        responsetxt +=
+                drr.responseData;
+      }
+
+      responsetxt +=
               "\n--------END:RESPONSE--------\n";
       manager.protocol(responsetxt);
     }
@@ -1449,10 +1454,11 @@ public class Request extends DavTesterBase {
       manager.delay();
     }
 
-    if (!manager.debug() || Util.isEmpty(hrefs)) {
+    if (!manager.globals.getWaitCountDump() || Util.isEmpty(hrefs)) {
       return Result.fail(new Result<>(),
                          String.valueOf(hrefs.size()));
     }
+
     // Get the content of each resource
     var rdata = new StringBuilder();
 

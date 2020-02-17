@@ -11,13 +11,15 @@ tests:
 
 testsets:
   quicklook:
-    - CalDAV/caldavIOP.xml        # 100%
-    - CalDAV/get.xml              # 100%
-    - CalDAV/ical-client.xml      # 100%
-    - CalDAV/propfind.xml         # 100%
-    - CalDAV/put.xml              # 100%
-    - CalDAV/reports.xml          # 100%
-    - CalDAV/freebusy.xml
+    - CalDAV/caldavIOP.xml         # 100%
+    - CalDAV/get.xml               # 100%
+    - CalDAV/ical-client.xml       # 100%
+    - CalDAV/propfind.xml          # 100%
+    - CalDAV/put.xml               # 100%
+    - CalDAV/reports.xml           # 100%
+    - CalDAV/freebusy.xml          # 100%
+    - CalDAV/sharing-calendars.xml # 100%
+    - CalDAV/implicitscenario1.xml - failed 11
 
   # Following represent all tests subdivided into groups
   # First some basic tests

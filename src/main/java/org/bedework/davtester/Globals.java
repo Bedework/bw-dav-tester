@@ -54,6 +54,8 @@ public class Globals {
 
   private String testsDir = "$basedir:tests";
 
+  private boolean waitCountDump;
+
   public void setAll(final boolean val) {
     all = val;
   }
@@ -222,6 +224,14 @@ public class Globals {
     return testsDir;
   }
 
+  public void setWaitCountDump(final boolean val) {
+    waitCountDump = val;
+  }
+
+  public boolean getWaitCountDump() {
+    return waitCountDump;
+  }
+
   public String toString() {
     final ToString ts = new ToString(this);
 
@@ -246,6 +256,7 @@ public class Globals {
              .append("tests", getTests())
              .append("testsets", getTestsets())
              .append("testsDir", getTestsDir())
+             .append("waitCountDump", getWaitCountDump())
              .toString();
   }
 }
