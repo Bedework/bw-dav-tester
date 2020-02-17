@@ -121,6 +121,13 @@
 				</grabelement>
 			</request>
 		</test>
+    <test name='3a'>
+      <description>Wait for shared calendar</description>
+      <request user="$userid2:" pswd="$pswd2:">
+        <method>GETWAIT 5</method>
+        <ruri>$sharedcalendar:/</ruri>
+      </request>
+    </test>
 		<test name='4'>
 			<description>Shared calendar exists</description>
 			<request user="$userid2:" pswd="$pswd2:">
