@@ -151,7 +151,7 @@ public class Testfile extends DavTesterBase {
         manager.testFile(testPath.toString(),
                          "Start items failed - tests will not be run.",
                          Manager.RESULT_ERROR);
-        res = TestResult.failed();
+        res = TestResult.error();
       } else {
         res = runSuites(name);
       }
@@ -166,7 +166,7 @@ public class Testfile extends DavTesterBase {
                        Manager.RESULT_ERROR);
       manager.error(t);
 
-      return TestResult.failed();
+      return TestResult.error();
     } finally {
       if (httpTrace) {
         httpTraceOff();

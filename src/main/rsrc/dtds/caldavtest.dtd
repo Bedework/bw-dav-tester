@@ -93,5 +93,6 @@
 						  count CDATA "1"
 						  stats (yes|no) "no"
 						  ignore (yes|no) "no"
+              skip-suite-on-fail (yes|no) "no"
 						  only (yes|no) "no"
               http-trace (yes|no) "no">

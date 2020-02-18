@@ -45,6 +45,7 @@ class Test extends DavTesterBase {
   boolean details;
   boolean stats;
   boolean ignore;
+  public boolean skipSuiteOnFail;
   int count = 1;
 
   List<Request> requests = new ArrayList<>();
@@ -65,6 +66,7 @@ class Test extends DavTesterBase {
     stats = getYesNoAttributeValue(node, XmlDefs.ATTR_STATS);
     ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
     only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
+    skipSuiteOnFail = getYesNoAttributeValue(node, XmlDefs.ATTR_SKIP_SUITE_ON_FAIL);
     httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
                                        false);
 
@@ -82,6 +84,7 @@ class Test extends DavTesterBase {
     // get request
     requests = Request.parseList(manager, node);
   }
+
   public TestResult run(final KeyVals testsuite,
                         final Map<String, String> etags,
                         final boolean only,
@@ -118,7 +121,7 @@ class Test extends DavTesterBase {
     for (var ctr = 0; ctr < count; ctr++) {
       var failed = false;
       var reqCount = 1;
-      for (var req : requests) {
+      for (var req: requests) {
         var t = System.currentTimeMillis();
         if (req.waitForSuccess) {
           t += manager.serverInfo.waitsuccess;
@@ -202,6 +205,7 @@ class Test extends DavTesterBase {
     if (result) {
       return TestResult.ok();
     }
+
     return TestResult.failed();
   }
 

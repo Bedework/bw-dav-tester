@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import static java.lang.String.format;
 
@@ -178,28 +177,31 @@ public class Log extends BaseResultsObserver {
     manager().logit("");
     String overall;
 
-    if (manager().totals[Manager.RESULT_FAILED] +
-            manager().totals[Manager.RESULT_ERROR] != 0) {
+    if (manager().totals.failed +
+            manager().totals.errors != 0) {
       for (var failed: loggedFailures) {
         manager().logit("=".repeat(70));
         manager().logit(failed);
       }
             
-      overall = format("FAILED (ok=%s, ignored=%s, failed=%s, errors=%s)",
-                       manager().totals[Manager.RESULT_OK],
-                       manager().totals[Manager.RESULT_IGNORED],
-                       manager().totals[Manager.RESULT_FAILED],
-                       manager().totals[Manager.RESULT_ERROR]);
+      overall = format("FAILED (ok=%s, ignored=%s, " +
+                               "failed=%s, errors=%s, " +
+                               "errorSkipped=%s)",
+                       manager().totals.ok,
+                       manager().totals.ignored,
+                       manager().totals.failed,
+                       manager().totals.errors,
+                       manager().totals.errorSkipped);
     } else {
       overall = format("PASSED (ok=%s, ignored=%s)",
-                       manager().totals[Manager.RESULT_OK],
-                       manager().totals[Manager.RESULT_IGNORED]);
+                       manager().totals.ok,
+                       manager().totals.ignored);
     }
 
     manager().logit("-".repeat(70));
     manager().logit(format("Ran %s tests in %.3f\n",
-                           IntStream.of(manager().totals).sum(),
-                           (float)manager().totalTime / 1000));
+                           manager().totals.tests,
+                           (float)manager().totals.total / 1000));
 
     manager().logit(overall);
   }

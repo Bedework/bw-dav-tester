@@ -36,6 +36,7 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
 class Testsuite extends DavTesterBase {
   public boolean ignore;
   private boolean changeuid;
+  private boolean errorSkip;
 
   public List<Test> tests = new ArrayList<>();
 
@@ -128,13 +129,24 @@ class Testsuite extends DavTesterBase {
       }
 
       for (var test: tests) {
+        if (errorSkip) {
+          res.tests++;
+          res.errorSkipped++;
+          continue;
+        }
+
         try {
           if (test.httpTrace) {
             httpTraceOn();
           }
 
-          res.add(test.run(testsuite, etags, onlyTests,
-                           format("%s | %s", label, test.name)));
+          var testRes =
+                  test.run(testsuite, etags, onlyTests,
+                           format("%s | %s", label, test.name));
+          if ((testRes.failed > 0) && test.skipSuiteOnFail) {
+            errorSkip = true;
+          }
+          res.add(testRes);
         } finally {
           if (test.httpTrace) {
             httpTraceOff();
@@ -149,8 +161,13 @@ class Testsuite extends DavTesterBase {
         */
     }
 
-    manager.trace(format("  Suite Results: %d PASSED, %d FAILED, %d IGNORED\n",
-                         res.ok, res.failed, res.ignored));
+    manager.trace(format("  Suite Results: %d PASSED, " +
+                                 "%d FAILED, " +
+                                 "%d IGNORED, " +
+                                 "%d ERRORSKIP\n",
+                         res.ok, res.failed,
+                         res.ignored,
+                         res.errorSkipped));
     /* POSTGRES
         if postgresCount is ! null:
             postgresResult(postgresCount, indent=4);

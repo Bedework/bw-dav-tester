@@ -117,6 +117,7 @@ public interface XmlDefs {
   String ATTR_PSWD = "pswd";
   String ATTR_QUOTE = "quote";
   String ATTR_REQUEST_FAILED = "request-failed";
+  String ATTR_SKIP_SUITE_ON_FAIL = "skip-suite-on-fail";
   String ATTR_STATS = "stats";
   String ATTR_SUBSTITUTIONS = "substitutions";
   String ATTR_TIME_EXCEEDED = "time-exceeded";

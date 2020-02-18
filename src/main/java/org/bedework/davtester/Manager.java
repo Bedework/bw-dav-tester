@@ -57,9 +57,7 @@ public class Manager implements Logged {
 
   public Globals globals;
 
-  // 1 for each of above
-  public int[] totals = {0, 0, 0, 0};
-  public long totalTime;
+  public TestResult totals = new TestResult();
 
   public static final String EX_INVALID_CONFIG_FILE = "Invalid Config File";
   public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
@@ -226,7 +224,7 @@ public class Manager implements Logged {
   public Path normResPath(final String path) {
     var p = Paths.get(path);
 
-    Path np = null;
+    Path np;
     try {
       np = resDirPath.resolve(p);
     } catch (final Throwable t) {
@@ -352,8 +350,8 @@ public class Manager implements Logged {
 
     if (resultCode != null) {
       results.put("result", resultCode);
-      totals[resultCode]++;
     }
+
     message("testFile", results);
     return res;
   }
@@ -370,7 +368,6 @@ public class Manager implements Logged {
 
     if (resultCode != null) {
       testfile.put("result", resultCode);
-      totals[resultCode]++;
     }
 
     message("testSuite", testfile);
@@ -390,7 +387,6 @@ public class Manager implements Logged {
       testsuite.addAll(addons);
     }
 
-    totals[resultCode]++;
     message("testResult", testsuite);
   }
 
@@ -518,12 +514,9 @@ public class Manager implements Logged {
   public TestResult runAll() {
     message("start", null);
 
-    var count = new TestResult();
-
     var ctr = 1;
 
-    var res = new TestResult();
-    res.startTimer();
+    totals.startTimer();
 
     for (var testFile: testFiles) {
       ctr++;
@@ -545,7 +538,7 @@ public class Manager implements Logged {
       currentTestfile = testFile;
       var testResult = testFile.run();
 
-      res.add(testResult);
+      totals.add(testResult);
 
       if ((testResult.failed != 0) && globals.getStopOnFail()) {
         break;
@@ -562,8 +555,7 @@ public class Manager implements Logged {
       }
     }
 
-    res.endTimer();
-    totalTime = res.total;
+    totals.endTimer();
 
     message("finish", null);
 
@@ -575,7 +567,7 @@ public class Manager implements Logged {
       }
     }
 
-    return res;
+    return totals;
   }
 
   /* ====================================================================

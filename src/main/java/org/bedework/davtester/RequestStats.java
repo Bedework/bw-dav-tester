@@ -21,9 +21,9 @@ import org.bedework.util.misc.ToString;
  * Maintains stats about the current test.
  */
 public class RequestStats {
-  int count;
-  long total;
-  long start;
+  public int count;
+  public long total;
+  public long start;
 
   public void startTimer() {
     start = System.currentTimeMillis();

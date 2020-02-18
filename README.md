@@ -192,6 +192,8 @@ will print its progress through the tests.
 			printed.
 		ATTRIBUTE ignore
 			if set to 'yes' then the entire test will be skipped.
+		ATTRIBUTE skip-suite-on-fail
+			if set to 'yes' then the remaining suite tests will be skipped on any failure.
 	
 		ELEMENT <require-feature>
 			set of features.
