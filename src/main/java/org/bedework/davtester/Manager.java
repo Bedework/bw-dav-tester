@@ -94,7 +94,8 @@ public class Manager implements Logged {
    */
   public boolean init() {
     try {
-      serverInfo = new Serverinfo(globals.getBasedir());
+      serverInfo = new Serverinfo(this,
+                                  globals.getBasedir());
 
       if (!StringUtils.isEmpty(globals.getOutputName())) {
         logFile = new FileWriter(

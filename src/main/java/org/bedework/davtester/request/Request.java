@@ -1487,7 +1487,7 @@ public class Request extends DavTesterBase {
                                "No UID end found in\n" + rdata.toString());
           }
           var uid = rd.substring(uidpos + 4, end);
-          test = manager.currentTestfile.uidmaps
+          test = manager.serverInfo.uidmaps
                   .computeIfAbsent(uid, s -> "unknown");
         }
       }

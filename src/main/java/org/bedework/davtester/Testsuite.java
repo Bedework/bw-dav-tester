@@ -15,7 +15,6 @@
 */
 package org.bedework.davtester;
 
-import org.bedework.davtester.Serverinfo.KeyVal;
 import org.bedework.util.misc.ToString;
 
 import org.w3c.dom.Element;
@@ -47,21 +46,6 @@ class Testsuite extends DavTesterBase {
   @Override
   public String getKind() {
     return "Testsuite";
-  }
-
-  public List<KeyVal> aboutToRun() {
-    /*
-      Typically we need the calendar/contact data for a test file to have a common set
-      of UIDs, and for each overall test file to have unique UIDs. Occasionally, within
-      a test file we also need test suites to have unique UIDs. The "change-uid" attribute
-      can be used to reset the active UIDs for a test suite.
-    */
-
-    if (changeuid) {
-      return manager.serverInfo.newUIDs();
-    }
-
-    return new ArrayList<>();
   }
 
   public void parseXML(final Element node) {
@@ -139,9 +123,8 @@ class Testsuite extends DavTesterBase {
       }
 
       var testsuite = manager.testSuite(testfile, resultName, "", null);
-      var uids = aboutToRun();
-      for (var kv: uids) {
-        manager.currentTestfile.uidmaps.put(kv.key, format("%s - %s", kv.val, label));
+      if (changeuid) {
+        manager.serverInfo.newUIDs();
       }
 
       for (var test: tests) {

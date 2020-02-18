@@ -97,7 +97,6 @@ public class Testfile extends DavTesterBase {
 
   public String grabbedLocation;
   public Set<String> previouslyFound = new TreeSet<>();
-  public Map<String, String> uidmaps = new HashMap<>();
 
   public Testfile(final Manager manager,
                   final Path testPath,
@@ -128,9 +127,7 @@ public class Testfile extends DavTesterBase {
     }
 
     // Always need a new set of UIDs for the entire test file
-    for (var kv : manager.serverInfo.newUIDs()) {
-      uidmaps.put(kv.key, format("%s - %s", kv.val, name));
-    }
+    manager.serverInfo.newUIDs();
 
     for (var suite: suites) {
       if (suite.only) {

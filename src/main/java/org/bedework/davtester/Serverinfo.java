@@ -29,12 +29,15 @@ import org.w3c.dom.Node;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import static java.lang.String.format;
 import static org.bedework.davtester.Utils.getDtParts;
 import static org.bedework.davtester.XmlUtils.children;
 import static org.bedework.davtester.XmlUtils.content;
@@ -50,6 +53,8 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Class that encapsulates the server information for a CalDAV test run.
  */
 public class Serverinfo {
+  final private Manager manager;
+
   public String host;
   public int port;
   public String afunix;
@@ -75,8 +80,13 @@ public class Serverinfo {
   public int waitcount = 120;
   public long waitdelay = 250; // .25 second
   int waitsuccess = 10;
+
   final KeyVals subsKvs = new KeyVals();
   final KeyVals extrasubsKvs = new KeyVals();
+
+  // Used so we can flag which test a uid came from
+  public Map<String, String> uidmaps = new HashMap<>();
+
   final KeyVals defaultFilters = new KeyVals();
   public List<String> calendardatafilters = new ArrayList<>();
   List<String> addressdatafilters = new ArrayList<>();
@@ -92,7 +102,9 @@ public class Serverinfo {
     }
   }
 
-  Serverinfo(final String baseDir) {
+  Serverinfo(final Manager manager,
+             final String baseDir) {
+    this.manager = manager;
     subsKvs.put("$basedir:", baseDir);
   }
 
@@ -235,18 +247,20 @@ public class Serverinfo {
     addsubs(processed, extrasubsKvs);
   }
 
-  public List<KeyVal> newUIDs () {
-    var res = new ArrayList<KeyVal>();
-
+  /**
+   *
+   */
+  public void newUIDs () {
+    uidmaps.clear();
     for (int i = 1; i <= 21; i++) {
       var key = String.format("$uid%d:", i);
       var val = UUID.randomUUID().toString();
       subsKvs.put(key, val);
       extrasubsKvs.put(key, val);
-      res.add(new KeyVal(key, val));
-    }
 
-    return res;
+      uidmaps.put(val, format("%s - %s", key,
+                              manager.currentTestfile.name));
+    }
   }
 
   public void parseXML(final Node node) {
