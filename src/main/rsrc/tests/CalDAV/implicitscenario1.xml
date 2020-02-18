@@ -1053,6 +1053,11 @@
 		</test>
 		<test name='21'>
 			<description>Attendee no Inbox Item</description>
+      <request>
+        <!-- Wait for scheduler -->
+        <method>DELAY</method>
+        <ruri>5</ruri>
+      </request>
 			<request user="$userid2:" pswd="$pswd2:">
 				<method>PROPFIND</method>
 				<ruri>$inboxpath2:/</ruri>
