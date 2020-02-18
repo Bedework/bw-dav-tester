@@ -699,7 +699,13 @@ public class Request extends DavTesterBase {
 
       case "DELAY":
         // ruri contains a numeric delay in seconds
-        var delay = Integer.parseInt(this.ruri);
+        int delay;
+        if (ruri == null) {
+          delay = 1;
+        } else {
+          delay = Integer.parseInt(ruri);
+        }
+
         synchronized (this) {
           try {
             Thread.sleep(delay * 1000);
@@ -953,9 +959,11 @@ public class Request extends DavTesterBase {
     if (printRequest ||
             (manager.globals.getPrintDetailsOnFail() &&
                      (!drr.ok && !waitForSuccess))) {
-      var requesttxt = "\n-------BEGIN:REQUEST-------\n" +
-              data +
-              "\n--------END:REQUEST--------\n";
+      var requesttxt = "\n-------BEGIN:REQUEST-------\n";
+      if (data != null) {
+        requesttxt += data + "\n";
+      }
+      requesttxt += "--------END:REQUEST--------\n";
       manager.protocol(requesttxt);
     }
 
