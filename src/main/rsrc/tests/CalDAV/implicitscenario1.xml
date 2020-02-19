@@ -1428,6 +1428,11 @@
 		</test>
 		<test name='8'>
 			<description>Attendee no Inbox Item</description>
+      <request>
+        <!-- Wait for scheduler -->
+        <method>DELAY</method>
+        <ruri>5</ruri>
+      </request>
 			<request user="$userid2:" pswd="$pswd2:">
 				<method>PROPFIND</method>
 				<ruri>$inboxpath2:/</ruri>
@@ -1677,6 +1682,11 @@
 	</test-suite>
 	
 	<test-suite name='No master Organizer' change-uid='yes'>
+    <description>Organizer posts event with recurring instances with
+      attendees in only one override. Master/first instance has no
+      attendees. Attendee accepts then organizer deletes. Attendee
+      should see canceled event.
+    </description>
 		<test name='1'>
 			<description>Organizer invites Attendee</description>
 			<request>

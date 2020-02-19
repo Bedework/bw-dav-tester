@@ -26,6 +26,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.XmlUtils.children;
+import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
@@ -64,6 +65,8 @@ class Testsuite extends DavTesterBase {
       } else if (nodeMatches(child,
                              XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
         parseFeatures(child, false);
+      } else if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
+        description = content(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_TEST)) {
         var t = new Test(manager);
         t.parseXML(child);

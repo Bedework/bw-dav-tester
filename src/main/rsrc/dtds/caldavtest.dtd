@@ -81,7 +81,7 @@
 		<!ELEMENT grabcalproperty (name, variable)>
 		<!ELEMENT grabcalparameter (name, variable)>
 
-	<!ELEMENT test-suite (require-feature?, exclude-feature?, test*)>
+	<!ELEMENT test-suite (require-feature?, exclude-feature?, description?, test*)>
 		<!ATTLIST test-suite name CDATA #REQUIRED
 							ignore (yes|no) "no"
 							only (yes|no) "no"
