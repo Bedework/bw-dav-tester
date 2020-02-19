@@ -1782,7 +1782,7 @@
 				</verify>
 			</request>
 		</test>
-		<test name='11'>
+		<test name='11' skip-suite-on-fail="yes">
 			<description>Attendee Inbox Item</description>
 			<request user="$userid2:" pswd="$pswd2:">
 				<method>WAITDELETEALL 1</method>
