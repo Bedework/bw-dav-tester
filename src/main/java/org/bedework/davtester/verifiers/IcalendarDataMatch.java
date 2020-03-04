@@ -16,6 +16,7 @@
 package org.bedework.davtester.verifiers;
 
 import org.bedework.davtester.KeyVals;
+import org.bedework.davtester.Utils;
 import org.bedework.davtester.ical.Icalendar;
 import org.bedework.util.misc.Util;
 
@@ -28,6 +29,7 @@ import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.PropertyList;
 import net.fortuna.ical4j.model.parameter.XParameter;
+import net.fortuna.ical4j.model.property.RecurrenceId;
 import org.apache.http.Header;
 
 import java.util.ArrayList;
@@ -92,8 +94,7 @@ public class IcalendarDataMatch extends FileDataMatch {
       respCalendar.removeTimeZones();
       dataCalendar.removeTimeZones();
 
-      // Why was this being done?
-      //reconcileRecurrenceOverrides(respCalendar, dataCalendar);
+      reconcileRecurrenceOverrides(respCalendar, dataCalendar);
 
       var respLines = respCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
       var dataLines = dataCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
@@ -125,49 +126,50 @@ public class IcalendarDataMatch extends FileDataMatch {
     }
   }
 
-  /*
-  private void addOverrides(final Icalendar calendar,
-                            final Component master,
-                            final List<Property> missingRids){
-    /*
-    Derive instances for the missing overrides in the specified calendar object.
-    * /
-    if ((master == null) || Util.isEmpty(missingRids)) {
-      return;
-    }
-
-    for (var rid : missingRids) {
-      // if (we were fed an already derived component, use that, otherwise make a new one
-      var newcomp = calendar.deriveComponent(rid);
-      if (newcomp != null) {
-        calendar.addComponent(newcomp);
-      }
-    }
-  }
-
-  static class MasterRids {
+  private static class MasterRids {
     Component master;
-    List<Property> rids;
+    List<RecurrenceId> rids;
 
-    void add(final Property p) {
+    void add(final RecurrenceId p) {
       if (rids == null) {
-        rids = new ArrayList<>()
+        rids = new ArrayList<>();
       }
 
       rids.add(p);
     }
   }
 
+  /* If overrides are missing add an override based on the master event.
+   * That way we see what was expected to be changed.
+   */
+  private void reconcileRecurrenceOverrides(final Icalendar calendar1,
+                                            final Icalendar calendar2) {
+    /* Make sure that the same set of overridden components appears in
+       both calendar objects.
+    */
+
+    var rids1 = getRids(calendar1);
+    var rids2 = getRids(calendar2);
+
+    addOverrides(calendar1, rids1.master,
+                 Utils.diff(rids2.rids, rids1.rids));
+    addOverrides(calendar2, rids2.master,
+                 Utils.diff(rids1.rids, rids2.rids));
+
+    // Need to sort the components so they match.
+    calendar1.sort();
+    calendar2.sort();
+  }
+
   /* this assumes the calendar represents a single event. True for CalDAV
-   * /
+   */
   private MasterRids getRids(final Icalendar calendar){
-    /*
-    Get all the recurrence ids of the specified calendar.
-    * /
+    /* Get all the recurrence ids of the specified calendar.
+    */
     var res = new MasterRids();
 
-    for (var subcomponent : calendar.getComponents()) {
-      var p = subcomponent.getProperty(Property.RECURRENCE_ID);
+    for (var subcomponent: calendar.getComponents()) {
+      var p = (RecurrenceId)subcomponent.getProperty(Property.RECURRENCE_ID);
 
       if (p == null) {
         if ((subcomponent.getProperty(Property.RDATE) != null) ||
@@ -182,21 +184,23 @@ public class IcalendarDataMatch extends FileDataMatch {
     return res;
   }
 
-  private void reconcileRecurrenceOverrides(final Icalendar calendar1,
-                                            final Icalendar calendar2) {
-    /*
-      Make sure that the same set of overridden components appears in both calendar objects.
-    * /
+  private void addOverrides(final Icalendar calendar,
+                            final Component master,
+                            final List<RecurrenceId> missingRids){
+    /* Derive instances for the missing overrides in the specified calendar object.
+     */
+    if ((master == null) || Util.isEmpty(missingRids)) {
+      return;
+    }
 
-    var rids1 = getRids(calendar1);
-    var rids2 = getRids(calendar2);
-
-    addOverrides(calendar1, rids1.master,
-                 diff(rids2.rids, rids1.rids);
-    addOverrides(calendar2, rids2.master,
-                 diff(rids1.rids, rids2.rids));
+    for (var rid : missingRids) {
+      // if (we were fed an already derived component, use that, otherwise make a new one
+      var newcomp = calendar.deriveComponent(rid);
+      if (newcomp != null) {
+        calendar.addComponent(newcomp);
+      }
+    }
   }
-*/
 
   private static final Set<String> attendeeProps =
           new TreeSet<>(Arrays.asList("ATTENDEE",

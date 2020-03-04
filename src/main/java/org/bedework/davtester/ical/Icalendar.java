@@ -3,6 +3,7 @@
 */
 package org.bedework.davtester.ical;
 
+import org.bedework.util.misc.Util;
 import org.bedework.util.timezones.Timezones;
 
 import net.fortuna.ical4j.data.CalendarBuilder;
@@ -11,17 +12,23 @@ import net.fortuna.ical4j.data.UnfoldingReader;
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
+import net.fortuna.ical4j.model.Date;
+import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.TimeZone;
 import net.fortuna.ical4j.model.TimeZoneRegistry;
 import net.fortuna.ical4j.model.TimeZoneRegistryFactory;
 import net.fortuna.ical4j.model.component.CalendarComponent;
 import net.fortuna.ical4j.model.component.VTimeZone;
+import net.fortuna.ical4j.model.property.DtEnd;
+import net.fortuna.ical4j.model.property.DtStart;
+import net.fortuna.ical4j.model.property.RecurrenceId;
 import net.fortuna.ical4j.util.Strings;
 import net.fortuna.ical4j.validate.ValidationException;
 
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -130,6 +137,121 @@ public class Icalendar extends Component {
 
     cal.getComponents().clear();
     cal.getComponents().addAll(res);
+  }
+
+  public CalendarComponent getMaster() {
+    if (cal == null) {
+      return null;
+    }
+
+    for (final var c: cal.getComponents()) {
+      if (c.getProperty(Property.RECURRENCE_ID) == null) {
+        return c;
+      }
+    }
+
+    return null;
+  }
+
+  public CalendarComponent deriveComponent(final RecurrenceId recurrenceId) {
+    var master = getMaster();
+    if (master == null) {
+      return null;
+    }
+
+    try {
+      var newComp = (CalendarComponent)master.copy();
+
+      removeProps(newComp, Property.RRULE);
+      removeProps(newComp, Property.RDATE);
+      removeProps(newComp, Property.EXRULE);
+      removeProps(newComp, Property.EXDATE);
+      removeProps(newComp, Property.RECURRENCE_ID);
+
+      // Make a DTSTART from the recurrence id
+      // If not a duration we need to make a DTEND
+
+      final DtStart start =
+              (DtStart)newComp.getProperty(Property.DTSTART);
+
+      final DtEnd end =
+              (DtEnd)newComp.getProperty(Property.DTEND);
+
+      long duration = 0L;
+      if (end != null) {
+        var startTm = start.getDate().getTime();
+        var endTm = end.getDate().getTime();
+
+        duration = endTm - startTm;
+      }
+
+      final DtStart newStart =
+              new DtStart(recurrenceId.getParameters(),
+                          recurrenceId.getDate());
+      removeProps(newComp, Property.DTSTART);
+      addProp(newComp, newStart);
+
+      if (end != null) {
+        final DtEnd newEnd =
+                new DtEnd(recurrenceId.getParameters(),
+                          new Date(recurrenceId.getDate().getTime() +
+                                           duration));
+        removeProps(newComp, Property.DTEND);
+        addProp(newComp, newEnd);
+      }
+
+      addProp(newComp, recurrenceId);
+
+      return newComp;
+    } catch (final Throwable t) {
+      return throwException(t);
+    }
+  }
+
+  private class StartComparator implements Comparator<Component> {
+    @Override
+    public int compare(Component c1, Component c2) {
+      final Date start1 = getStartDate(c1);
+      final Date start2 = getStartDate(c2);
+
+      return Util.cmpObjval(start1, start2);
+    }
+  }
+
+  public void sort() {
+    if (cal == null) {
+      return;
+    }
+
+    cal.getComponents().sort(new StartComparator());
+  }
+
+  public void addComponent(final CalendarComponent c) {
+    if (cal == null) {
+      return;
+    }
+
+    cal.getComponents().add(c);
+  }
+
+  private Date getStartDate(final Component c) {
+    final DtStart start =
+            (DtStart)c.getProperty(Property.DTSTART);
+    if (start != null) {
+      return start.getDate();
+    }
+
+    return null;
+  }
+
+  private void removeProps(final Component c,
+                           final String pname) {
+    c.getProperties().removeIf(p -> p.getName().equals(pname));
+  }
+
+  private void addProp(final Component c,
+                       final Property p) {
+    c.getProperties().add(p);
   }
 
   public ComponentList<Component> getComponents() {
