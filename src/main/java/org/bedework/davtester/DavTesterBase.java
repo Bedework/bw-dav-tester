@@ -33,8 +33,11 @@ import java.util.Stack;
 import java.util.TreeSet;
 import java.util.logging.Level;
 
+import static java.lang.String.format;
 import static org.bedework.davtester.XmlUtils.children;
+import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.contentUtf8;
+import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -50,7 +53,8 @@ public abstract class DavTesterBase implements Logged {
 
   protected boolean only;
 
-  public boolean httpTrace = false;
+  public boolean ignore;
+  public boolean httpTrace;
   private Stack<Level> savedHttpLevels = new Stack<>();
 
   private Set<String> requireFeatures = new TreeSet<>();
@@ -64,7 +68,7 @@ public abstract class DavTesterBase implements Logged {
 
   /**
    *
-   * @return kind ffor labelling - e.g. TEST, REQUEST etc
+   * @return kind for labelling - e.g. TEST, REQUEST etc
    */
   public abstract String getKind();
 
@@ -92,7 +96,61 @@ public abstract class DavTesterBase implements Logged {
     return res;
   }
 
-  protected void parseFeatures(final Element node, final boolean require) {
+  /** Parse the xml for the current file.
+   *
+   * @param node root node for current structure
+   */
+  public void parseXML(final Element node) {
+    parseAttributes(node);
+
+    for (var child : children(node)) {
+      if (!xmlNode(child)) {
+        warn(format("Unknown child element %s for %s",
+                    child, node));
+      }
+    }
+  }
+
+  /** Should be overriden by any subclass which has custom attributes
+   * applied to the root node. Overriding methods should always call
+   * the super method.
+   *
+   * @param node root node of the current structure
+   */
+  public void parseAttributes(final Element node) {
+    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
+                                       false);
+    ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
+  }
+
+  /** This is called by parseXml and should be overridden by subclasses.
+   *
+   * @param node to possibly process
+   * @return true if processed
+   */
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_DESCRIPTION)) {
+      description = content(node);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
+      parseFeatures(node, true);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
+      parseFeatures(node, false);
+      return true;
+    }
+
+    return false;
+  }
+
+  protected void parseFeatures(final Element node,
+                               final boolean require) {
     for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
         if (require) {

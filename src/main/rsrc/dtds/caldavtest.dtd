@@ -14,85 +14,108 @@
  limitations under the License.
  -->
 
-<!ELEMENT caldavtest (description?, require-feature?, default-filters-applied*, start, test-suite*, end) >
-	<!ATTLIST caldavtest ignore-all (yes|no) "no"
-          http-trace (yes|no) "no">
+  <!ELEMENT caldavtest (require-feature?, exclude-feature?, description?,
+                default-filters-applied*, start, test-suite*, end) >
+        <!ATTLIST caldavtest ignore (yes|no) "no"
+                http-trace (yes|no) "no">
 
-	<!ELEMENT description (#PCDATA)>
+  <!ELEMENT description (#PCDATA)>
 
-	<!ELEMENT require-feature (feature*)>
-		<!ELEMENT feature (#PCDATA)>
+  <!ELEMENT require-feature (feature*)>
 
-	<!ELEMENT exclude-feature (feature*)>
+  <!ELEMENT feature (#PCDATA)>
+
+  <!ELEMENT exclude-feature (feature*)>
 
   <!ELEMENT default-filters-applied (callback, name)>
 
-	<!ELEMENT start (request*)>
-	<!ELEMENT end (request*)>
+  <!ELEMENT start (request*)>
 
-	<!ELEMENT pause EMPTY>
+  <!ELEMENT end (request*)>
 
-	<!ELEMENT request (require-feature?, exclude-feature?, method, ruri*, header*, data?, verify*,
-						graburi?, grabcount?, grabheader*, grabproperty*, grabelement*, grabjson*, grabcalproperty*, grabcalparameter*)>
-		<!ATTLIST request host2 (yes|no) "no"
-						 auth (yes|no) "yes"
-             http-trace (yes|no) "no"
-						 user CDATA ""
-						 pswd CDATA ""
-						 cert CDATA ""
-						 end-delete (yes|no) "no"
-						 print-response (yes|no) "no"
-						 iterate-data (yes|no) "no"
-						 wait-for-success (yes|no) "no">
-		
-		<!ELEMENT method (#PCDATA)>
-		<!ELEMENT ruri (#PCDATA)>
-			<!ATTLIST ruri quote (yes|no) "yes">
-		<!ELEMENT header (name, value)>
-			<!ELEMENT name (#PCDATA)>
-			<!ELEMENT value (#PCDATA)>
-		<!ELEMENT data (content-type, (filepath | generator), substitute*)>
-			<!ATTLIST data substitutions (yes|no) "yes"
-						   generate      (yes|no) "no">
-			<!ELEMENT content-type (#PCDATA)>
-			<!ELEMENT filepath (#PCDATA)>
-			<!ELEMENT generator (callback, arg*)>
-			<!ELEMENT substitute (name, value)>
+  <!ELEMENT pause EMPTY>
 
-		<!ELEMENT verify (require-feature?, exclude-feature?, callback, arg*)>
-			
-				<!ELEMENT callback (#PCDATA)>
-				<!ELEMENT arg (name, value*)>
-		
-		<!ELEMENT graburi (#PCDATA)>
+  <!ELEMENT request (require-feature?, exclude-feature?, description?,
+          method, ruri*,
+          header*, data?, verify*,	graburi?, grabcount?,
+          grabheader*, grabproperty*, grabelement*,
+          grabjson*, grabcalproperty*, grabcalparameter*)>
+        <!ATTLIST request host2 (yes|no) "no"
+                auth (yes|no) "yes"
+                http-trace (yes|no) "no"
+                user CDATA ""
+                pswd CDATA ""
+                cert CDATA ""
+                end-delete (yes|no) "no"
+                print-response (yes|no) "no"
+                iterate-data (yes|no) "no"
+                wait-for-success (yes|no) "no">
 
-		<!ELEMENT grabcount (#PCDATA)>
+  <!ELEMENT method (#PCDATA)>
 
-		<!ELEMENT grabheader (name, variable)>
-	
-		<!ELEMENT grabproperty (property, variable)>
-			<!ELEMENT property (#PCDATA)>
-			<!ELEMENT variable (#PCDATA)>
+  <!ELEMENT ruri (#PCDATA)>
+        <!ATTLIST ruri quote (yes|no) "yes">
 
-		<!ELEMENT grabelement (name, parent*, variable+)>
+  <!ELEMENT header (name, value)>
 
-		<!ELEMENT grabjson (pointer, variable+)>
+  <!ELEMENT name (#PCDATA)>
 
-		<!ELEMENT grabcalproperty (name, variable)>
-		<!ELEMENT grabcalparameter (name, variable)>
+  <!ELEMENT value (#PCDATA)>
 
-	<!ELEMENT test-suite (require-feature?, exclude-feature?, description?, test*)>
-		<!ATTLIST test-suite name CDATA #REQUIRED
-							ignore (yes|no) "no"
-							only (yes|no) "no"
-							change-uid (yes|no) "no"
-              http-trace (yes|no) "no">
-	
-		<!ELEMENT test (require-feature?, exclude-feature?, description?, (request|pause)+)>
-			<!ATTLIST test name CDATA #REQUIRED
-						  count CDATA "1"
-						  stats (yes|no) "no"
-						  ignore (yes|no) "no"
-              skip-suite-on-fail (yes|no) "no"
-						  only (yes|no) "no"
-              http-trace (yes|no) "no">
+  <!ELEMENT data (description?, content-type, (filepath | generator),
+          substitute*)>
+        <!ATTLIST data substitutions (yes|no) "yes"
+                generate      (yes|no) "no">
+
+  <!ELEMENT content-type (#PCDATA)>
+
+  <!ELEMENT filepath (#PCDATA)>
+
+  <!ELEMENT generator (callback, arg*)>
+
+  <!ELEMENT substitute (name, value)>
+
+  <!ELEMENT verify (require-feature?, exclude-feature?, description?,
+          callback, arg*)>
+
+  <!ELEMENT callback (#PCDATA)>
+
+  <!ELEMENT arg (name, value*)>
+
+  <!ELEMENT graburi (#PCDATA)>
+
+  <!ELEMENT grabcount (#PCDATA)>
+
+  <!ELEMENT grabheader (name, variable)>
+
+  <!ELEMENT grabproperty (property, variable)>
+
+  <!ELEMENT property (#PCDATA)>
+
+  <!ELEMENT variable (#PCDATA)>
+
+  <!ELEMENT grabelement (name, parent*, variable+)>
+
+  <!ELEMENT grabjson (pointer, variable+)>
+
+  <!ELEMENT grabcalproperty (name, variable)>
+
+  <!ELEMENT grabcalparameter (name, variable)>
+
+  <!ELEMENT test-suite (require-feature?, exclude-feature?, description?,
+                        test*)>
+        <!ATTLIST test-suite name CDATA #REQUIRED
+                ignore (yes|no) "no"
+                only (yes|no) "no"
+                change-uid (yes|no) "no"
+                http-trace (yes|no) "no">
+
+  <!ELEMENT test (require-feature?, exclude-feature?, description?,
+                   (request|pause)+)>
+        <!ATTLIST test name CDATA #REQUIRED
+                count CDATA "1"
+                stats (yes|no) "no"
+                ignore (yes|no) "no"
+                skip-suite-on-fail (yes|no) "no"
+                only (yes|no) "no"
+                http-trace (yes|no) "no">

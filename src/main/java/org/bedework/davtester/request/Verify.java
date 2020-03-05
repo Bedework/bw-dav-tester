@@ -126,20 +126,20 @@ public class Verify extends DavTesterBase {
     return "VERIFY";
   }
 
-  public void parseXML(final Element node) {
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-        parseFeatures(child, true);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-        parseFeatures(child, false);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_CALLBACK)) {
-        callback = contentUtf8(child);
-        name = callback;
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_ARG)) {
-        parseArgXML(child);
-      }
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_CALLBACK)) {
+      callback = contentUtf8(node);
+      name = callback;
+      return true;
     }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_ARG)) {
+      parseArgXML(node);
+      return true;
+    }
+
+    return super.xmlNode(node);
   }
 
   public void parseArgXML(final Element node) {

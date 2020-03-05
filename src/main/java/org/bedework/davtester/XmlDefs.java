@@ -107,7 +107,6 @@ public interface XmlDefs {
   String ATTR_GENERATE = "generate";
   String ATTR_HTTP_TRACE = "http-trace";
   String ATTR_IGNORE = "ignore";
-  String ATTR_IGNORE_ALL = "ignore-all";
   String ATTR_INTERVAL = "interval";
   String ATTR_ITERATE_DATA = "iterate-data";
   String ATTR_NAME = "name";

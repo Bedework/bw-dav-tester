@@ -25,8 +25,6 @@ import java.util.List;
 
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
-import static org.bedework.davtester.XmlUtils.children;
-import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
@@ -35,7 +33,6 @@ import static org.bedework.util.xml.XmlUtil.nodeMatches;
  * Maintains a list of tests to run as part of a 'suite'.
  */
 class Testsuite extends DavTesterBase {
-  public boolean ignore;
   private boolean changeuid;
   private boolean errorSkip;
 
@@ -50,29 +47,26 @@ class Testsuite extends DavTesterBase {
     return "Testsuite";
   }
 
-  public void parseXML(final Element node) {
+  @Override
+  public void parseAttributes(final Element node) {
+    super.parseAttributes(node);
+
     name = getAttrVal(node, XmlDefs.ATTR_NAME);
-    ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
     only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
     changeuid = getYesNoAttributeValue(node,
                                        XmlDefs.ATTR_CHANGE_UID);
-    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
-                                       false);
+  }
 
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-        parseFeatures(child, true);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-        parseFeatures(child, false);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
-        description = content(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_TEST)) {
-        var t = new Test(manager);
-        t.parseXML(child);
-        tests.add(t);
-      }
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_TEST)) {
+      var t = new Test(manager);
+      t.parseXML(node);
+      tests.add(t);
+      return true;
     }
+
+    return super.xmlNode(node);
   }
 
   public TestResult run(final KeyVals testfile,

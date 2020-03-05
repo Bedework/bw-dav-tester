@@ -58,31 +58,45 @@ public class Data extends DavTesterBase {
     return "REQUEST.DATA";
   }
 
-  public void parseXML(final Element node) {
+  @Override
+  public void parseAttributes(final Element node) {
+    super.parseAttributes(node);
+
     substitute = getYesNoAttributeValue(node,
                                         XmlDefs.ATTR_SUBSTITUTIONS,
                                         true);
     generate = getYesNoAttributeValue(node,
                                       XmlDefs.ATTR_GENERATE,
                                       false);
+  }
 
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_CONTENTTYPE)) {
-        contentType = contentUtf8(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_FILEPATH)) {
-        filepath = manager.normResPath(contentUtf8(child)).toString();
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_CONTENTTYPE)) {
+      contentType = contentUtf8(node);
+      return true;
+    }
 
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_GENERATOR)) {
-        throwException("generator: unimplemented");
+    if (nodeMatches(node, XmlDefs.ELEMENT_FILEPATH)) {
+      filepath = manager.normResPath(contentUtf8(node)).toString();
+      return true;
+    }
 
-          /* GENERATOR
+    if (nodeMatches(node, XmlDefs.ELEMENT_GENERATOR)) {
+      throwException("generator: unimplemented");
+
+      /* GENERATOR
           generator = new generator(manager);
           generator.parseXML(child);
            */
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTE)) {
-        parseSubstituteXML(child);
-      }
     }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_SUBSTITUTE)) {
+      parseSubstituteXML(node);
+      return true;
+    }
+
+    return super.xmlNode(node);
   }
 
   public void parseSubstituteXML(final Element node) {

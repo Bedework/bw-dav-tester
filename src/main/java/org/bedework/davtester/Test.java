@@ -28,11 +28,9 @@ import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_FAILED;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
 import static org.bedework.davtester.Manager.RESULT_OK;
-import static org.bedework.davtester.XmlUtils.attr;
-import static org.bedework.davtester.XmlUtils.children;
-import static org.bedework.davtester.XmlUtils.content;
 import static org.bedework.davtester.XmlUtils.getIntAttributeValue;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
+import static org.bedework.util.xml.XmlUtil.getAttrVal;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -48,7 +46,7 @@ class Test extends DavTesterBase {
   public boolean skipSuiteOnFail;
   int count = 1;
 
-  List<Request> requests = new ArrayList<>();
+  private List<Request> requests = new ArrayList<>();
 
   public Test(final Manager manager) {
     super(manager);
@@ -59,30 +57,34 @@ class Test extends DavTesterBase {
     return "TEST";
   }
 
-  public void parseXML(final Element node) {
-    name = attr(node, XmlDefs.ATTR_NAME);
+  @Override
+  public void parseAttributes(final Element node) {
+    super.parseAttributes(node);
+
+    name = getAttrVal(node, XmlDefs.ATTR_NAME);
+    only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
     details = getYesNoAttributeValue(node, XmlDefs.ATTR_DETAILS);
     count = getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
     stats = getYesNoAttributeValue(node, XmlDefs.ATTR_STATS);
     ignore = getYesNoAttributeValue(node, XmlDefs.ATTR_IGNORE);
-    only = getYesNoAttributeValue(node, XmlDefs.ATTR_ONLY);
     skipSuiteOnFail = getYesNoAttributeValue(node, XmlDefs.ATTR_SKIP_SUITE_ON_FAIL);
-    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
-                                       false);
+  }
 
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-        parseFeatures(child, true);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-        parseFeatures(child, false);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
-        description = content(child);
-      }
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_REQUEST)) {
+      var req = new Request(manager);
+      req.parseXML(node);
+      requests.add(req);
+      return true;
     }
 
-    // get request
-    requests = Request.parseList(manager, node);
+    if (nodeMatches(node, XmlDefs.ELEMENT_PAUSE)) {
+      requests.add(Request.PauseClass.pause);
+      return true;
+    }
+
+    return super.xmlNode(node);
   }
 
   public TestResult run(final KeyVals testsuite,

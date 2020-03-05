@@ -455,15 +455,16 @@ public class Request extends DavTesterBase {
     eem.setEntity(entity);
   }
 
-  public void parseXML(final Element node) {
+  @Override
+  public void parseAttributes(final Element node) {
+    super.parseAttributes(node);
+
     auth = getYesNoAttributeValue(node, XmlDefs.ATTR_AUTH, true);
-    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
-                                       false);
     setUser(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_USER)));
     setPswd(manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_PSWD)));
     cert = manager.serverInfo.subs(attrUtf8(node, XmlDefs.ATTR_CERT));
     endDelete = getYesNoAttributeValue(node,
-                                        XmlDefs.ATTR_END_DELETE);
+                                       XmlDefs.ATTR_END_DELETE);
     printRequest = manager.globals.getPrintRequest() ||
             getYesNoAttributeValue(node, XmlDefs.ATTR_PRINT_REQUEST);
     printResponse = manager.globals.getPrintResponse() ||
@@ -480,54 +481,89 @@ public class Request extends DavTesterBase {
       afunix = manager.serverInfo.afunix2;
     }
      */
+  }
 
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-        parseFeatures(child, true);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-        parseFeatures(child, false);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_METHOD)) {
-        method = contentUtf8(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_HEADER)) {
-        parseHeader(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_RURI)) {
-        ruriQuote = getYesNoAttributeValue(child,
-                                           XmlDefs.ATTR_QUOTE,
-                                           true);
-        ruris.add(manager.serverInfo.subs(contentUtf8(child)));
-        if (ruris.size() == 1) {
-          ruri = ruris.get(0);
-        }
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_DATA)) {
-        data = new Data(manager);
-        data.parseXML(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_VERIFY)) {
-        var v = new Verify(manager);
-        verifiers.add(v);
-        v.parseXML(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABURI)) {
-        graburi = contentUtf8(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABCOUNT)) {
-        grabcount = contentUtf8(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABHEADER)) {
-        parseGrab(child, grabheader);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_GRABPROPERTY)) {
-        parseGrab(child, grabproperty);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_GRABELEMENT)) {
-        parseMultiGrab(child, grabelement);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_GRABJSON)) {
-        parseMultiGrab(child, grabjson);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_GRABCALPROP)) {
-        parseGrab(child, grabcalprop);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_GRABCALPARAM)) {
-        parseGrab(child, grabcalparam);
-      }
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_METHOD)) {
+      method = contentUtf8(node);
+      return true;
     }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_HEADER)) {
+      parseHeader(node);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_RURI)) {
+      ruriQuote = getYesNoAttributeValue(node,
+                                         XmlDefs.ATTR_QUOTE,
+                                         true);
+      ruris.add(manager.serverInfo.subs(contentUtf8(node)));
+      if (ruris.size() == 1) {
+        ruri = ruris.get(0);
+      }
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_DATA)) {
+      data = new Data(manager);
+      data.parseXML(node);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_VERIFY)) {
+      var v = new Verify(manager);
+      verifiers.add(v);
+      v.parseXML(node);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_GRABURI)) {
+      graburi = contentUtf8(node);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_GRABCOUNT)) {
+      grabcount = contentUtf8(node);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_GRABHEADER)) {
+      parseGrab(node, grabheader);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_GRABPROPERTY)) {
+      parseGrab(node, grabproperty);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_GRABELEMENT)) {
+      parseMultiGrab(node, grabelement);
+      return true;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_GRABJSON)) {
+      parseMultiGrab(node, grabjson);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_GRABCALPROP)) {
+      parseGrab(node, grabcalprop);
+      return true;
+    }
+
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_GRABCALPARAM)) {
+      parseGrab(node, grabcalparam);
+      return true;
+    }
+
+    return super.xmlNode(node);
   }
 
   public void parseHeader(final Element node) {
@@ -546,25 +582,6 @@ public class Request extends DavTesterBase {
       headers.add(new BasicHeader(name, value));
     }
   }
-
-  public static List<Request> parseList(final Manager manager,
-                                        final Element node) {
-    final List<Request> requests = new ArrayList<>();
-
-    for (var child: children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_REQUEST)) {
-        var req = new Request(manager);
-        req.parseXML(child);
-        requests.add(req);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_PAUSE)) {
-        requests.add(PauseClass.pause);
-      }
-    }
-
-    return requests;
-  }
-
-//    parseList = staticmethod(parseList)
 
   public void parseGrab(final Element node, final List<KeyVal>  appendto) {
     String name = null;
@@ -819,7 +836,7 @@ public class Request extends DavTesterBase {
 
     // Cache delayed delete
     if (endDelete) {
-      manager.currentTestfile.addEndDelete(ruri, this);
+      manager.currentTestfile.endDeletes.add(ruri, this);
     }
 
     if (ruri == null) {

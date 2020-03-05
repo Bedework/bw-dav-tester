@@ -15,29 +15,16 @@
 */
 package org.bedework.davtester;
 
-import org.bedework.davtester.request.Request;
-import org.bedework.util.misc.Util;
-import org.bedework.util.xml.tagdefs.WebdavTags;
-
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.servlet.http.HttpServletResponse;
-
 import static java.lang.String.format;
 import static org.bedework.davtester.Manager.RESULT_IGNORED;
-import static org.bedework.davtester.Utils.throwException;
-import static org.bedework.davtester.XmlUtils.children;
-import static org.bedework.davtester.XmlUtils.childrenMatching;
-import static org.bedework.davtester.XmlUtils.content;
-import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
@@ -49,48 +36,14 @@ public class Testfile extends DavTesterBase {
     return "CALDAVTEST";
   }
 
-  public static class RequestPars {
-    final String uri;
-    final Request req;
-
-    public RequestPars(final String uri,
-                       final Request req) {
-      this.uri = uri;
-      this.req = req;
-    }
-
-    public Request makeRequest(final String method,
-                               final Manager manager) {
-      var nreq = new Request(manager);
-
-      nreq.method = method;
-
-      nreq.scheme = req.scheme;
-      nreq.host = req.host;
-      nreq.port = req.port;
-
-      nreq.ruris.add(uri);
-      nreq.ruri = uri;
-      if (req.getUser() != null) {
-        nreq.setUser(req.getUser());
-      }
-      if (req.getPswd() != null) {
-        nreq.setPswd(req.getPswd());
-      }
-      nreq.cert = req.cert;
-
-      return nreq;
-    }
-  }
-
   public Path testPath;
 
-  boolean ignoreAll;
   public boolean only;
 
-  private List<Request> startRequests = new ArrayList<>();
-  private List<Request> endRequests = new ArrayList<>();
-  private Map<String, RequestPars> endDeletes = new HashMap<>();
+  private StartEndTest startRequests;
+  private StartEndTest endRequests;
+
+  public EndDeletes endDeletes;
 
   private List<Testsuite> suites = new ArrayList<>();
   private Testsuite currentSuite;
@@ -104,6 +57,8 @@ public class Testfile extends DavTesterBase {
     super(manager);
     this.testPath = testPath;
     this.name = testPath.getFileName().toString();
+
+    endDeletes = new EndDeletes(manager);
 
     doc = XmlUtils.parseXml(testPath.toString());
     parseXML(doc.getDocumentElement());
@@ -141,11 +96,15 @@ public class Testfile extends DavTesterBase {
         httpTraceOn();
       }
 
+      final boolean doReqres;
+
+      if (startRequests != null) {
+        doReqres = startRequests.run();
+      } else {
+        doReqres = true;
+      }
+
       final TestResult res;
-      var doReqres = doRequests("Start Requests...", startRequests,
-                          true,
-                          format("%s | %s", name,
-                                        "START_REQUESTS"));
 
       if (!doReqres) {
         manager.testFile(testPath.toString(),
@@ -155,10 +114,13 @@ public class Testfile extends DavTesterBase {
       } else {
         res = runSuites(name);
       }
-      doEnddelete("Deleting Requests...", format("%s | %s", name,
-                  "END_DELETE"));
-      doRequests("End Requests...", endRequests, false,
-                 format("%s | %s", name, "END_REQUESTS"));
+
+      endDeletes.run();
+
+      if (endRequests != null) {
+        endRequests.run();
+      }
+
       return res;
     } catch (final Throwable t) {
       manager.testFile(testPath.toString(),
@@ -187,67 +149,7 @@ public class Testfile extends DavTesterBase {
     return res;
   }
 
-  private boolean doRequests(final String description,
-                             final List<Request> requests,
-                             final boolean forceverify,
-                             final String label) {
-    /* This method is only used for start and end requests
-     */
-    if (Util.isEmpty(requests)) {
-      return true;
-    }
-
-    var result = true;
-
-    manager.trace("Start: " + description);
-
-    var reqCount = 1;
-    StringBuilder resulttxt = new StringBuilder();
-
-    for (var req: requests) {
-      var resreq = req.run(false,
-                           false, // doverify,
-                           forceverify,
-                           null, // stats
-                           null, // etags
-                           format("%s | #%s", label, reqCount),
-                           1);  // count
-      if (resreq.message != null) {
-        resulttxt.append(resreq.message);
-      }
-
-      if (!resreq.ok &&
-         (!req.method.equals("DELETE") ||
-                (resreq.status != HttpServletResponse.SC_NOT_FOUND))) {
-        resulttxt.append(format(
-                "\nFailure during multiple requests " +
-                        "#%d out of %d, request=%s",
-                reqCount, requests.size(),
-                req));
-        result = false;
-        break;
-      }
-
-      reqCount++;
-    }
-
-    final String s;
-    if (result) {
-      s = "[OK]";
-    } else {
-      s = "[FAILED]";
-      manager.logit(resulttxt.toString());
-    }
-
-    manager.trace(format("%s60%s5",
-                         "End: " + description,
-                         s));
-    if (resulttxt.length() > 0) {
-      manager.trace(resulttxt.toString());
-    }
-    return result;
-  }
-
+  /*
   private String getOneHref(final Element node) {
     var href = childrenMatching(node, WebdavTags.href);
 
@@ -257,58 +159,36 @@ public class Testfile extends DavTesterBase {
 
     return content(href.get(0));
   }
+  */
 
-  public void addEndDelete(final String uri,
-                           final Request req) {
-    if (endDeletes.containsKey(uri)) {
-      return;
+  @Override
+  public boolean xmlNode(final Element node) {
+    if (nodeMatches(node,
+                    XmlDefs.ELEMENT_DEFAULTFILTERSAPPLIED)) {
+      parseDefaultFiltersApplied(node);
+      return true;
     }
 
-    endDeletes.put(uri, new RequestPars(uri, req));
-  }
-
-  public void doEnddelete(final String description,
-                          final String label) {
-    if (endDeletes.isEmpty()) {
-      return;
+    if (nodeMatches(node, XmlDefs.ELEMENT_START)) {
+      startRequests = new StartEndTest(manager, true);
+      startRequests.parseXML(node);
+      return true;
     }
-    manager.trace("Start: " + description);
-    for (var delReq: endDeletes.values()) {
-      var req = delReq.makeRequest("DELETE", manager);
-      req.run(false, false, false, null, null, label, 0);
-    }
-    manager.trace(format("%s60%s", "End: " + description, "[DONE]"));
-  }
 
-  public void parseXML(final Element node) {
-    ignoreAll = getYesNoAttributeValue(node,
-                                       XmlDefs.ATTR_IGNORE_ALL,
-                                       false);
-    httpTrace = getYesNoAttributeValue(node, XmlDefs.ATTR_HTTP_TRACE,
-                                       false);
-
-    for (var child : children(node)) {
-      if (nodeMatches(child, XmlDefs.ELEMENT_DESCRIPTION)) {
-        description = content(child);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_REQUIRE_FEATURE)) {
-        parseFeatures(child, true);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_EXCLUDE_FEATURE)) {
-        parseFeatures(child, false);
-      } else if (nodeMatches(child,
-                             XmlDefs.ELEMENT_DEFAULTFILTERSAPPLIED)) {
-        parseDefaultFiltersApplied(child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_START)) {
-        startRequests = Request.parseList(manager, child);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_TESTSUITE)) {
-        var suite = new Testsuite(manager);
-        suite.parseXML(child);
-        suites.add(suite);
-      } else if (nodeMatches(child, XmlDefs.ELEMENT_END)) {
-        endRequests = Request.parseList(manager, child);
-      }
+    if (nodeMatches(node, XmlDefs.ELEMENT_END)) {
+      endRequests = new StartEndTest(manager, false);
+      endRequests.parseXML(node);
+      return true;
     }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_TESTSUITE)) {
+      var suite = new Testsuite(manager);
+      suite.parseXML(node);
+      suites.add(suite);
+      return true;
+    }
+
+    return super.xmlNode(node);
   }
 
   /*

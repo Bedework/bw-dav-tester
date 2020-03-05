@@ -494,8 +494,8 @@ public class Manager implements Logged {
       // Open and parse the config file
       var test = new Testfile(this, testfile, false);
 
-      // ignore if all mode and ignore-all is set
-      if (!all || !test.ignoreAll) {
+      // ignore if all mode and ignore is set
+      if (!all || !test.ignore) {
         testFiles.add(test);
       }
     }

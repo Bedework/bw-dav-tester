@@ -18,7 +18,7 @@
  limitations under the License.
  -->
 
-<caldavtest ignore-all='no'>
+<caldavtest ignore='no'>
 	<description>Test calendar sharing travel time busy status</description>
 
 	<require-feature>

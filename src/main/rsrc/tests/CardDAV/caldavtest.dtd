@@ -15,7 +15,7 @@
  -->
 
 <!ELEMENT caldavtest (description?, require-feature?, start, test-suite*, end) >
-	<!ATTLIST caldavtest ignore-all (yes|no) "no">
+	<!ATTLIST caldavtest ignore (yes|no) "no">
 
 	<!ELEMENT description (#PCDATA)>
 

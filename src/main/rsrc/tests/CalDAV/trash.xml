@@ -18,7 +18,7 @@
  limitations under the License.
  -->
 
-<caldavtest ignore-all="no">
+<caldavtest ignore="no">
 	<description>Test trash-collection support on the server</description>
 
 	<require-feature>

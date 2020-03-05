@@ -5,8 +5,8 @@ Some notes made as working through tests.
 === Change to User-Agent
 I've added a constant prefix to the value so it's easier to pick out requests coming directly from the tester.
 
-=== Add description to test-suite
-Allows for a full description of what the suite is testing.
+=== Add description to caldavtest, test-suite
+Allows for a full description of what the file and suite are testing.
 
 === skip-suite-on-fail
 New attribute for a test. If the test fails in any way then remaining tests for the suite will be skipped.
@@ -14,6 +14,9 @@ New attribute for a test. If the test fails in any way then remaining tests for 
 This is appropriate for e.g. scheduling tests where if an attendee fails to receive an invite the remaining tests are meaningless.
 
 This shows the need for further changes. We have auto-delete on test files but we probably need something similar for suites. Some have tests at the end only to clean up. This should probably be done by specifying cleanup tests for the suite which get run regardless of failures (and don't figure in counts).
+
+=== ignore-all changed to ignore
+For consistency
 
 === XML data match
 The python version just did a string match of normalised data. By normalised - strip out some values - e.g dtstamp, parse the response and the test data and compare the resulting string representation.

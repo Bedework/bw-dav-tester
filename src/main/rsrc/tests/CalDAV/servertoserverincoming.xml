@@ -18,7 +18,7 @@
  limitations under the License.
  -->
 
-<caldavtest ignore-all="yes">
+<caldavtest ignore="yes">
 	<description>Test POST method in CalDAV</description>
 
 	<require-feature>
