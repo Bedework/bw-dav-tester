@@ -14,7 +14,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import static java.lang.String.format;
-import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
  * User: mike Date: 3/4/20 Time: 22:33
@@ -37,15 +36,9 @@ public class StartEndTest extends DavTesterBase {
 
   @Override
   public boolean xmlNode(final Element node) {
-    if (nodeMatches(node, XmlDefs.ELEMENT_REQUEST)) {
-      var req = new Request(manager);
-      req.parseXML(node);
+    var req = Request.checkNode(node, manager);
+    if (req != null) {
       requests.add(req);
-      return true;
-    }
-
-    if (nodeMatches(node, XmlDefs.ELEMENT_PAUSE)) {
-      requests.add(Request.PauseClass.pause);
       return true;
     }
 

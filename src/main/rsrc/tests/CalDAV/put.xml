@@ -167,7 +167,7 @@
 			</request>
 		</test>
 		<test name='3'>
-			<description>Plain VTODO with DTSTART/DUARTION only</description>
+			<description>Plain VTODO with DTSTART/DURATION only</description>
 			<request end-delete='yes'>
 				<method>PUT</method>
 				<ruri>$taskspath1:/3todo.ics</ruri>

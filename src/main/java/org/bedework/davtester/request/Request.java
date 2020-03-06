@@ -176,6 +176,13 @@ public void calcResponse(
  * be used to determine a satisfactory output or not.
  */
 public class Request extends DavTesterBase {
+  public final static String typeRequest = "request";
+  public final static String typeDelay = "delay";
+  public final static String typePause = "pause";
+  public final static String typeProvision = "provision";
+
+  public final String type;
+
   public String scheme;
   public String host;
   public int port;
@@ -222,7 +229,7 @@ public class Request extends DavTesterBase {
    */
   public static class PauseRequest extends Request {
     PauseRequest() {
-      super(null);
+      super(null, typePause);
     }
   }
 
@@ -230,14 +237,58 @@ public class Request extends DavTesterBase {
     public final static Request pause = new PauseRequest();
   }
 
-  public Request(final Manager manager) {
+  public Request(final Manager manager,
+                 final String type) {
     super(manager);
+    this.type = type;
     if (manager != null) {
       scheme = manager.serverInfo.getScheme();
       host = manager.serverInfo.host;
       port = manager.serverInfo.port;
       afunix = manager.serverInfo.afunix;
     }
+  }
+
+  /**
+   *
+   * @param node to test
+   * @param manager for globals
+   * @return null if not a request element - otherwise populated request
+   */
+  public static Request checkNode(final Element node,
+                                  final Manager manager) {
+    if (nodeMatches(node, XmlDefs.ELEMENT_REQUEST)) {
+      var req = new Request(manager, typeRequest);
+      req.parseXML(node);
+
+      return req;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_DELAY)) {
+      var req = new Request(manager, typeDelay);
+      req.parseXML(node);
+
+      req.method = "DELAY";
+
+      return req;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_PROVISION)) {
+      var req = new Request(manager, typeProvision);
+      req.parseXML(node);
+
+      if (req.method == null) {
+        req.method = "GET";
+      }
+
+      return req;
+    }
+
+    if (nodeMatches(node, XmlDefs.ELEMENT_PAUSE)) {
+      return Request.PauseClass.pause;
+    }
+
+    return null;
   }
 
   @Override
@@ -473,6 +524,14 @@ public class Request extends DavTesterBase {
                                          XmlDefs.ATTR_ITERATE_DATA);
     waitForSuccess = getYesNoAttributeValue(node,
                                             XmlDefs.ATTR_WAIT_FOR_SUCCESS);
+
+    if (type.equals(typeDelay)) {
+      method = "DELAY";
+      ruri = attrUtf8(node, XmlDefs.ATTR_WAIT);
+      if (StringUtils.isEmpty(ruri)) {
+        ruri = "1";
+      }
+    }
 
     /* HOST2
     if (getYesNoAttributeValue(node, XmlDefs.ATTR_HOST2, false)) {
@@ -916,12 +975,13 @@ public class Request extends DavTesterBase {
         if (getWait) {
           ct++;
 
-          if (status == HttpServletResponse.SC_NOT_FOUND){
+          getWait = (ct <= wcount) &&
+                  (status == HttpServletResponse.SC_NOT_FOUND);
+
+          if (getWait) {
             manager.delay();
             continue;
           }
-          getWait = (ct <= wcount) &&
-                  (status != HttpServletResponse.SC_OK);
         }
 
         final HttpEntity ent = resp.getEntity();

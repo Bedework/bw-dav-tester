@@ -31,7 +31,6 @@ import static org.bedework.davtester.Manager.RESULT_OK;
 import static org.bedework.davtester.XmlUtils.getIntAttributeValue;
 import static org.bedework.davtester.XmlUtils.getYesNoAttributeValue;
 import static org.bedework.util.xml.XmlUtil.getAttrVal;
-import static org.bedework.util.xml.XmlUtil.nodeMatches;
 
 /**
  *
@@ -72,15 +71,9 @@ class Test extends DavTesterBase {
 
   @Override
   public boolean xmlNode(final Element node) {
-    if (nodeMatches(node, XmlDefs.ELEMENT_REQUEST)) {
-      var req = new Request(manager);
-      req.parseXML(node);
+    var req = Request.checkNode(node, manager);
+    if (req != null) {
       requests.add(req);
-      return true;
-    }
-
-    if (nodeMatches(node, XmlDefs.ELEMENT_PAUSE)) {
-      requests.add(Request.PauseClass.pause);
       return true;
     }
 

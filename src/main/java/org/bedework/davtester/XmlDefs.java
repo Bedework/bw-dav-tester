@@ -26,6 +26,7 @@ public interface XmlDefs {
   QName ELEMENT_AUTHTYPE = new QName("authtype");
   QName ELEMENT_BODY = new QName("body");
   QName ELEMENT_CALDAVTEST = new QName("caldavtest");
+  QName ELEMENT_CALTEST = new QName("caltest");
   QName ELEMENT_CALENDARDATAFILTER = new QName("calendardatafilter");
   QName ELEMENT_CALLBACK = new QName("callback");
   QName ELEMENT_CERTDIR = new QName("certdir");
@@ -35,6 +36,7 @@ public interface XmlDefs {
   QName ELEMENT_DEFAULTFILTERS = new QName("default-filters");
   QName ELEMENT_DEFAULTFILTERSAPPLIED = new QName("default-filters-applied");
   QName ELEMENT_DESCRIPTION = new QName("description");
+  QName ELEMENT_DELAY = new QName("delay");
   QName ELEMENT_END = new QName("end");
   QName ELEMENT_EXCLUDE_FEATURE = new QName("exclude-feature");
   QName ELEMENT_FEATURES = new QName("features");
@@ -66,6 +68,7 @@ public interface XmlDefs {
   QName ELEMENT_PERIOD = new QName("period");
   QName ELEMENT_POINTER = new QName("pointer");
   QName ELEMENT_PROPERTY = new QName("property");
+  QName ELEMENT_PROVISION = new QName("provision");
   QName ELEMENT_REPEAT = new QName("repeat");
   QName ELEMENT_REQUEST = new QName("request");
   QName ELEMENT_REQUIRE_FEATURE = new QName("require-feature");
@@ -121,6 +124,7 @@ public interface XmlDefs {
   String ATTR_SUBSTITUTIONS = "substitutions";
   String ATTR_TIME_EXCEEDED = "time-exceeded";
   String ATTR_USER = "user";
+  String ATTR_WAIT = "wait";
   String ATTR_WAIT_FOR_SUCCESS = "wait-for-success";
 
   String ATTR_VALUE_NO = "no";

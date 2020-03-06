@@ -543,6 +543,12 @@
 		</test>
 	</test-suite>
 
-	<end/>
+	<end>
+    <description>Clean-up</description>
+    <request user="$userid1:" pswd="$pswd1:">
+      <method>DELETEALL</method>
+      <ruri>$calendarpath1:/</ruri>
+    </request>
+  </end>
 	
 </caldavtest>

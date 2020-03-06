@@ -15,6 +15,8 @@
 */
 package org.bedework.davtester;
 
+import org.bedework.util.misc.response.Response;
+
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
@@ -59,9 +61,37 @@ public class Testfile extends DavTesterBase {
     this.name = testPath.getFileName().toString();
 
     endDeletes = new EndDeletes(manager);
+  }
+
+  public Response readFile() {
+    var resp = new Response();
 
     doc = XmlUtils.parseXml(testPath.toString());
-    parseXML(doc.getDocumentElement());
+
+    if (doc == null) {
+      return Response.error(resp,
+                            format("No valid document for %s",
+                                   testPath));
+    }
+
+    final Element rootEl = doc.getDocumentElement();
+
+    if (nodeMatches(rootEl,
+                    XmlDefs.ELEMENT_CALTEST)) {
+      parseXML(rootEl);
+      return Response.ok(resp);
+    }
+
+    // Try old root
+    if (nodeMatches(rootEl,
+                    XmlDefs.ELEMENT_CALDAVTEST)) {
+      parseXML(rootEl);
+      return Response.ok(resp);
+    }
+
+    return Response.error(resp,
+                          format("Invalid root element %s",
+                                 rootEl));
   }
 
   public TestResult run() {

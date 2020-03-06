@@ -59,7 +59,8 @@ public class UriIdPw {
   public Request makeRequest(final Request originalRequest,
                              final String method,
                              final String depth) {
-    var req = new Request(originalRequest.manager);
+    var req = new Request(originalRequest.manager,
+                          originalRequest.type);
     req.method = method;
     req.scheme = originalRequest.scheme;
     req.host = originalRequest.host;

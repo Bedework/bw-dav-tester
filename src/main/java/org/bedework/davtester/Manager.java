@@ -60,7 +60,7 @@ public class Manager implements Logged {
   public TestResult totals = new TestResult();
 
   public static final String EX_INVALID_CONFIG_FILE = "Invalid Config File";
-  public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
+  //public static final String EX_FAILED_REQUEST = "HTTP Request Failed";
 
   public Serverinfo serverInfo;
 
@@ -75,8 +75,8 @@ public class Manager implements Logged {
   private List<Testfile> testFiles = new ArrayList<>();
   public Testfile currentTestfile;
 
-  boolean memUsage;
-  String postgresLog;
+  //boolean memUsage;
+  //String postgresLog;
   FileWriter logFile;
 
   private CloseableHttpClient httpClient;
@@ -147,8 +147,13 @@ public class Manager implements Logged {
         }
       }
 
+      if (Util.isEmpty(testNames)) {
+        warn("No testfiles specified: terminating");
+        return false;
+      }
+
       // Randomize file list
-      if (globals.getRandom() && !Util.isEmpty(testNames)) {
+      if (globals.getRandom()) {
         Collections.shuffle(testNames);
       }
 
@@ -444,10 +449,10 @@ public class Manager implements Logged {
       // HOST2 serverInfo.port2 = serverInfo.sslport2;
     }
 
-    if (serverInfo.certdir != null) {
+//    if (serverInfo.certdir != null) {
 //        serverInfo.certdir = os.path
 //                .join(base_dir, serverInfo.certdir)
-    }
+//    }
 
     final KeyVals moresubs = new KeyVals();
     moresubs.put("$host:", format("%s://%s", serverInfo.getScheme(), serverInfo.host));
@@ -493,6 +498,12 @@ public class Manager implements Logged {
 
       // Open and parse the config file
       var test = new Testfile(this, testfile, false);
+      final var tfResp = test.readFile();
+
+      if (!tfResp.isOk()) {
+        warn(tfResp.getMessage());
+        continue;
+      }
 
       // ignore if all mode and ignore is set
       if (!all || !test.ignore) {

@@ -1,0 +1,106 @@
+<?xml version="1.0" standalone="no"?>
+
+<!DOCTYPE caltest SYSTEM "caldavtest.dtd">
+
+<!--
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ -->
+
+<caltest>
+  <description>Test simple write and read of recurring entities.
+    Also carry out some simple time-ranged queries.
+  </description>
+
+  <require-feature>
+    <feature>caldav</feature>
+  </require-feature>
+
+  <start>
+    <description>Ensure account(s) provisioned</description>
+    <provision user="$userid1:" pswd="$pswd1:">
+      <ruri>$calendarpath1:/</ruri>
+    </provision>
+  </start>
+
+  <test-suite name="Write/Read simple recurring events">
+    <test name='1'>
+      <description>Write - then read - simple recurring. Ensure unchanged</description>
+      <request end-delete='yes'>
+        <method>PUT</method>
+        <ruri>$calendarpath1:/1r.ics</ruri>
+        <data>
+          <content-type>text/calendar; charset=utf-8</content-type>
+          <filepath>Resource/CalDAV/put/recurring/1.ics</filepath>
+        </data>
+        <verify>
+          <callback>statusCode</callback>
+        </verify>
+        <verify>
+          <callback>header</callback>
+          <arg>
+            <name>header</name>
+            <value>ETag</value>
+          </arg>
+        </verify>
+      </request>
+      <request>
+        <method>GETWAIT 5</method>
+        <ruri>$calendarpath1:/1r.ics</ruri>
+        <verify>
+          <description>Ensure unchanged</description>
+          <callback>calendarDataMatch</callback>
+          <arg>
+            <name>filepath</name>
+            <value>Resource/CalDAV/put/recurring/1.ics</value>
+          </arg>
+        </verify>
+      </request>
+    </test>
+    <test name='2'>
+      <description>Add an override</description>
+      <request end-delete='yes'>
+        <method>PUT</method>
+        <ruri>$calendarpath1:/1r.ics</ruri>
+        <data>
+          <content-type>text/calendar; charset=utf-8</content-type>
+          <filepath>Resource/CalDAV/put/recurring/2.ics</filepath>
+        </data>
+        <verify>
+          <callback>statusCode</callback>
+        </verify>
+        <verify>
+          <callback>header</callback>
+          <arg>
+            <name>header</name>
+            <value>ETag</value>
+          </arg>
+        </verify>
+      </request>
+      <delay wait="2"/>
+      <request>
+        <method>GETWAIT 5</method>
+        <ruri>$calendarpath1:/1r.ics</ruri>
+        <verify>
+          <description>Ensure now has override</description>
+          <callback>calendarDataMatch</callback>
+          <arg>
+            <name>filepath</name>
+            <value>Resource/CalDAV/put/recurring/2.ics</value>
+          </arg>
+        </verify>
+      </request>
+    </test>
+  </test-suite>
+
+  <end/>
+</caltest>

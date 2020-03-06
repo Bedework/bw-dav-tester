@@ -26,7 +26,7 @@ public class EndDeletes extends DavTesterBase {
 
     public Request makeRequest(final String method,
                                final Manager manager) {
-      var nreq = new Request(manager);
+      var nreq = new Request(manager, Request.typeRequest);
 
       nreq.method = method;
 

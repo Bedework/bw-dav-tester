@@ -14,9 +14,15 @@
  limitations under the License.
  -->
 
-  <!ELEMENT caldavtest (require-feature?, exclude-feature?, description?,
+  <!-- Try to move away from this to a more generic element -->
+  <!ELEMENT caldavtest (description?, require-feature?, exclude-feature?,
                 default-filters-applied*, start, test-suite*, end) >
         <!ATTLIST caldavtest ignore (yes|no) "no"
+                http-trace (yes|no) "no">
+
+  <!ELEMENT caltest (description?, require-feature?, exclude-feature?,
+                default-filters-applied*, start, test-suite*, end) >
+        <!ATTLIST caltest ignore (yes|no) "no"
                 http-trace (yes|no) "no">
 
   <!ELEMENT description (#PCDATA)>
@@ -29,18 +35,35 @@
 
   <!ELEMENT default-filters-applied (callback, name)>
 
-  <!ELEMENT start (request*)>
+  <!ELEMENT start (description?, (request|delay|pause|provision)*)>
 
-  <!ELEMENT end (request*)>
+  <!ELEMENT end (description?, (request|delay|pause)*)>
 
   <!ELEMENT pause EMPTY>
 
-  <!ELEMENT request (require-feature?, exclude-feature?, description?,
+  <!ELEMENT delay EMPTY>
+        <!ATTLIST delay wait CDATA "">
+
+  <!ELEMENT request (description?, require-feature?, exclude-feature?,
           method, ruri*,
           header*, data?, verify*,	graburi?, grabcount?,
           grabheader*, grabproperty*, grabelement*,
           grabjson*, grabcalproperty*, grabcalparameter*)>
         <!ATTLIST request host2 (yes|no) "no"
+                auth (yes|no) "yes"
+                http-trace (yes|no) "no"
+                user CDATA ""
+                pswd CDATA ""
+                cert CDATA ""
+                end-delete (yes|no) "no"
+                print-response (yes|no) "no"
+                iterate-data (yes|no) "no"
+                wait-for-success (yes|no) "no">
+
+  <!ELEMENT provision (description?, require-feature?, exclude-feature?,
+          method?, ruri*,
+          header*, data?, verify*)>
+        <!ATTLIST provision host2 (yes|no) "no"
                 auth (yes|no) "yes"
                 http-trace (yes|no) "no"
                 user CDATA ""
@@ -75,7 +98,7 @@
 
   <!ELEMENT substitute (name, value)>
 
-  <!ELEMENT verify (require-feature?, exclude-feature?, description?,
+  <!ELEMENT verify (description?, require-feature?, exclude-feature?,
           callback, arg*)>
 
   <!ELEMENT callback (#PCDATA)>
@@ -102,7 +125,7 @@
 
   <!ELEMENT grabcalparameter (name, variable)>
 
-  <!ELEMENT test-suite (require-feature?, exclude-feature?, description?,
+  <!ELEMENT test-suite (description?, require-feature?, exclude-feature?,
                         test*)>
         <!ATTLIST test-suite name CDATA #REQUIRED
                 ignore (yes|no) "no"
@@ -110,8 +133,12 @@
                 change-uid (yes|no) "no"
                 http-trace (yes|no) "no">
 
+  <!-- Note description after require-feature and exclude-feature.
+       I'd prefer first but that's a lot of tests to change.
+       It was already first for caldavtest
+  -->
   <!ELEMENT test (require-feature?, exclude-feature?, description?,
-                   (request|pause)+)>
+                   (request|delay|pause)+)>
         <!ATTLIST test name CDATA #REQUIRED
                 count CDATA "1"
                 stats (yes|no) "no"
