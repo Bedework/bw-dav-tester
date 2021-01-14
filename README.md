@@ -27,7 +27,7 @@ CalDAVTester is run as follows:
 	cd bw-dav-tester
 	./target/davtest/bin/davtest
 		[--config filename]
-		[--tests testsetname]
+		[--testset testsetname]
 		[file1 file2 ...]
 
 See the asciidoc documentation for information on configuration.
