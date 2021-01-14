@@ -132,31 +132,31 @@ public class Serverinfo {
     // Special handling for relative date-times
     var pos = sub.indexOf("$now.");
     while (pos != -1) {
-      var endpos = sub.indexOf(":", pos);
-      var subpos = sub.substring(pos);
-      String value;
+      final var endpos = sub.indexOf(":", pos);
+      final var subpos = sub.substring(pos);
+      final String value;
 
-      DtParts dtp = getDtParts();
+      final DtParts dtp = getDtParts();
 
       if (subpos.startsWith("$now.year.")) {
-        var yearoffset = ival(sub, pos + 10, endpos);
+        final var yearoffset = ival(sub, pos + 10, endpos);
         value = String.format("%d", dtp.year + yearoffset);
       } else if (subpos.startsWith("$now.month.")) {
-        var monthoffset = ival(sub, pos + 11, endpos);
+        final var monthoffset = ival(sub, pos + 11, endpos);
         var month = dtp.month + monthoffset;
-        var year = dtp.year + (month / 12);
+        final var year = dtp.year + (month / 12);
         month = month % 12;
         value = String.format("%d%02d", year, month);
       } else {
         final int dayOffset;
         if (sub.substring(pos).startsWith("$now.week.")) {
-          var weekoffset = ival(sub, pos + 10, endpos);
+          final var weekoffset = ival(sub, pos + 10, endpos);
           dayOffset = 7 * weekoffset;
         } else {
           dayOffset = ival(sub, pos + 5, endpos);
         }
 
-        var offDtp = getDtParts(dayOffset);
+        final var offDtp = getDtParts(dayOffset);
 
         value = String.format("%d%02d%02d",
                               offDtp.year,
@@ -189,7 +189,7 @@ public class Serverinfo {
 
     dbActual = Objects.requireNonNullElse(db, subsKvs);
 
-    for (var key: items.keySet()){
+    for (final var key: items.keySet()){
       dbActual.put(key, items.get(key));
     }
 
@@ -221,7 +221,7 @@ public class Serverinfo {
           value = value.substring(0, value.length() - 1);
         }
 
-        var els = value.split("/");
+        final var els = value.split("/");
 
         value = els[els.length - 1];
 
@@ -230,11 +230,11 @@ public class Serverinfo {
       } else if (variable.startsWith("urlpath(")) {
         variable = variable.substring("urlpath(".length(),
                                       variable.length() - 1);
-        URL url;
+        final URL url;
         String value = items.getOnlyString(variable);
         try {
           url = new URL(value);
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
           throw new RuntimeException(e);
         }
         value = url.getPath();
@@ -253,8 +253,8 @@ public class Serverinfo {
   public void newUIDs () {
     uidmaps.clear();
     for (int i = 1; i <= 21; i++) {
-      var key = String.format("$uid%d:", i);
-      var val = UUID.randomUUID().toString();
+      final var key = String.format("$uid%d:", i);
+      final var val = UUID.randomUUID().toString();
       subsKvs.put(key, val);
       extrasubsKvs.put(key, val);
 
@@ -264,7 +264,7 @@ public class Serverinfo {
   }
 
   public void parseXML(final Node node) {
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_HOST)) {
         try {
           host = contentUtf8(child);
@@ -318,7 +318,7 @@ public class Serverinfo {
   }
 
   public void parseFeatures (final Node node) {
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
         features.add(contentUtf8(child));
       }
@@ -327,21 +327,21 @@ public class Serverinfo {
 
   public void updateParams () {
     // Expand substitutions fully at this point
-    for (var key: subsKvs.keySet()) {
+    for (final var key: subsKvs.keySet()) {
       subsKvs.put(key,
                   propertyReplace(subsKvs.getOnlyString(key),
                                   subsKvs));
     }
 
     // Now cache some useful substitutions
-    String uname;
+    final String uname;
     if (subsKvs.containsKey("$userid1:")) {
       uname = "$userid1:";
     } else {
       uname = "$userid01:";
     }
 
-    String pname;
+    final String pname;
     if (subsKvs.containsKey("$pswd1:")) {
       pname = "$pswd1:";
     } else {
@@ -361,9 +361,9 @@ public class Serverinfo {
 
   public void parseRepeatXML(final Element node){
     // Look for count
-    var count = XmlUtils.getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
+    final var count = XmlUtils.getIntAttributeValue(node, XmlDefs.ATTR_COUNT, 1);
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if(nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTION)) {
         parseSubstitutionXML(child, count);
       }
@@ -371,7 +371,7 @@ public class Serverinfo {
   }
 
   public void parseSubstitutionsXML(final Node node){
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if(nodeMatches(child, XmlDefs.ELEMENT_SUBSTITUTION)){
         parseSubstitutionXML(child, 0);
       } else if(nodeMatches(child, XmlDefs.ELEMENT_REPEAT)){
@@ -382,9 +382,9 @@ public class Serverinfo {
 
   public void parseDefaultFilters(final Node node){
     String name = null;
-    List<Object> values = new ArrayList<>();
+    final List<Object> values = new ArrayList<>();
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if(nodeMatches(child, XmlDefs.ELEMENT_NAME)){
         name = contentUtf8(child);
       } else if(nodeMatches(child, XmlDefs.ELEMENT_VALUE)){
@@ -404,11 +404,11 @@ public class Serverinfo {
   public void parseSubstitutionXML(final Node node, final int repeat) {
     String key = null;
     String value = null;
-    for (var schild : children(node)) {
+    for (final var schild: children(node)) {
       if (nodeMatches(schild, XmlDefs.ELEMENT_KEY)) {
         key = contentUtf8(schild);
       } else if (nodeMatches(schild, XmlDefs.ELEMENT_VALUE)) {
-        var str = contentUtf8(schild);
+        final var str = contentUtf8(schild);
 
         value = Objects.requireNonNullElse(str, "");
       }
@@ -444,7 +444,7 @@ public class Serverinfo {
     var res = val;
 
     while (true) {
-      var newval = replace1Pass(res, props);
+      final var newval = replace1Pass(res, props);
       if (newval.equals(res)) {
         return res;
       }
@@ -477,7 +477,7 @@ public class Serverinfo {
         break;
       }
 
-      var remPos = end + 1;
+      final var remPos = end + 1;
       final String matched = val.substring(pos, remPos).trim();
 
       final String pval = props.getOnlyString(matched);

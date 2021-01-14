@@ -54,14 +54,14 @@ public class PostFreeBusy extends FreeBusyBase {
 
     // Extract each calendar-data object
 
-    for (var resp : children(docRoot)) {
+    for (var resp: children(docRoot)) {
       if (!nodeMatches(resp, CaldavTags.response)) {
         fmsg("        Expect only responses as children. Found: %s",
              resp);
         return result;
       }
 
-      for (var ch : children(resp)) {
+      for (var ch: children(resp)) {
         if (!nodeMatches(ch, CaldavTags.calendarData)) {
           continue;
         }
@@ -71,7 +71,7 @@ public class PostFreeBusy extends FreeBusyBase {
         }
 
         // Check for attendee value
-        for (var attendee : checker.fb.getProperties("ATTENDEE")) {
+        for (var attendee: checker.fb.getProperties("ATTENDEE")) {
           var cua = attendee.getValue();
 
           if (users.contains(cua)) {

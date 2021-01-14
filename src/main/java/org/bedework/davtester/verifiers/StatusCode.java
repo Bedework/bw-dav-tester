@@ -38,7 +38,7 @@ public class StatusCode extends Verifier {
     //  debug("teststatus: " + teststatus + " actual: " + status);
     //}
 
-    for (var ts : teststatus) {
+    for (var ts: teststatus) {
       final int test;
       if (ts.substring(1, 3).equals("xx")) {
         test = Integer.parseInt(ts.substring(0, 1));

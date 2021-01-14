@@ -102,7 +102,7 @@ public class Data extends DavTesterBase {
   public void parseSubstituteXML(final Element node) {
     String name = null;
     String value = null;
-    for (var child : children(node)) {
+    for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {

@@ -663,7 +663,7 @@ public class Request extends DavTesterBase {
   public void parseMultiGrab(final Element node, final List<GrabElement> appendto) {
     final GrabElement ge = new GrabElement();
 
-    for (var child : children(node)) {
+    for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME) ||
               nodeMatches(child, XmlDefs.ELEMENT_PROPERTY) ||
                        nodeMatches(child, XmlDefs.ELEMENT_POINTER)) {
@@ -1209,11 +1209,11 @@ public class Request extends DavTesterBase {
     }
 
     if (!Util.isEmpty(grabcalparam)) {
-      for (var kv: grabcalparam) {
+      for (final var kv: grabcalparam) {
         // grab the property here
         var path = manager.serverInfo.subs(kv.key);
         path = manager.serverInfo.extrasubs(path);
-        var paramvalue = extractCalParameter(path, drr.responseData);
+        final var paramvalue = extractCalParameter(path, drr.responseData);
         if (paramvalue == null) {
           drr.ok = false;
           drr.append(format("Calendar Parameter was not extracted from response: %s",
@@ -1240,7 +1240,7 @@ public class Request extends DavTesterBase {
     }
   }
 
-  private CloseableHttpResponse execute(HttpRequestBase meth) {
+  private CloseableHttpResponse execute(final HttpRequestBase meth) {
     final CloseableHttpClient cl;
 
     if (auth) {
@@ -1252,19 +1252,19 @@ public class Request extends DavTesterBase {
 
     try {
       return cl.execute(meth);
-    } catch (IOException e) {
+    } catch (final IOException e) {
       return throwException(e);
     }
   }
 
   public DoRequestResult doGet(final UriIdPw uip,
                                final String label) {
-    var req = uip.makeRequest(this, "GET");
+    final var req = uip.makeRequest(this, "GET");
 
-    var reqres = req.run(false, false, false,
-                         null, // stats
-                         null, // etags
-                         label, 1);
+    final var reqres = req.run(false, false, false,
+                               null, // stats
+                               null, // etags
+                               label, 1);
     if (reqres.status / 100 != 2) {
       reqres.ok = false;
     }
@@ -1303,7 +1303,7 @@ public class Request extends DavTesterBase {
                            msr);
       }
 
-      for (var response : msr.val.responses) {
+      for (var response: msr.val.responses) {
         // Get href for this response
         if (!response.href.equals(requestUri)) {
           hrefs.add(new UriIdPw(response.href, uip.user, uip.pswd));
@@ -1319,7 +1319,7 @@ public class Request extends DavTesterBase {
     if (Util.isEmpty(deletes)) {
       return true;
     }
-    for (var uip : deletes) {
+    for (var uip: deletes) {
       var req = uip.makeRequest(this, "DELETE");
 
       var reqres = req.run(false, false, false,
@@ -1389,7 +1389,7 @@ public class Request extends DavTesterBase {
         return Result.fail(new Result<>(), msr);
       }
 
-      for (var response : msr.val.responses) {
+      for (var response: msr.val.responses) {
         if (!response.href.equals(requestUri) &&
                 (!other|| !(response.href.equals(skip)))) {
 
@@ -1471,7 +1471,7 @@ public class Request extends DavTesterBase {
         return Result.fail(new Result<>(), msr);
       }
 
-      for (var response : msr.val.responses) {
+      for (var response: msr.val.responses) {
         if (!response.href.equals(requestUri)) {
           var respdata = req.doGet(new UriIdPw(response.href,
                                                uip.user,
@@ -1522,7 +1522,7 @@ public class Request extends DavTesterBase {
           return msr;
         }
 
-        for (var response : msr.val.responses) {
+        for (var response: msr.val.responses) {
           // Get href for this response
           var href = response.href;
           if (!StringUtils.stripEnd(href, "/").equals(
@@ -1618,7 +1618,7 @@ public class Request extends DavTesterBase {
                          msr);
     }
 
-    for (var response : msr.val.responses) {
+    for (var response: msr.val.responses) {
       for (var propstat: response.propstats) {
         if ((propstat.status / 100) != 2) {
           continue;

@@ -103,7 +103,7 @@ public abstract class DavTesterBase implements Logged {
   public void parseXML(final Element node) {
     parseAttributes(node);
 
-    for (var child : children(node)) {
+    for (var child: children(node)) {
       if (!xmlNode(child)) {
         warn(format("Unknown child element %s for %s",
                     child, node));
@@ -166,7 +166,7 @@ public abstract class DavTesterBase implements Logged {
     String callback = null;
     String name = null;
 
-    for (var schild : children(node)) {
+    for (var schild: children(node)) {
       if (nodeMatches(schild, XmlDefs.ELEMENT_CALLBACK)) {
         callback = contentUtf8(schild);
       } else if (nodeMatches(schild, XmlDefs.ELEMENT_NAME)) {

@@ -176,7 +176,7 @@ class Testsuite extends DavTesterBase {
     var ts = new ToString(this);
 
     ts.append("name", name);
-    for (var test : tests) {
+    for (var test: tests) {
       test.toStringSegment(ts);
     }
 

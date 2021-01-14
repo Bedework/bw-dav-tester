@@ -72,7 +72,7 @@ public class AclItems extends Verifier {
       return result;
     }
 
-    for (var response : msr.responses) {
+    for (var response: msr.responses) {
       // Get href for this response
       var href = URLDecoder.decode(
               StringUtils.stripEnd(response.href, "/"),
@@ -109,7 +109,7 @@ public class AclItems extends Verifier {
       // Get all privileges
       var grantedPrivs = new ArrayList<String>();
 
-      for (var priv : privset) {
+      for (var priv: privset) {
         if (!nodeMatches(priv,
                          WebdavTags.privilege)) {
           fmsg("           Expected privilege elements only: %s",
@@ -129,7 +129,7 @@ public class AclItems extends Verifier {
       if (grantedMissing.size() != 0) {
         fmsg("        Missing privileges not granted for %s:",
              href);
-        for (var i : grantedMissing) {
+        for (var i: grantedMissing) {
           append(" " + i, false);
         }
         nl();
@@ -137,7 +137,7 @@ public class AclItems extends Verifier {
       if (deniedPresent.size() != 0) {
         fmsg("        Available privileges that should be denied for %s:",
              href);
-        for (var i : deniedPresent) {
+        for (var i: deniedPresent) {
           append(" " + i, false);
         }
         nl();

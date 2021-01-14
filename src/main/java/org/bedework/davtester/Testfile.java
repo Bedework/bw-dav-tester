@@ -171,7 +171,7 @@ public class Testfile extends DavTesterBase {
 
     var testfile = manager.testFile(testPath.toString(),
                                     description, null);
-    for (var suite : suites) {
+    for (var suite: suites) {
       currentSuite = suite;
       res.add(suite.run(testfile, label));
     }

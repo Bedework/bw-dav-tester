@@ -109,7 +109,7 @@ public class MultistatusItems extends Verifier {
     var ok = false;
     int code;
 
-    for (var response : msr.responses) {
+    for (var response: msr.responses) {
       // Get href for this response
       var href = URLDecoder.decode(StringUtils.stripEnd(response.href, "/"),
                                    StandardCharsets.UTF_8);
@@ -265,7 +265,7 @@ public class MultistatusItems extends Verifier {
                                                 final String prefix) {
     var results = new ArrayList<String>();
 
-    for (var href : hrefs) {
+    for (var href: hrefs) {
       if (href.startsWith("[")) {
         var split = href.substring(1, href.length() - 1).split(",");
 

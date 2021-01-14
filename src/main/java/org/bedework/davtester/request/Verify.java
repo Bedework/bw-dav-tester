@@ -146,7 +146,7 @@ public class Verify extends DavTesterBase {
     String name = null;
     List<Object> values = new ArrayList<>();
 
-    for (var child : children(node)) {
+    for (var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {

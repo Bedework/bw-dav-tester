@@ -161,7 +161,7 @@ public class CopyrightResolver implements EntityResolver {
     if (hasContent(node)) {
       sb.append(content(node).strip());
     } else if (hasChildren(node)) {
-      for (var child : children(node)) {
+      for (var child: children(node)) {
         normalizedString(sb, child);
       }
     }
@@ -212,7 +212,7 @@ public class CopyrightResolver implements EntityResolver {
       var children = XmlUtil.getElements(nd);
       var matched = new ArrayList<Element>();
 
-      for (var ch : children) {
+      for (var ch: children) {
         if (nodeMatches(ch, tag)) {
           matched.add(ch);
         }

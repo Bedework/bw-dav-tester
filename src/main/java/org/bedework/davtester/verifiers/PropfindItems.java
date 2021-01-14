@@ -80,7 +80,7 @@ public class PropfindItems extends Verifier {
     var okPropsMatch = new ArrayList<NameVal>();
     var okpropsNomatch = new HashMap<String, String>();
 
-    for (var p : okprops) {
+    for (var p: okprops) {
       if (p.contains("$")) {
         var split = p.split("\\$");
         if (p.indexOf("$") != p.length() - 1) {
@@ -170,7 +170,7 @@ public class PropfindItems extends Verifier {
       var okStatusProps = new ArrayList<NameVal>();
       var badStatusProps = new ArrayList<NameVal>();
 
-      for (var propstat : response.propstats) {
+      for (var propstat: response.propstats) {
         String value;
 
         // Determine status for this propstat

@@ -104,7 +104,7 @@ public class Header extends Verifier {
       }
     }
 
-    for (var ti : testInfo) {
+    for (var ti: testInfo) {
       var hdrs = getHeaders(ti.hdrName, responseHeaders);
       if (Util.isEmpty(hdrs)) {
         if (ti.present == Presence.absent) {
@@ -130,7 +130,7 @@ public class Header extends Verifier {
 
       if (ti.pattern != null) {
         var matched = false;
-        for (var hdr : hdrs) {
+        for (var hdr: hdrs) {
           var hval = hdr.getValue().replace(" ", "");
           if (ti.pattern.matcher(hval).lookingAt()) {
             matched = true;

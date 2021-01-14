@@ -97,7 +97,7 @@ public class XmlElementMatch extends Verifier {
       matchNode(root, path, null, null, true);
     }
 
-    for (var path : notexists) {
+    for (var path: notexists) {
       matchNode(root, path, null, null, false);
     }
 
@@ -167,7 +167,7 @@ public class XmlElementMatch extends Verifier {
 
     for (var t1: split) {
       var test = t1.substring(0, t1.length() - 1);
-      for (var node : nodes) {
+      for (var node: nodes) {
         if (testNode(node, path, test).isOk()) {
           res.add(node);
         }
@@ -306,7 +306,7 @@ public class XmlElementMatch extends Verifier {
       var test = t1.substring(0, t1.length() - 1);
       Response resp = null;
 
-      for (var node : nodes) {
+      for (var node: nodes) {
         resp = testNode(node, title, test);
         if (!resp.isOk()) {
           continue;

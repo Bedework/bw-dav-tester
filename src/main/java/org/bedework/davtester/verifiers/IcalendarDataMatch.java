@@ -66,7 +66,7 @@ public class IcalendarDataMatch extends FileDataMatch {
 
     // Prefix of ! indicates remove the filter - used to remove a default
 
-    for (var afilter: new ArrayList<>(filters)) {
+    for (final var afilter: new ArrayList<>(filters)) {
       if (afilter.startsWith("!")) {
         filters.remove(afilter.substring(1));
       }
@@ -83,11 +83,11 @@ public class IcalendarDataMatch extends FileDataMatch {
     }
 */
     try {
-      var respCalendar = Icalendar.parseText(respdata);
+      final var respCalendar = Icalendar.parseText(respdata);
       removePropertiesParameters(respCalendar,
                                  filters);
 
-      var dataCalendar = Icalendar.parseText(data);
+      final var dataCalendar = Icalendar.parseText(data);
       removePropertiesParameters(dataCalendar,
                                  filters);
 
@@ -96,22 +96,22 @@ public class IcalendarDataMatch extends FileDataMatch {
 
       reconcileRecurrenceOverrides(respCalendar, dataCalendar);
 
-      var respLines = respCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
-      var dataLines = dataCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
+      final var respLines = respCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
+      final var dataLines = dataCalendar.toLines(/*Calendar.NO_TIMEZONES*/);
 
-      Patch<String> patch = DiffUtils.diff(dataLines, respLines);
+      final Patch<String> patch = DiffUtils.diff(dataLines, respLines);
 
       if (Util.isEmpty(patch.getDeltas())) {
         return;
       }
 
-      List<String> unifiedDiff = UnifiedDiffUtils
+      final List<String> unifiedDiff = UnifiedDiffUtils
               .generateUnifiedDiff("Response",
                                    "Expected", dataLines, patch, 0);
 
-      var errorDiff = new StringBuilder();
+      final var errorDiff = new StringBuilder();
 
-      for (var s: unifiedDiff) {
+      for (final var s: unifiedDiff) {
         errorDiff.append(s);
         errorDiff.append('\n');
       }
@@ -148,8 +148,8 @@ public class IcalendarDataMatch extends FileDataMatch {
        both calendar objects.
     */
 
-    var rids1 = getRids(calendar1);
-    var rids2 = getRids(calendar2);
+    final var rids1 = getRids(calendar1);
+    final var rids2 = getRids(calendar2);
 
     addOverrides(calendar1, rids1.master,
                  Utils.diff(rids2.rids, rids1.rids));
@@ -166,10 +166,10 @@ public class IcalendarDataMatch extends FileDataMatch {
   private MasterRids getRids(final Icalendar calendar){
     /* Get all the recurrence ids of the specified calendar.
     */
-    var res = new MasterRids();
+    final var res = new MasterRids();
 
-    for (var subcomponent: calendar.getComponents()) {
-      var p = (RecurrenceId)subcomponent.getProperty(Property.RECURRENCE_ID);
+    for (final var subcomponent: calendar.getComponents()) {
+      final var p = (RecurrenceId)subcomponent.getProperty(Property.RECURRENCE_ID);
 
       if (p == null) {
         if ((subcomponent.getProperty(Property.RDATE) != null) ||
@@ -193,9 +193,9 @@ public class IcalendarDataMatch extends FileDataMatch {
       return;
     }
 
-    for (var rid : missingRids) {
+    for (final var rid: missingRids) {
       // if (we were fed an already derived component, use that, otherwise make a new one
-      var newcomp = calendar.deriveComponent(rid);
+      final var newcomp = calendar.deriveComponent(rid);
       if (newcomp != null) {
         calendar.addComponent(newcomp);
       }
@@ -220,8 +220,8 @@ public class IcalendarDataMatch extends FileDataMatch {
     }
      */
 
-    var newProps = new ArrayList<Property>();
-    final PropertyList pl;
+    final var newProps = new ArrayList<Property>();
+    final PropertyList<Property> pl;
     Icalendar ical = null;
     Component component = null;
 
@@ -233,10 +233,10 @@ public class IcalendarDataMatch extends FileDataMatch {
       pl = component.getProperties();
     }
 
-    for (var property: pl) {
+    for (final var property: pl) {
       // Always reset DTSTAMP on these properties
       if (attendeeProps.contains(property.getName())) {
-        Parameter par = property
+        final Parameter par = property
                 .getParameter("X-CALENDARSERVER-DTSTAMP");
         if (par != null) {
           property.getParameters().remove(par);
@@ -246,11 +246,11 @@ public class IcalendarDataMatch extends FileDataMatch {
         }
       }
 
-      for (var filter : filters) {
+      for (final var filter: filters) {
         if (filter.contains(":")) {
-          var split = filter.split(":");
+          final var split = filter.split(":");
           if (property.getName().equals(split[0])) {
-            Parameter par = property.getParameter(split[1]);
+            final Parameter par = property.getParameter(split[1]);
             if (par != null) {
               property.getParameters().remove(par);
             }
@@ -261,7 +261,7 @@ public class IcalendarDataMatch extends FileDataMatch {
         }
 
         if (filter.contains("=")) {
-          var split = filter.split("=");
+          final var split = filter.split("=");
           if (property.getName().equals(split[0]) &&
                   property.getValue().equals(split[1])) {
             continue; // don't preserve
@@ -291,7 +291,7 @@ public class IcalendarDataMatch extends FileDataMatch {
       comps = component.getComponents();
     }
 
-    for (var c: comps) {
+    for (final var c: comps) {
       removePropertiesParameters(c, filters);
     }
   }

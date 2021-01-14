@@ -55,7 +55,7 @@ public class PropfindValues extends Verifier {
     // Get property arguments and split on $ delimited for name, value tuples
     var testprops = args.getStrings("props");
     var propsMatch = new ArrayList<NameVal>();
-    for (var p : testprops) {
+    for (var p: testprops) {
       if (p.contains("$")) {
         var split = p.split("\\$");
         if (p.indexOf("$") != p.length() - 1) {
@@ -96,7 +96,7 @@ public class PropfindValues extends Verifier {
       return result;
     }
 
-    for (var response : msr.responses) {
+    for (var response: msr.responses) {
       // Get href for this response
       var href = URLDecoder.decode(
               StringUtils.stripEnd(response.href, "/"),
@@ -114,7 +114,7 @@ public class PropfindValues extends Verifier {
       var okStatusProps = new HashMap<String, String>();
 
       String value = null;
-      for (var propstat : response.propstats) {
+      for (var propstat: response.propstats) {
         // Determine status for this propstat
         boolean isOkStatus = propstat.status / 100 == 2;
 
@@ -130,7 +130,7 @@ public class PropfindValues extends Verifier {
           var sb = new StringBuilder();
           removeWhitespace(prop);
 
-          for (var p : children(prop)) {
+          for (var p: children(prop)) {
             sb.append(p.toString());
           }
 
@@ -147,7 +147,7 @@ public class PropfindValues extends Verifier {
       }
 
       // Look at each property we want to test and see if present
-      for (var nv : propsMatch) {
+      for (var nv: propsMatch) {
         if (!okStatusProps.containsKey(nv.name)) {
           fmsg("        Items not returned in report (OK) for %s: %s\n",
                href, nv.name);
@@ -179,7 +179,7 @@ public class PropfindValues extends Verifier {
   }
 
   private void removeWhitespace(final Element node) {
-    for (var child : children(node)) {
+    for (var child: children(node)) {
       if (hasContent(child)) {
         setElementContent(child,
                           content(child).strip());

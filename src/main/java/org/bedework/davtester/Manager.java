@@ -72,7 +72,7 @@ public class Manager implements Logged {
   private Testfile pretest;
   Path posttestFile;
   private Testfile posttest;
-  private List<Testfile> testFiles = new ArrayList<>();
+  private final List<Testfile> testFiles = new ArrayList<>();
   public Testfile currentTestfile;
 
   //boolean memUsage;
@@ -82,8 +82,8 @@ public class Manager implements Logged {
   private CloseableHttpClient httpClient;
   final CredentialsProvider credsProvider = new BasicCredentialsProvider();
 
-  private List<BaseResultsObserver> observers = new ArrayList<>();
-  private KeyVals results = new KeyVals();
+  private final List<BaseResultsObserver> observers = new ArrayList<>();
+  private final KeyVals results = new KeyVals();
 
   /**
    * Call after settings are read.
@@ -120,14 +120,14 @@ public class Manager implements Logged {
       final List<String> testNames;
 
       if (globals.getAll()) {
-        File f = new File(globals.getTestsDir());
-        Path stDir = Paths.get(f.getAbsolutePath());
+        final File f = new File(globals.getTestsDir());
+        final Path stDir = Paths.get(f.getAbsolutePath());
 
         testNames = new ArrayList<>();
 
-        FileLister fl = new FileLister(testNames,
-                                       globals.getExcludes(),
-                                       subs(globals.getSubdir()));
+        final FileLister fl = new FileLister(testNames,
+                                             globals.getExcludes(),
+                                             subs(globals.getSubdir()));
         Files.walkFileTree(stDir, fl);
       } else {
         final var testsets = globals.getTestsets();
@@ -140,7 +140,7 @@ public class Manager implements Logged {
           if (Util.isEmpty(tests)) {
             testNames.addAll(testsets.get(null));
           } else {
-            for (final var nm : tests) {
+            for (final var nm: tests) {
               testNames.addAll(testsets.get(nm));
             }
           }
@@ -160,7 +160,7 @@ public class Manager implements Logged {
       if (Util.isEmpty(globals.getObservers())) {
         loadObserver("log");
       } else {
-        for (var name : globals.getObservers()) {
+        for (final var name: globals.getObservers()) {
           loadObserver(name);
         }
       }
@@ -227,9 +227,9 @@ public class Manager implements Logged {
   }
 
   public Path normResPath(final String path) {
-    var p = Paths.get(path);
+    final var p = Paths.get(path);
 
-    Path np;
+    final Path np;
     try {
       np = resDirPath.resolve(p);
     } catch (final Throwable t) {
@@ -250,7 +250,7 @@ public class Manager implements Logged {
   }
 
   public Path normTestsPath(final String path) {
-    var p = Paths.get(path);
+    final var p = Paths.get(path);
 
     Path np = null;
     try {
@@ -289,17 +289,17 @@ public class Manager implements Logged {
 
   public void loadObserver(final String observerName) {
     try {
-      String cname;
+      final String cname;
       if (observerName.contains(".")) {
         cname = observerName;
       } else {
         cname = "org.bedework.davtester.observers." + upperFirst(observerName);
       }
-      var module = Util
+      final var module = Util
               .getObject(cname,
                          BaseResultsObserver.class);
 
-      var observer = (BaseResultsObserver)module;
+      final var observer = (BaseResultsObserver)module;
 
       observer.init(this);
 
@@ -310,7 +310,7 @@ public class Manager implements Logged {
   }
 
   public void message(final String message, final KeyVals args) {
-    for (final BaseResultsObserver obs : observers) {
+    for (final BaseResultsObserver obs: observers) {
       obs.process(message, args);
     }
   }
@@ -347,7 +347,7 @@ public class Manager implements Logged {
   public KeyVals testFile(final String name,
                           final String details,
                           final Integer resultCode) {
-    var res = new KeyVals();
+    final var res = new KeyVals();
 
     results.put("name", name);
     results.put("details", details);
@@ -365,7 +365,7 @@ public class Manager implements Logged {
                            final String name,
                            final String details,
                            final Integer resultCode) {
-    var res = new KeyVals();
+    final var res = new KeyVals();
 
     testfile.put("name", name);
     testfile.put("details", details);
@@ -396,7 +396,7 @@ public class Manager implements Logged {
   }
 
   public void delay() {
-    var delay = serverInfo.waitdelay;
+    final var delay = serverInfo.waitdelay;
     synchronized (this) {
       try {
         Thread.sleep(delay);
@@ -431,7 +431,7 @@ public class Manager implements Logged {
     }
 
     // Verify that top-level element is correct
-    Element serverinfoNode = doc.getDocumentElement();
+    final Element serverinfoNode = doc.getDocumentElement();
 
     if (!nodeMatches(serverinfoNode, XmlDefs.ELEMENT_SERVERINFO)) {
       throwException(EX_INVALID_CONFIG_FILE);
@@ -460,14 +460,14 @@ public class Manager implements Logged {
 
     if ((ssl && (serverInfo.port != 443)) ||
             (!ssl && (serverInfo.port != 80))) {
-      var val = moresubs.getOnlyString("$host:");
+      final var val = moresubs.getOnlyString("$host:");
       moresubs.put("$host:",
                    val + format(":%d", serverInfo.port));
     }
     moresubs.put("$hostssl:",
                  format("https://%s", serverInfo.host));
     if (serverInfo.sslport != 443) {
-      var val = moresubs.getOnlyString("$hostssl:");
+      final var val = moresubs.getOnlyString("$hostssl:");
       moresubs.put("$hostssl:",
                    val + format(":%d", serverInfo.sslport));
     }
@@ -492,12 +492,12 @@ public class Manager implements Logged {
 
     var ctr = 1;
 
-    for (var testfile : testfilePaths) {
+    for (final var testfile: testfilePaths) {
       load(testfile, ctr, testfilePaths.size());
       ctr++;
 
       // Open and parse the config file
-      var test = new Testfile(this, testfile, false);
+      final var test = new Testfile(this, testfile, false);
       final var tfResp = test.readFile();
 
       if (!tfResp.isOk()) {
@@ -529,7 +529,7 @@ public class Manager implements Logged {
 
     totals.startTimer();
 
-    for (var testFile: testFiles) {
+    for (final var testFile: testFiles) {
       ctr++;
 
       if (testFiles.size() > 1) {
@@ -538,7 +538,7 @@ public class Manager implements Logged {
 
       if (pretest != null) {
         currentTestfile = pretest;
-        var testResult = pretest.run();
+        final var testResult = pretest.run();
 
         // Always stop the tests if the pretest fails
         if (testResult.failed != 0) {
@@ -547,7 +547,7 @@ public class Manager implements Logged {
       }
 
       currentTestfile = testFile;
-      var testResult = testFile.run();
+      final var testResult = testFile.run();
 
       totals.add(testResult);
 
@@ -557,7 +557,7 @@ public class Manager implements Logged {
 
       if (posttest != null) {
         currentTestfile = posttest;
-        var postTestResult = posttest.run();
+        final var postTestResult = posttest.run();
 
         // Always stop the tests if the posttest fails
         if (postTestResult.failed != 0) {
@@ -573,7 +573,7 @@ public class Manager implements Logged {
     if (logFile != null) {
       try {
         logFile.close();
-      } catch (Throwable t) {
+      } catch (final Throwable t) {
         throwException(t);
       }
     }
@@ -585,7 +585,7 @@ public class Manager implements Logged {
    *                   Logged methods
    * ==================================================================== */
 
-  private BwLogger logger = new BwLogger();
+  private final BwLogger logger = new BwLogger();
 
   @Override
   public BwLogger getLogger() {
