@@ -201,18 +201,24 @@ public abstract class DavTesterBase implements Logged {
     args.addAll("filter", defaults);
   }
 
+  /*
+  Comment these out for the moment. This might require
+  we call log4j2 directly as it requires access to the
+  core api.
+   */
+
   protected void httpTraceOn() {
-    savedHttpLevels.push(getLogLevel("org.apache.http"));
-    setLogLevel("org.apache.http", Level.FINE);
+//    savedHttpLevels.push(getLogLevel("org.apache.http"));
+//    setLogLevel("org.apache.http", Level.FINE);
   }
 
   protected void httpTraceOff() {
-    if (!savedHttpLevels.empty()) {
-      setLogLevel("org.apache.http", savedHttpLevels.pop());
-    }
+//    if (!savedHttpLevels.empty()) {
+//      setLogLevel("org.apache.http", savedHttpLevels.pop());
+//    }
   }
 
-  protected void print(String msg) {
+  protected void print(final String msg) {
     System.out.println(msg);
   }
 
