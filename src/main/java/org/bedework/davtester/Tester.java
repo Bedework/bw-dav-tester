@@ -20,6 +20,7 @@ import org.bedework.util.misc.Util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import net.fortuna.ical4j.util.MapTimeZoneCache;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,7 +35,10 @@ public class Tester extends DavTesterBase {
   }
 
   public static void main(final String[] args) {
-    var tester = new Tester();
+    System.setProperty(
+            "net.fortuna.ical4j.timezone.cache.impl",
+            MapTimeZoneCache.class.getName());
+    final var tester = new Tester();
     if (tester.processArgs(args)) {
       tester.runTests();
     }

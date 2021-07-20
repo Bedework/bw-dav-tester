@@ -55,12 +55,12 @@ public abstract class DavTesterBase implements Logged {
 
   public boolean ignore;
   public boolean httpTrace;
-  private Stack<Level> savedHttpLevels = new Stack<>();
+  private final Stack<Level> savedHttpLevels = new Stack<>();
 
-  private Set<String> requireFeatures = new TreeSet<>();
-  private Set<String> excludeFeatures = new TreeSet<>();
+  private final Set<String> requireFeatures = new TreeSet<>();
+  private final Set<String> excludeFeatures = new TreeSet<>();
 
-  private Map<String, String> defaultFiltersApplied = new HashMap<>();
+  private final Map<String, String> defaultFiltersApplied = new HashMap<>();
 
   public DavTesterBase(final Manager manager) {
     this.manager = manager;
@@ -77,7 +77,7 @@ public abstract class DavTesterBase implements Logged {
   }
 
   public TreeSet<String> missingFeatures() {
-    var res = new TreeSet<>(requireFeatures);
+    final var res = new TreeSet<>(requireFeatures);
 
     res.removeAll(manager.serverInfo.features);
 
@@ -89,7 +89,7 @@ public abstract class DavTesterBase implements Logged {
   }
 
   public TreeSet<String> excludedFeatures() {
-    var res = new TreeSet<>(excludeFeatures);
+    final var res = new TreeSet<>(excludeFeatures);
 
     res.retainAll(manager.serverInfo.features);
 
@@ -103,7 +103,7 @@ public abstract class DavTesterBase implements Logged {
   public void parseXML(final Element node) {
     parseAttributes(node);
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (!xmlNode(child)) {
         warn(format("Unknown child element %s for %s",
                     child, node));
@@ -151,7 +151,7 @@ public abstract class DavTesterBase implements Logged {
 
   protected void parseFeatures(final Element node,
                                final boolean require) {
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_FEATURE)) {
         if (require) {
           requireFeatures.add(contentUtf8(child));
@@ -166,11 +166,11 @@ public abstract class DavTesterBase implements Logged {
     String callback = null;
     String name = null;
 
-    for (var schild: children(node)) {
+    for (final var schild: children(node)) {
       if (nodeMatches(schild, XmlDefs.ELEMENT_CALLBACK)) {
         callback = contentUtf8(schild);
       } else if (nodeMatches(schild, XmlDefs.ELEMENT_NAME)) {
-        var str = contentUtf8(schild);
+        final var str = contentUtf8(schild);
 
         name = Objects.requireNonNullElse(str, "");
       }
@@ -231,7 +231,7 @@ public abstract class DavTesterBase implements Logged {
    *                   Logged methods
    * ==================================================================== */
 
-  private BwLogger logger = new BwLogger();
+  private final BwLogger logger = new BwLogger();
 
   @Override
   public BwLogger getLogger() {
