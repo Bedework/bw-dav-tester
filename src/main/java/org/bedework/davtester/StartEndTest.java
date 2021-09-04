@@ -68,14 +68,14 @@ public class StartEndTest extends DavTesterBase {
     var reqCount = 1;
     StringBuilder resulttxt = new StringBuilder();
 
-    for (var req: requests) {
-      var resreq = req.run(false,
-                           false, // doverify,
-                           start, // forceverify,
-                           null, // stats
-                           null, // etags
-                           format("%s | #%s", label, reqCount),
-                           1);  // count
+    for (final var req: requests) {
+      final var resreq = req.run(false,
+                                 false, // doverify,
+                                 start, // forceverify,
+                                 null, // stats
+                                 null, // etags
+                                 format("%s | #%s", label, reqCount),
+                                 1);  // count
       if (resreq.message != null) {
         resulttxt.append(resreq.message);
       }

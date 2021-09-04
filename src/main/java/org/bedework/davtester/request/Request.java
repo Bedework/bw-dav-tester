@@ -13,6 +13,7 @@ import org.bedework.davtester.ical.Icalendar;
 import org.bedework.davtester.verifiers.Verifier.VerifyResult;
 import org.bedework.util.dav.DavUtil.MultiStatusResponse;
 import org.bedework.util.http.HttpUtil;
+import org.bedework.util.misc.ToString;
 import org.bedework.util.misc.Util;
 import org.bedework.util.xml.tagdefs.WebdavTags;
 
@@ -749,7 +750,7 @@ public class Request extends DavTesterBase {
     // Handle special methods
     String methodPar = null;
 
-    var split = method.split(" ");
+    final var split = method.split(" ");
     if (split.length > 1) {
       methodPar = split[1];
     }
@@ -758,9 +759,9 @@ public class Request extends DavTesterBase {
 
     switch (method) {
       case "DELETEALL":
-        for (var requri: ruris) {
-          var hrefs = doFindall(new UriIdPw(requri, getUser(), getPswd()),
-                                format("%s | %s", label, "DELETEALL"));
+        for (final var requri: ruris) {
+          final var hrefs = doFindall(new UriIdPw(requri, getUser(), getPswd()),
+                                      format("%s | %s", label, "DELETEALL"));
           if (!hrefs.ok) {
             return DoRequestResult.fail(hrefs.message);
           }
@@ -775,7 +776,7 @@ public class Request extends DavTesterBase {
 
       case "DELAY":
         // ruri contains a numeric delay in seconds
-        int delay;
+        final int delay;
         if (ruri == null) {
           delay = 1;
         } else {
@@ -784,7 +785,7 @@ public class Request extends DavTesterBase {
 
         synchronized (this) {
           try {
-            Thread.sleep(delay * 1000);
+            Thread.sleep(delay * 1000L);
           } catch (final InterruptedException e) {
             throwException(e);
           }
@@ -846,11 +847,11 @@ public class Request extends DavTesterBase {
         break;
 
       case "WAITCOUNT":
-        var wcount = waitCount(methodPar);
-        for (var wdruri: ruris) {
-          var waitres = doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
-                                    wcount,
-                                    label);
+        final var wcount = waitCount(methodPar);
+        for (final var wdruri: ruris) {
+          final var waitres = doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
+                                          wcount,
+                                          label);
           if (!waitres.ok) {
             return DoRequestResult.fail(format("Count did not change: %s",
                                                waitres.message));
@@ -860,18 +861,20 @@ public class Request extends DavTesterBase {
         return DoRequestResult.ok();
 
       case "WAITDELETEALL":
-        for (var wdruri: ruris) {
-          var waitres = doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
-                                    waitCount(methodPar),
-                                    label);
+        for (final var wdruri: ruris) {
+          final var waitres =
+                  doWaitcount(new UriIdPw(wdruri, getUser(), getPswd()),
+                              waitCount(methodPar),
+                              label);
           if (!waitres.ok) {
             return DoRequestResult.fail(
                     format("Count did not change: %s",
                            waitres.message));
           }
 
-          var hrefs = doFindall(new UriIdPw(wdruri, getUser(), getPswd()),
-                                format("%s | %s", label, "DELETEALL"));
+          final var hrefs =
+                  doFindall(new UriIdPw(wdruri, getUser(), getPswd()),
+                            format("%s | %s", label, "DELETEALL"));
           if (!hrefs.ok) {
             return DoRequestResult.fail(hrefs.message);
           }
@@ -890,8 +893,8 @@ public class Request extends DavTesterBase {
       ruri = manager.currentTestfile.grabbedLocation;
     }
 
-    var headers = getHeaders();
-    var data = getDataVal();
+    final var headers = getHeaders();
+    final var data = getDataVal();
 
     // Cache delayed delete
     if (endDelete) {
@@ -938,7 +941,7 @@ public class Request extends DavTesterBase {
       return DoRequestResult.fail("Bad uri " + t.getMessage());
     }
 
-    HttpRequestBase meth = HttpUtil.findMethod(method, uri);
+    final HttpRequestBase meth = HttpUtil.findMethod(method, uri);
     if (meth == null) {
       throwException("No method: " + method);
     }
@@ -970,8 +973,8 @@ public class Request extends DavTesterBase {
 
     int ct = 0;
     do { // So we can repeat for getwait
-      try (CloseableHttpResponse resp = execute(meth)) {
-        int status = HttpUtil.getStatus(resp);
+      try (final CloseableHttpResponse resp = execute(meth)) {
+        final int status = HttpUtil.getStatus(resp);
         if (getWait) {
           ct++;
 
@@ -1018,10 +1021,10 @@ public class Request extends DavTesterBase {
     }
 
     if (doverify && (drr.responseData != null)) {
-      var vres = verifyRequest(ruri,
-                               drr.responseHeaders,
-                               drr.status,
-                               drr.responseData);
+      final var vres = verifyRequest(ruri,
+                                     drr.responseHeaders,
+                                     drr.status,
+                                     drr.responseData);
       if (!vres.ok) {
         drr.ok = false;
       }
@@ -1745,6 +1748,40 @@ public class Request extends DavTesterBase {
     }
 
     return prop.getValue();
+  }
+
+  public void toStringSegment(final ToString ts) {
+    super.toStringSegment(ts);
+
+    ts.append("\n-------BEGIN:REQUEST-------\n");
+    if (data != null) {
+      ts.append(data);
+      ts.newLine();
+    }
+
+    ts.append("--------END:REQUEST--------\n");
+/*
+    ts.append("-------BEGIN:RESPONSE-------\n");
+    ts.append(format("%s %s %s\n",
+                     drr.protocolVersion,
+                     drr.status, drr.reason));
+    if (drr.responseData != null) {
+//              String.valueOf(drr.response.message) +
+      responsetxt +=
+              drr.responseData;
+    }
+
+    responsetxt +=
+            "\n--------END:RESPONSE--------\n";
+*/
+  }
+
+  public String toString() {
+    final var ts = new ToString(this);
+
+    toStringSegment(ts);
+
+    return ts.toString();
   }
 
   private Property calProperty(final String propertyname,
