@@ -56,14 +56,14 @@ public class DataMatch extends FileDataMatch {
     // If we have iCalendar data, then unwrap data and do compare
     if ((filepath != null) && filepath.endsWith(".ics")) {
       ndata = ndata.replace("\r\n ", "");
-      var rd = respdata.replace("\r\n ", "");
+      final var rd = respdata.replace("\r\n ", "");
       if (ndata.equals(rd)) {
         return;
       }
     } else if ((filepath != null) && filepath.endsWith(".xml")) {
-      var rd = docToString(XmlUtils.parseXml(respdata));
+      final var rd = docToString(XmlUtils.parseXml(respdata));
 
-      var xdata = docToString(XmlUtils.parseXml(data));
+      final var xdata = docToString(XmlUtils.parseXml(data));
       if (xdata == null) {
         fmsg("        Unable to parse xml data: %s", data);
         return;

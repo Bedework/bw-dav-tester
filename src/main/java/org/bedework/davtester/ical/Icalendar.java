@@ -44,7 +44,7 @@ public class Icalendar extends Component {
     @Override
     public void register(final TimeZone timezone) {
       try {
-        TimeZone tz = Timezones.getTz(timezone.getID());
+        final TimeZone tz = Timezones.getTz(timezone.getID());
         if (tz != null) {
           // Already three
           return;
@@ -55,7 +55,7 @@ public class Icalendar extends Component {
         }
 
         localTzs.put(timezone.getID(), timezone);
-      } catch (Throwable t) {
+      } catch (final Throwable t) {
         throw new RuntimeException(t);
       }
     }
@@ -75,7 +75,7 @@ public class Icalendar extends Component {
     @Override
     public TimeZone getTimeZone(final String id) {
       try {
-        TimeZone tz = Timezones.getTz(id);
+        final TimeZone tz = Timezones.getTz(id);
         if (tz != null) {
           return  tz;
         }
@@ -85,7 +85,7 @@ public class Icalendar extends Component {
         }
 
         return localTzs.get(id);
-      } catch (Throwable t) {
+      } catch (final Throwable t) {
         throw new RuntimeException(t);
       }
     }
@@ -101,15 +101,15 @@ public class Icalendar extends Component {
   }
 
   public static Icalendar parseText(final String val) {
-    CalendarBuilder bldr =
+    final CalendarBuilder bldr =
             new CalendarBuilder(new CalendarParserImpl(),
                                 TimeZoneRegistryFactory.getInstance().createRegistry());
 
     final Reader rdr = new StringReader(val);
 
-    UnfoldingReader ufrdr = new UnfoldingReader(rdr, true);
+    final UnfoldingReader ufrdr = new UnfoldingReader(rdr, true);
 
-    var ical = new Icalendar();
+    final var ical = new Icalendar();
 
     try {
       ical.cal = bldr.build(ufrdr);
@@ -125,9 +125,9 @@ public class Icalendar extends Component {
       return;
     }
 
-    var res = new ComponentList<CalendarComponent>();
+    final var res = new ComponentList<CalendarComponent>();
 
-    for (var comp: cal.getComponents()) {
+    for (final var comp: cal.getComponents()) {
       if (comp instanceof VTimeZone) {
         continue;
       }
@@ -154,13 +154,13 @@ public class Icalendar extends Component {
   }
 
   public CalendarComponent deriveComponent(final RecurrenceId recurrenceId) {
-    var master = getMaster();
+    final var master = getMaster();
     if (master == null) {
       return null;
     }
 
     try {
-      var newComp = (CalendarComponent)master.copy();
+      final var newComp = (CalendarComponent)master.copy();
 
       removeProps(newComp, Property.RRULE);
       removeProps(newComp, Property.RDATE);
@@ -172,15 +172,15 @@ public class Icalendar extends Component {
       // If not a duration we need to make a DTEND
 
       final DtStart start =
-              (DtStart)newComp.getProperty(Property.DTSTART);
+              newComp.getProperty(Property.DTSTART);
 
       final DtEnd end =
-              (DtEnd)newComp.getProperty(Property.DTEND);
+              newComp.getProperty(Property.DTEND);
 
       long duration = 0L;
       if (end != null) {
-        var startTm = start.getDate().getTime();
-        var endTm = end.getDate().getTime();
+        final var startTm = start.getDate().getTime();
+        final var endTm = end.getDate().getTime();
 
         duration = endTm - startTm;
       }
@@ -210,7 +210,7 @@ public class Icalendar extends Component {
 
   private class StartComparator implements Comparator<Component> {
     @Override
-    public int compare(Component c1, Component c2) {
+    public int compare(final Component c1, final Component c2) {
       final Date start1 = getStartDate(c1);
       final Date start2 = getStartDate(c2);
 
@@ -236,7 +236,7 @@ public class Icalendar extends Component {
 
   private Date getStartDate(final Component c) {
     final DtStart start =
-            (DtStart)c.getProperty(Property.DTSTART);
+            c.getProperty(Property.DTSTART);
     if (start != null) {
       return start.getDate();
     }
@@ -255,7 +255,7 @@ public class Icalendar extends Component {
   }
 
   public ComponentList<Component> getComponents() {
-    var res = new ComponentList<>();
+    final var res = new ComponentList<>();
 
     if (cal != null) {
       res.addAll(cal.getComponents());
@@ -265,7 +265,7 @@ public class Icalendar extends Component {
   }
 
   public ComponentList<Component> getComponents(final String name) {
-    var res = new ComponentList<>();
+    final var res = new ComponentList<>();
 
     if (cal != null) {
       res.addAll(cal.getComponents(name));

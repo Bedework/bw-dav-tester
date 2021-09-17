@@ -31,7 +31,7 @@ public class FreeBusy extends FreeBusyBase {
                              final int status,
                              final String respdata,
                              final KeyVals args) {
-    var checker = new FreeBusyBase.PeriodsChecker();
+    final var checker = new FreeBusyBase.PeriodsChecker();
 
     if (!checker.getPeriods(status, args)) {
       return result;

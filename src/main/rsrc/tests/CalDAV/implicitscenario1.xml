@@ -126,6 +126,13 @@
 				<ruri>$inboxpath2:/</ruri>
 			</request>
 		</test>
+		<test name='6a'>
+			<description>Organizer deletes Inbox Items</description>
+			<request>
+				<method>DELETEALL</method>
+				<ruri>$inboxpath1:/</ruri>
+			</request>
+		</test>
 		<test name='7'>
 			<description>Attendee -> Accepted</description>
 			<request user="$userid2:" pswd="$pswd2:">

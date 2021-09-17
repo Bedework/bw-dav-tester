@@ -79,13 +79,13 @@ public class Verify extends DavTesterBase {
   }
 
   private String callback;
-  private KeyVals args = new KeyVals();
+  private final KeyVals args = new KeyVals();
 
   public Verify(final Manager manager) {
     super(manager);
 
     // Initialise the verifiers
-    for (var verifier: verifiers.values()) {
+    for (final var verifier: verifiers.values()) {
       verifier.init(manager);
     }
   }
@@ -93,28 +93,28 @@ public class Verify extends DavTesterBase {
   public VerifyResult doVerify(final String ruri,
                                final List<Header> responseHeaders,
                                final int status,
-                               String respdata) {
+                               final String respdata) {
 
     // Re-do substitutions from values generated during the current test run
     if (manager.serverInfo.hasextrasubs()) {
-      for (var name: args.keySet()) {
-        var values = args.getStrings(name);
-        var newvalues = new ArrayList<>();
-        for (var value: values) {
+      for (final var name: args.keySet()) {
+        final var values = args.getStrings(name);
+        final var newvalues = new ArrayList<>();
+        for (final var value: values) {
           newvalues.add(manager.serverInfo.extrasubs(value));
         }
         args.put(name, newvalues);
       }
     }
 
-    var verifier = verifiers.get(callback);
+    final var verifier = verifiers.get(callback);
 
     if (verifier == null) {
       return throwException("Unknown verifier: " + callback);
     }
 
     // Always clone the args as this verifier may be called multiple times
-    var newargs = new KeyVals(args);
+    final var newargs = new KeyVals(args);
 
     manager.currentTestfile.applyDefaultFilters(callback, newargs);
 
@@ -144,9 +144,9 @@ public class Verify extends DavTesterBase {
 
   public void parseArgXML(final Element node) {
     String name = null;
-    List<Object> values = new ArrayList<>();
+    final List<Object> values = new ArrayList<>();
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {

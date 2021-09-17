@@ -18,6 +18,7 @@ import org.bedework.util.misc.Util;
 import org.bedework.util.xml.tagdefs.WebdavTags;
 
 import net.fortuna.ical4j.model.Component;
+import net.fortuna.ical4j.model.ComponentContainer;
 import net.fortuna.ical4j.model.Property;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
@@ -259,14 +260,14 @@ public class Request extends DavTesterBase {
   public static Request checkNode(final Element node,
                                   final Manager manager) {
     if (nodeMatches(node, XmlDefs.ELEMENT_REQUEST)) {
-      var req = new Request(manager, typeRequest);
+      final var req = new Request(manager, typeRequest);
       req.parseXML(node);
 
       return req;
     }
 
     if (nodeMatches(node, XmlDefs.ELEMENT_DELAY)) {
-      var req = new Request(manager, typeDelay);
+      final var req = new Request(manager, typeDelay);
       req.parseXML(node);
 
       req.method = "DELAY";
@@ -275,7 +276,7 @@ public class Request extends DavTesterBase {
     }
 
     if (nodeMatches(node, XmlDefs.ELEMENT_PROVISION)) {
-      var req = new Request(manager, typeProvision);
+      final var req = new Request(manager, typeProvision);
       req.parseXML(node);
 
       if (req.method == null) {
@@ -317,10 +318,10 @@ public class Request extends DavTesterBase {
   }
 
   public List<Header> getHeaders () {
-    var si = manager.serverInfo;
-    var res = new ArrayList<Header>();
+    final var si = manager.serverInfo;
+    final var res = new ArrayList<Header>();
 
-    for (var hdr: headers) {
+    for (final var hdr: headers) {
       res.add(new BasicHeader(hdr.getName(),
                               si.extrasubs(hdr.getValue())));
     }
@@ -388,13 +389,13 @@ public class Request extends DavTesterBase {
     }
 
     dataList = new LinkedList<>();
-    File folder = new File(getFilePath());
+    final File folder = new File(getFilePath());
     if (!folder.isDirectory()) {
       return Result.fail(new Result<>(),
                          "Not a directory: " + getFilePath());
     }
 
-    var fl = folder.listFiles();
+    final var fl = folder.listFiles();
     if (fl == null) {
       return Result.fail(new Result<>(),
                          "No files in list for " + getFilePath());
@@ -403,12 +404,12 @@ public class Request extends DavTesterBase {
 
     dataList.clear();
 
-    for (File f: fl) {
+    for (final File f: fl) {
       if (!f.isFile()) {
         continue;
       }
 
-      var nm = f.getName();
+      final var nm = f.getName();
       if (nm.startsWith(".") || nm.endsWith("~")) {
         continue;
       }
@@ -428,14 +429,14 @@ public class Request extends DavTesterBase {
                                     final List<Header> responseHeaders,
                                     final int status,
                                     final String respdata) {
-    var res = new VerifyResult();
+    final var res = new VerifyResult();
 
     // check for response
     if (Util.isEmpty(verifiers)) {
       return res;
     }
 
-    for (var verifier: verifiers) {
+    for (final var verifier: verifiers) {
       if (verifier.hasMissingFeatures()) {
         continue;
       }
@@ -443,8 +444,8 @@ public class Request extends DavTesterBase {
         continue;
       }
 
-      var ires = verifier.doVerify(ruri, responseHeaders,
-                                              status, respdata);
+      final var ires = verifier.doVerify(ruri, responseHeaders,
+                                         status, respdata);
       if (!ires.ok) {
         res.ok = false;
 
@@ -573,7 +574,7 @@ public class Request extends DavTesterBase {
     }
 
     if (nodeMatches(node, XmlDefs.ELEMENT_VERIFY)) {
-      var v = new Verify(manager);
+      final var v = new Verify(manager);
       verifiers.add(v);
       v.parseXML(node);
       return true;
@@ -630,7 +631,7 @@ public class Request extends DavTesterBase {
     String name = null;
     String value = null;
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {
@@ -647,7 +648,7 @@ public class Request extends DavTesterBase {
     String name = null;
     String variable = null;
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME) ||
               nodeMatches(child, XmlDefs.ELEMENT_PROPERTY)) {
         name = manager.serverInfo.subs(contentUtf8(child));
@@ -664,7 +665,7 @@ public class Request extends DavTesterBase {
   public void parseMultiGrab(final Element node, final List<GrabElement> appendto) {
     final GrabElement ge = new GrabElement();
 
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME) ||
               nodeMatches(child, XmlDefs.ELEMENT_PROPERTY) ||
                        nodeMatches(child, XmlDefs.ELEMENT_POINTER)) {
@@ -700,7 +701,7 @@ public class Request extends DavTesterBase {
     }
 
     static DoRequestResult fail(final String message) {
-      var res = new DoRequestResult();
+      final var res = new DoRequestResult();
       res.ok = false;
       res.message = message;
 
@@ -1104,7 +1105,7 @@ public class Request extends DavTesterBase {
     }
 
     if (!grabheader.isEmpty()) {
-      for (var prop: grabheader) {
+      for (final var prop: grabheader) {
         if (!Util.isEmpty(drr.responseHeaders)) {
           manager.serverInfo.addextrasubs(
                   new KeyVals(prop.val,
@@ -1119,9 +1120,9 @@ public class Request extends DavTesterBase {
 
     if (!grabproperty.isEmpty()) {
       if (drr.status == 207) {
-        for (var prop: grabproperty){
+        for (final var prop: grabproperty){
           // grab the property here
-          var epres = extractProperty(prop.key, drr.responseData);
+          final var epres = extractProperty(prop.key, drr.responseData);
           if (!epres.ok) {
             drr.ok = false;
             drr.append(format("Property %s was not extracted " +
@@ -1136,8 +1137,8 @@ public class Request extends DavTesterBase {
     }
 
     if (!Util.isEmpty(grabelement)) {
-      for (var item: grabelement) {
-        var elements = extractElements(item.path, drr.responseData);
+      for (final var item: grabelement) {
+        final var elements = extractElements(item.path, drr.responseData);
         if (Util.isEmpty(elements)) {
           drr.ok = false;
           drr.append(format("Element %s was not extracted from response",
@@ -1149,8 +1150,8 @@ public class Request extends DavTesterBase {
                             item.path));
         } else {
           var i = 0;
-          for (var v: item.variables) {
-            var e = elements.get(i);
+          for (final var v: item.variables) {
+            final var e = elements.get(i);
             i++;
 
             manager.serverInfo.addextrasubs(
@@ -1194,11 +1195,11 @@ public class Request extends DavTesterBase {
      */
 
     if (!Util.isEmpty(grabcalprop)) {
-      for (var kv: grabcalprop) {
+      for (final var kv: grabcalprop) {
         // grab the property here
         var propname = manager.serverInfo.subs(kv.key);
         propname = manager.serverInfo.extrasubs(propname);
-        var propvalue = extractCalProperty(propname, drr.responseData);
+        final var propvalue = extractCalProperty(propname, drr.responseData);
         if (propvalue == null) {
           drr.ok = false;
           drr.append(format("Calendar property %s was not extracted from response",
@@ -1277,9 +1278,9 @@ public class Request extends DavTesterBase {
 
   public Result<List<UriIdPw>> doFindall(final UriIdPw uip,
                                          final String label) {
-    var hrefs = new ArrayList<UriIdPw>();
+    final var hrefs = new ArrayList<UriIdPw>();
 
-    var req = uip.makeRequest(this, "PROPFIND", "1");
+    final var req = uip.makeRequest(this, "PROPFIND", "1");
 
     req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                            "<D:propfind xmlns:D=\"DAV:\">" +
@@ -1289,15 +1290,15 @@ public class Request extends DavTesterBase {
                            "</D:propfind>",
                    "text/xml");
 
-    var reqres = req.run(false, false, false,
-                         null, // stats
-                         null, // etags
-                         label, 1);
+    final var reqres = req.run(false, false, false,
+                               null, // stats
+                               null, // etags
+                               label, 1);
     if (reqres.ok &&
             (reqres.status == 207) &&
             (reqres.responseData != null)) {
 
-      var requestUri = req.getURI();
+      final var requestUri = req.getURI();
       final Result<MultiStatusResponse> msr =
               getMultiStatusResponse(reqres.responseData);
 
@@ -1306,7 +1307,7 @@ public class Request extends DavTesterBase {
                            msr);
       }
 
-      for (var response: msr.val.responses) {
+      for (final var response: msr.val.responses) {
         // Get href for this response
         if (!response.href.equals(requestUri)) {
           hrefs.add(new UriIdPw(response.href, uip.user, uip.pswd));
@@ -1322,13 +1323,13 @@ public class Request extends DavTesterBase {
     if (Util.isEmpty(deletes)) {
       return true;
     }
-    for (var uip: deletes) {
-      var req = uip.makeRequest(this, "DELETE");
+    for (final var uip: deletes) {
+      final var req = uip.makeRequest(this, "DELETE");
 
-      var reqres = req.run(false, false, false,
-                           null, // stats
-                           null, // etags
-                           label, 1);
+      final var reqres = req.run(false, false, false,
+                                 null, // stats
+                                 null, // etags
+                                 label, 1);
       if (reqres.status / 100 != 2) {
         return false;
       }
@@ -1343,7 +1344,7 @@ public class Request extends DavTesterBase {
     String hresult = null;
 
     var uri = uip.ruri;
-    String skip;
+    final String skip;
 
     if (other) {
       // Remove last element
@@ -1351,7 +1352,7 @@ public class Request extends DavTesterBase {
                                  "/");
       skip = uri;
 
-      var pos = uri.lastIndexOf("/");
+      final var pos = uri.lastIndexOf("/");
 
       if (pos > 0) {
         uri = uri.substring(0, pos + 1);
@@ -1360,9 +1361,9 @@ public class Request extends DavTesterBase {
       skip = null;
     }
 
-    var possibleMatches = new ArrayList<String>();
+    final var possibleMatches = new ArrayList<String>();
 
-    var req = uip.makeRequest(this, "PROPFIND", "1");
+    final var req = uip.makeRequest(this, "PROPFIND", "1");
     req.ruris.add(uri);
     req.ruri = uri;
 
@@ -1374,17 +1375,17 @@ public class Request extends DavTesterBase {
                            "</D:prop>" +
                            "</D:propfind>",
                    "text/xml");
-    var reqres = req.run(false, false, false,
-                         null, // stats
-                         null, // etags
-                         format("%s | %s", label, "FINDNEW"),
-                         1);
+    final var reqres = req.run(false, false, false,
+                               null, // stats
+                               null, // etags
+                               format("%s | %s", label, "FINDNEW"),
+                               1);
     if (reqres.ok &&
             (reqres.status == 207) &&
             (reqres.responseData != null)) {
 
       long latest = 0;
-      var requestUri = req.getURI();
+      final var requestUri = req.getURI();
       final Result<MultiStatusResponse> msr =
               getMultiStatusResponse(reqres.responseData);
 
@@ -1392,27 +1393,27 @@ public class Request extends DavTesterBase {
         return Result.fail(new Result<>(), msr);
       }
 
-      for (var response: msr.val.responses) {
+      for (final var response: msr.val.responses) {
         if (!response.href.equals(requestUri) &&
                 (!other|| !(response.href.equals(skip)))) {
 
-          for (var propstat: response.propstats) {
-            var status = (propstat.status / 100) == 2;
+          for (final var propstat: response.propstats) {
+            final var status = (propstat.status / 100) == 2;
 
             if (!status) {
               possibleMatches.add(response.href);
               continue;
             }
 
-            for (var prop: propstat.props) {
+            for (final var prop: propstat.props) {
               if (!nodeMatches(prop, WebdavTags.getlastmodified)) {
                 continue;
               }
 
-              var value = content(prop);
-              var fmt = DateTimeFormatter.RFC_1123_DATE_TIME;
-              ZonedDateTime zdt = fmt.parse (value , ZonedDateTime :: from);
-              long tval = Date.from(zdt.toInstant()).getTime();
+              final var value = content(prop);
+              final var fmt = DateTimeFormatter.RFC_1123_DATE_TIME;
+              final ZonedDateTime zdt = fmt.parse (value , ZonedDateTime :: from);
+              final long tval = Date.from(zdt.toInstant()).getTime();
 
               if (tval > latest) {
                 possibleMatches.clear();
@@ -1430,8 +1431,8 @@ public class Request extends DavTesterBase {
     if (possibleMatches.size() == 1) {
       hresult = possibleMatches.get(0);
     } else if (possibleMatches.size() > 1) {
-      var notSeenBefore = diff(possibleMatches,
-                               manager.currentTestfile.previouslyFound);
+      final var notSeenBefore = diff(possibleMatches,
+                                     manager.currentTestfile.previouslyFound);
       if (notSeenBefore.size() == 1) {
         hresult = notSeenBefore.get(0);
       }
@@ -1446,7 +1447,7 @@ public class Request extends DavTesterBase {
   public Result<String> doFindcontains(final UriIdPw uip,
                                        final String match,
                                        final String label) {
-    var req = uip.makeRequest(this, "PROPFIND", "1");
+    final var req = uip.makeRequest(this, "PROPFIND", "1");
 
     req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                            "<D:propfind xmlns:D=\"DAV:\">" +
@@ -1456,16 +1457,16 @@ public class Request extends DavTesterBase {
                            "</D:propfind>",
                    "text/xml");
 
-    var reqres = req.run(false, false, false,
-                         null, // stats
-                         null, // etags
-                         format("%s | %s", label, "FINDNEW"), 1);
+    final var reqres = req.run(false, false, false,
+                               null, // stats
+                               null, // etags
+                               format("%s | %s", label, "FINDNEW"), 1);
     String href = null;
     if (reqres.ok &&
             (reqres.status == 207) &&
             (reqres.responseData != null)) {
 
-      var requestUri = req.getURI();
+      final var requestUri = req.getURI();
 
       final Result<MultiStatusResponse> msr =
               getMultiStatusResponse(reqres.responseData);
@@ -1474,12 +1475,12 @@ public class Request extends DavTesterBase {
         return Result.fail(new Result<>(), msr);
       }
 
-      for (var response: msr.val.responses) {
+      for (final var response: msr.val.responses) {
         if (!response.href.equals(requestUri)) {
-          var respdata = req.doGet(new UriIdPw(response.href,
-                                               uip.user,
-                                               uip.pswd),
-                                   label);
+          final var respdata = req.doGet(new UriIdPw(response.href,
+                                                     uip.user,
+                                                     uip.pswd),
+                                         label);
           if (respdata.responseData.contains(match)) {
             href = response.href;
             break;
@@ -1494,10 +1495,10 @@ public class Request extends DavTesterBase {
   public Result<?> doWaitcount(final UriIdPw uip,
                                final int hrefCount,
                                final String label) {
-    var hrefs = new ArrayList<String>();
+    final var hrefs = new ArrayList<String>();
 
     for (var ignore = 0; ignore < manager.serverInfo.waitcount; ignore++) {
-      var req = uip.makeRequest(this, "PROPFIND", "1");
+      final var req = uip.makeRequest(this, "PROPFIND", "1");
 
       req.setDataVal("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                              "<D:propfind xmlns:D=\"DAV:\">" +
@@ -1507,12 +1508,12 @@ public class Request extends DavTesterBase {
                              "</D:propfind>",
                      "text/xml");
 
-      var reqres = req.run(false, false, false,
-                           null, // stats
-                           null, // etags
-                           format("%s | %s %d", label,
+      final var reqres = req.run(false, false, false,
+                                 null, // stats
+                                 null, // etags
+                                 format("%s | %s %d", label,
                                   "WAITCOUNT", hrefCount),
-                           1);
+                                 1);
       hrefs.clear();
 
       if (reqres.ok &&
@@ -1525,9 +1526,9 @@ public class Request extends DavTesterBase {
           return msr;
         }
 
-        for (var response: msr.val.responses) {
+        for (final var response: msr.val.responses) {
           // Get href for this response
-          var href = response.href;
+          final var href = response.href;
           if (!StringUtils.stripEnd(href, "/").equals(
                   StringUtils.stripEnd(uip.ruri, "/"))) {
             hrefs.add(href);
@@ -1548,14 +1549,14 @@ public class Request extends DavTesterBase {
     }
 
     // Get the content of each resource
-    var rdata = new StringBuilder();
+    final var rdata = new StringBuilder();
 
-    for (var href: hrefs) {
-      var getDrr = doGet(new UriIdPw(href, uip.user, uip.pswd), label);
+    for (final var href: hrefs) {
+      final var getDrr = doGet(new UriIdPw(href, uip.user, uip.pswd), label);
       String test = "unknown";
-      var rd = getDrr.responseData;
+      final var rd = getDrr.responseData;
       if (rd.startsWith("BEGIN:VCALENDAR")) {
-        var uidpos = rd.indexOf("UID:");
+        final var uidpos = rd.indexOf("UID:");
         if (uidpos != -1) {
           var end = rd.indexOf("\r\n", uidpos);
           if (end < 0) {
@@ -1564,9 +1565,9 @@ public class Request extends DavTesterBase {
 
           if (end < 0) {
             return Result.fail(new Result<>(),
-                               "No UID end found in\n" + rdata.toString());
+                               "No UID end found in\n" + rdata);
           }
-          var uid = rd.substring(uidpos + 4, end);
+          final var uid = rd.substring(uidpos + 4, end);
           test = manager.serverInfo.uidmaps
                   .computeIfAbsent(uid, s -> "unknown");
         }
@@ -1583,12 +1584,12 @@ public class Request extends DavTesterBase {
                                final String etag,
                                final String label) {
     for (var ignore = 0; ignore < manager.serverInfo.waitcount; ignore++) {
-      var req = uip.makeRequest(this, "HEAD");
+      final var req = uip.makeRequest(this, "HEAD");
 
-      var reqres = req.run(false, false, false,
-                           null, // stats
-                           null, // etags
-                           format("%s | %s", label, "WAITCHANGED"), 1);
+      final var reqres = req.run(false, false, false,
+                                 null, // stats
+                                 null, // etags
+                                 format("%s | %s", label, "WAITCHANGED"), 1);
       if (reqres.ok) {
         if (reqres.status / 100 == 2) {
           if (!etag.equals(reqres.etag)) {
@@ -1598,7 +1599,7 @@ public class Request extends DavTesterBase {
           return false;
         }
       }
-      var delay = manager.serverInfo.waitdelay;
+      final var delay = manager.serverInfo.waitdelay;
       synchronized (this) {
         try {
           Thread.sleep(delay);
@@ -1621,8 +1622,8 @@ public class Request extends DavTesterBase {
                          msr);
     }
 
-    for (var response: msr.val.responses) {
-      for (var propstat: response.propstats) {
+    for (final var response: msr.val.responses) {
+      for (final var propstat: response.propstats) {
         if ((propstat.status / 100) != 2) {
           continue;
         }
@@ -1633,21 +1634,21 @@ public class Request extends DavTesterBase {
                              "           Wrong number of DAV:prop elements");
         }
 
-        for (var child: children(propstat.props.get(0))) {
-          var tag = child.getTagName();
+        for (final var child: children(propstat.props.get(0))) {
+          final var tag = child.getTagName();
           if (!tag.equals(propertyname)) {
             continue;
           }
 
-          var subch = children(child);
+          final var subch = children(child);
 
           if (subch.size() == 0) {
             return new Result<>(content(child));
           }
 
           // Copy sub-element data as text into one long string and strip leading/trailing space
-          var value = new StringBuilder();
-          for (var p: subch) {
+          final var value = new StringBuilder();
+          for (final var p: subch) {
             value.append(content(p).strip());
           }
 
@@ -1712,16 +1713,16 @@ public class Request extends DavTesterBase {
     // followed by a parameter name
     // e.g. VEVENT/ATTACH/MANAGED-ID
     pos = ppath.lastIndexOf('/');
-    var paramName = ppath.substring(pos + 1);
+    final var paramName = ppath.substring(pos + 1);
     ppath = ppath.substring(0, pos);
 
-    var prop = calProperty(ppath, pvalue, respdata);
+    final var prop = calProperty(ppath, pvalue, respdata);
 
     if (prop == null) {
       return null;
     }
 
-    var param = prop.getParameter(paramName);
+    final var param = prop.getParameter(paramName);
 
     if (param == null) {
       return null;
@@ -1735,14 +1736,14 @@ public class Request extends DavTesterBase {
     /* If the path has a $... segment at the end, split it off
        as the desired property value.
      */
-    var pos = path.indexOf('$');
+    final var pos = path.indexOf('$');
     String pvalue = null;
     String ppath = path;
     if (pos > 0) {
       ppath = path.substring(0, pos);
       pvalue = path.substring(pos + 1);
     }
-    var prop = calProperty(ppath, pvalue, respdata);
+    final var prop = calProperty(ppath, pvalue, respdata);
     if (prop == null) {
       return null;
     }
@@ -1791,15 +1792,19 @@ public class Request extends DavTesterBase {
 
     // propname is a path consisting of component and property names
     // e.g. VEVENT/ATTACH
-    var split = propertyname.split("/");
+    final var split = propertyname.split("/");
 
     var spliti = 0;
 
+    if (!(comp instanceof ComponentContainer)) {
+      return null;
+    }
+
     while (spliti < split.length) {
-      var name = split[spliti];
+      final var name = split[spliti];
 
       var found = false;
-      for (var c: comp.getComponents()) {
+      for (final var c: ((ComponentContainer<Component>)comp).getComponents()) {
         if (c.getName().equals(name)) {
           found = true;
           comp = c;
@@ -1820,11 +1825,11 @@ public class Request extends DavTesterBase {
 
     // Try properties
 
-    var name = split[spliti];
-    var props = comp.getProperties(name);
+    final var name = split[spliti];
+    final var props = comp.getProperties(name);
 
     if (propertyValue != null) {
-      for (var prop: props) {
+      for (final var prop: props) {
         if (prop.getValue().equals(propertyValue)) {
           return prop;
         }
@@ -1842,10 +1847,10 @@ public class Request extends DavTesterBase {
 
   String readContent(final InputStream in, final long expectedLen,
                      final Charset characterSet) throws Throwable {
-    StringBuilder res = new StringBuilder();
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    final StringBuilder res = new StringBuilder();
+    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     int len = 0;
-    String charset;
+    final String charset;
 
     if (characterSet == null) {
       charset = StandardCharsets.UTF_8.toString();
@@ -1861,7 +1866,7 @@ public class Request extends DavTesterBase {
     boolean hadCr = false;
 
     while ((expectedLen < 0) || (len < expectedLen)) {
-      int ich = in.read();
+      final int ich = in.read();
       if (ich < 0) {
         break;
       }
@@ -1898,7 +1903,7 @@ public class Request extends DavTesterBase {
         hadCr = false;
 
         if (baos.size() > 0) {
-          res.append(new String(baos.toByteArray(), charset));
+          res.append(baos.toString(charset));
           if (hadCr) {
             res.append('\r');
           } else {
@@ -1915,7 +1920,7 @@ public class Request extends DavTesterBase {
     }
 
     if (baos.size() > 0) {
-      res.append(new String(baos.toByteArray(), charset));
+      res.append(baos.toString(charset));
     }
 
     return res.toString();

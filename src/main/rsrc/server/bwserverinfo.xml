@@ -114,6 +114,7 @@
     <!-- NOTBW <feature>proxy</feature>	-->					<!-- calendar-user-proxy extension -->
 		<!-- <feature>proxy-authz</feature> -->			<!-- sudo user extension -->
     <!-- NOTBW <feature>recurrence-splitting</feature>	-->		<!-- Recurring components can be split -->
+		<feature>relaxed-parsing</feature> <!-- Allow some technically illegal constructs -->
     <!-- NOTBW <feature>remove-duplicate-alarms</feature> -->  	<!-- Server removes any duplicate alarms on PUT -->
     <!-- NOTBW <feature>query-extended</feature>	-->			<!-- calendar-query-extended extension -->
 		<feature>shared-calendars</feature>				<!-- Shared calendars extension -->
@@ -131,8 +132,8 @@
 		<feature>timezone-std-service</feature>			<!-- Timezone standard service extension -->
 		<!-- <feature>trash-collection</feature> -->  			<!-- Trash collection enabled -->
     <!-- NOTBW <feature>travel-time-busy</feature> -->			<!-- Travel time appears as busy -->
-		<feature>vavailability</feature>				<!-- VAVAILABILITY on inbox -->
-		<!-- <feature>vpoll</feature> -->				<!-- VPOLL support for store and scheduling -->
+		<feature>vavailability</feature>		<!-- VAVAILABILITY on inbox -->
+		<feature>vpoll</feature>  					<!-- VPOLL support for store and scheduling -->
 		<feature>webcal</feature>						<!-- Internet calendar subscription via GET on calendar collection -->
 
 		<!-- CardDAV specific extension -->

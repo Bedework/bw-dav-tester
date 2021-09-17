@@ -67,7 +67,7 @@ public abstract class FreeBusyBase extends Verifier {
       calendar = Icalendar.parseText(respdata);
 
       // Only one component
-      var comps = calendar.getComponents("VFREEBUSY");
+      final var comps = calendar.getComponents("VFREEBUSY");
       if (comps.size() != 1) {
         append("Wrong number or unexpected components in calendar");
         return false;
@@ -80,17 +80,17 @@ public abstract class FreeBusyBase extends Verifier {
     }
 
     boolean comparePeriods() {
-      var busyp = new ArrayList<Period>();
-      var tentativep = new ArrayList<Period>();
-      var unavailablep = new ArrayList<Period>();
+      final var busyp = new ArrayList<Period>();
+      final var tentativep = new ArrayList<Period>();
+      final var unavailablep = new ArrayList<Period>();
 
-      for (var fp: fb.getProperties("FREEBUSY")) {
-        var periods = ((net.fortuna.ical4j.model.property.FreeBusy)fp)
+      for (final var fp: fb.getProperties("FREEBUSY")) {
+        final var periods = ((net.fortuna.ical4j.model.property.FreeBusy)fp)
                 .getPeriods();
 
         // Check param
         final String fbtype;
-        final FbType fbtPar = (FbType)fp.getParameter(Parameter.FBTYPE);
+        final FbType fbtPar = fp.getParameter(Parameter.FBTYPE);
 
         if (fbtPar == null) {
           fbtype = "BUSY";

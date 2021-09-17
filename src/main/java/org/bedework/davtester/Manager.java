@@ -525,7 +525,7 @@ public class Manager implements Logged {
   public TestResult runAll() {
     message("start", null);
 
-    var ctr = 1;
+    var ctr = 0;
 
     totals.startTimer();
 
@@ -533,7 +533,7 @@ public class Manager implements Logged {
       ctr++;
 
       if (testFiles.size() > 1) {
-        testProgress(ctr + 1, testFiles.size());
+        testProgress(ctr, testFiles.size());
       }
 
       if (pretest != null) {

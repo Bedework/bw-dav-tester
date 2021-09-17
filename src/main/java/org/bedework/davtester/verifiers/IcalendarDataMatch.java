@@ -24,6 +24,7 @@ import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
 import com.github.difflib.patch.Patch;
 import net.fortuna.ical4j.model.Component;
+import net.fortuna.ical4j.model.ComponentContainer;
 import net.fortuna.ical4j.model.ComponentList;
 import net.fortuna.ical4j.model.Parameter;
 import net.fortuna.ical4j.model.Property;
@@ -288,11 +289,17 @@ public class IcalendarDataMatch extends FileDataMatch {
     } else {
       component.getProperties().clear();
       component.getProperties().addAll(newProps);
-      comps = component.getComponents();
+      if (component instanceof ComponentContainer) {
+        comps = ((ComponentContainer)component).getComponents();
+      } else {
+        comps = null;
+      }
     }
 
-    for (final var c: comps) {
-      removePropertiesParameters(c, filters);
+    if (comps != null) {
+      for (final var c: comps) {
+        removePropertiesParameters(c, filters);
+      }
     }
   }
 }

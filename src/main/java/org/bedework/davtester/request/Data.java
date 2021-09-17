@@ -102,7 +102,7 @@ public class Data extends DavTesterBase {
   public void parseSubstituteXML(final Element node) {
     String name = null;
     String value = null;
-    for (var child: children(node)) {
+    for (final var child: children(node)) {
       if (nodeMatches(child, XmlDefs.ELEMENT_NAME)) {
         name = contentUtf8(child);
       } else if (nodeMatches(child, XmlDefs.ELEMENT_VALUE)) {
@@ -159,7 +159,7 @@ public class Data extends DavTesterBase {
     var data = dataVal.replaceAll("UID:.*", "UID:" + uuid());
     data = data.replaceAll("SUMMARY:(.*)", "SUMMARY:\\1 #" + count);
 
-    var now = getDtParts(new Date());
+    final var now = getDtParts(new Date());
 
     data = data.replaceAll("(DTSTART;[^:]*) [0-9]{8,8}",
                            format("\\1:%04d%02d%02d",
