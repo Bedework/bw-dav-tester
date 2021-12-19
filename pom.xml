@@ -1,148 +1,63 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.bedework</groupId>
+
+  <parent>
+    <groupId>org.bedework</groupId>
+    <artifactId>bedework-parent</artifactId>
+    <version>4.0.0-SNAPSHOT</version>
+  </parent>
+
   <artifactId>bw-dav-tester</artifactId>
   <version>4.0.0-SNAPSHOT</version>
+  <name>Bedework: DAV tester</name>
   <description>A java version of the darwin DAV tester</description>
   <url>https://github.com/Bedework/bw-caldavTest</url>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<!-- Maven Plugin Versions -->
-		<maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
-		<maven.source.plugin.version>2.1.2</maven.source.plugin.version>
-
-		<!-- Bedework Versions -->
-    <bw-util.version>4.0.31</bw-util.version>
-    <bw-util-conf.version>4.1.4</bw-util-conf.version>
-    <bw-util-logging.version>5.0.1-SNAPSHOT</bw-util-logging.version>
-    <bw-util-network.version>4.1.4</bw-util-network.version>
-    <bw-util-tz.version>4.1.4</bw-util-tz.version>
-
-    <ical4j.groupId>org.bedework.ical4j</ical4j.groupId>
-    <ical4j.artifactId>ical4j</ical4j.artifactId>
-    <ical4j.version>3.0.16</ical4j.version>
-
-    <ical4j-vcard.version>1.0.8</ical4j-vcard.version>
-
-		<!-- Third Party Library Versions -->
-    <commons-lang3.version>3.3.2</commons-lang3.version>
-    <diff-utils.version>4.5</diff-utils.version>
-    <http-client.version>4.5.13</http-client.version>
-    <http-core.version>4.4.8</http-core.version>
-    <jackson.version>2.11.0</jackson.version>
-    <servlet-api.version>4.0.0</servlet-api.version>
-
-		<log4j.version>2.16.0</log4j.version>
-	</properties>
-
-  <organization>
-    <name>Bedework</name>
-    <url>https://github.com/Bedework</url>
-  </organization>
-
-  <licenses>
-    <license>
-      <name>Apache License Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
-    </license>
-  </licenses>
-
-  <scm>
-    <connection>scm:git:git@github.com:Bedework/bw-webdav.git</connection>
-    <developerConnection>scm:git:git@github.com:Bedework/bw-webdav.git</developerConnection>
-    <url>https://github.com/Bedework/bw-webdav</url>
-    <tag>HEAD</tag>
-  </scm>
-
-  <issueManagement>
-    <system>github</system>
-
-    <url>https://github.com/Bedework/bw-webdav/issues</url>
-  </issueManagement>
-
-  <developers>
-    <developer>
-      <name>Mike Douglass</name>
-      <organization>
-        Bedework Commercial Services
-      </organization>
-      <organizationUrl>https://bedework.com/</organizationUrl>
-    </developer>
-    <developer>
-      <name>Arlen Johnson</name>
-      <organization>
-        Spherical Cow Group
-      </organization>
-      <organizationUrl>http://sphericalcowgroup.com/</organizationUrl>
-    </developer>
-  </developers>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 
 	<dependencies>
 		<!-- Bedework Dependencies -->
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-args</artifactId>
-      <version>${bw-util.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-dav</artifactId>
-      <version>${bw-util-network.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-http</artifactId>
-      <version>${bw-util-network.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-logging</artifactId>
-      <version>${bw-util-logging.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-misc</artifactId>
-      <version>${bw-util.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-tz</artifactId>
-      <version>${bw-util-tz.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-util-xml</artifactId>
-      <version>${bw-util.version}</version>
     </dependency>
 
     <dependency>
       <groupId>${ical4j.groupId}</groupId>
       <artifactId>${ical4j.artifactId}</artifactId>
-      <version>${ical4j.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.bedework</groupId>
       <artifactId>bw-ical4j-vcard</artifactId>
-      <version>${ical4j-vcard.version}</version>
     </dependency>
 
 		<!-- Third Party Dependencies -->
@@ -150,146 +65,58 @@
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>${commons-lang3.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>${http-client.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>${http-core.version}</version>
     </dependency>
 
     <dependency>
       <groupId>io.github.java-diff-utils</groupId>
       <artifactId>java-diff-utils</artifactId>
-      <version>${diff-utils.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
-      <version>${log4j.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>${log4j.version}</version>
     </dependency>
 
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
-      <version>${servlet-api.version}</version>
     </dependency>
 	</dependencies>
 
 	<build>
-		<extensions>
-			<extension>
-				<groupId>org.apache.maven.wagon</groupId>
-				<artifactId>wagon-ssh</artifactId>
-				<version>2.9</version>
-			</extension>
-		</extensions>
 		<plugins>
-			<!-- Specify the compiler options and settings -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<showDeprecation>false</showDeprecation>
-					<showWarnings>false</showWarnings>
-				</configuration>
-			</plugin>
-			<!-- Produce source jars during the 'verify' phase -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>${maven.source.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>jar</goal>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <useReleaseProfile>false</useReleaseProfile>
-          <releaseProfiles>release</releaseProfiles>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.1.1</version>
-        <configuration>
-          <!--<additionalJOption>-Xdoclint:none</additionalJOption>-->
-          <failOnError>false</failOnError>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>appassembler-maven-plugin</artifactId>
-        <version>1.10</version>
-        <executions>
-          <execution>
-            <id>execution2</id>
-            <phase>package</phase>
-            <goals>
-              <goal>assemble</goal>
-            </goals>
-          </execution>
-        </executions>
+
         <configuration>
-          <!-- Set the target configuration directory to be used in the bin scripts -->
-          <configurationDirectory>conf</configurationDirectory>
-          <!-- Copy the contents from "/src/main/config" to the target
-               configuration directory in the assembled application -->
-          <copyConfigurationDirectory>true</copyConfigurationDirectory>
-          <!-- Include the target configuration directory in the beginning of
-               the classpath declaration in the bin scripts -->
-          <includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
           <!-- set alternative assemble directory -->
           <assembleDirectory>${project.build.directory}/davtest</assembleDirectory>
-          <!-- Extra JVM arguments that will be included in the bin scripts
-          <extraJvmArguments>-Xms128m</extraJvmArguments> -->
-          <!-- Generate bin scripts for windows and unix pr default -->
-          <repositoryLayout>flat</repositoryLayout>
-          <platforms>
-            <platform>windows</platform>
-            <platform>unix</platform>
-          </platforms>
           <programs>
             <program>
               <mainClass>org.bedework.davtester.Tester</mainClass>
@@ -301,76 +128,7 @@
 
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.5.3</version>
-        <executions>
-          <execution>
-            <id>davtest-assembly</id>
-            <phase>install</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptors>
-                <descriptor>src/assembly/davtest.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 		</plugins>
 	</build>
-
-  <profiles>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.2.1</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>3.1.1</version>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <additionalJOption>-Xdoclint:none</additionalJOption>
-              <failOnError>false</failOnError>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
