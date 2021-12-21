@@ -13,6 +13,13 @@
   <description>A java version of the darwin DAV tester</description>
   <url>https://github.com/Bedework/bw-caldavTest</url>
 
+  <scm>
+    <connection>scm:git:git@github.com:Bedework/bw-webdav.git</connection>
+    <developerConnection>scm:git:git@github.com:Bedework/bw-webdav.git</developerConnection>
+    <url>https://github.com/Bedework/bw-webdav</url>
+    <tag>HEAD</tag>
+  </scm>
+
 	<dependencies>
 		<!-- Bedework Dependencies -->
     <dependency>
