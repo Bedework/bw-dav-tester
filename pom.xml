@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.bedework</groupId>
     <artifactId>bedework-parent</artifactId>
-    <version>1-SNAPSHOT</version>
+    <version>7</version>
   </parent>
 
   <artifactId>bw-dav-tester</artifactId>
