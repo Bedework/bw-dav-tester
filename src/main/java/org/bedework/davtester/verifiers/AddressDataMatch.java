@@ -44,15 +44,16 @@ public class AddressDataMatch extends FileDataMatch {
                       final String respdata,
                       final KeyVals args,
                       final String filepath,
-                      final List<String> filters,
                       final String data) {
-    var card = Vcards.parse(respdata);
-    removePropertiesParameters(card, filters);
-    var cardStr = card.toString();
+    final var filters = args.getStrings("filter");
 
-    var dcard = Vcards.parse(data);
+    final var card = Vcards.parse(respdata);
+    removePropertiesParameters(card, filters);
+    final var cardStr = card.toString();
+
+    final var dcard = Vcards.parse(data);
     removePropertiesParameters(dcard, filters);
-    var dcardStr = dcard.toString();
+    final var dcardStr = dcard.toString();
 
     if (!card.equals(dcard)) {
       errorDiff(

@@ -30,14 +30,13 @@ import static org.bedework.davtester.Utils.fileToString;
 public abstract class FileDataMatch extends Verifier {
   public abstract List<Integer> expectedStatus(final KeyVals args);
 
-  public abstract void compare(final String ruri,
-                               final List<Header> responseHeaders,
-                               final int status,
-                               final String respdata,
-                               final KeyVals args,
-                               final String filepath,
-                               final List<String> filters,
-                               final String data);
+  public abstract void compare(String ruri,
+                               List<Header> responseHeaders,
+                               int status,
+                               String respdata,
+                               KeyVals args,
+                               String filepath,
+                               String data);
 
   @Override
   public VerifyResult verify(final String ruri,
@@ -52,7 +51,6 @@ public abstract class FileDataMatch extends Verifier {
     }
 
     var data = args.getOnlyString("data");
-    var filters = args.getStrings("filter");
 
     if (!expectedStatus(args).contains(status)) {
       fmsg("        HTTP Status Code Wrong: %d", status);
@@ -83,7 +81,7 @@ public abstract class FileDataMatch extends Verifier {
     data = manager.serverInfo.extrasubs(data);
 
     compare(ruri, responseHeaders, status, respdata, args,
-            filepath, filters, data);
+            filepath, data);
 
     return result;
   }

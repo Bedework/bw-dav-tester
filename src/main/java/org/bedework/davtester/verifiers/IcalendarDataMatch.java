@@ -55,8 +55,9 @@ public class IcalendarDataMatch extends FileDataMatch {
                       final String respdata,
                       final KeyVals args,
                       final String filepath,
-                      final List<String> filters,
                       final String data) {
+    final var filters = args.getStrings("filter");
+
     if (!featureSupported("EMAIL parameter")) {
       filters.add("ATTENDEE:EMAIL");
       filters.add("ORGANIZER:EMAIL");
@@ -68,9 +69,13 @@ public class IcalendarDataMatch extends FileDataMatch {
     // Prefix of ! indicates remove the filter - used to remove a default
 
     for (final var afilter: new ArrayList<>(filters)) {
-      if (afilter.startsWith("!")) {
-        filters.remove(afilter.substring(1));
+      if (!afilter.startsWith("!")) {
+        continue;
       }
+
+      // Remove the flagged filter
+      filters.remove(afilter.substring(1));
+      // Remove the negated one
       filters.remove(afilter);
     }
 

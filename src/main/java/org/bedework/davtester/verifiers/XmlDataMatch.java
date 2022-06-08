@@ -41,13 +41,14 @@ public class XmlDataMatch extends FileDataMatch {
                       final String respdata,
                       final KeyVals args,
                       final String filepath,
-                      final List<String> filters,
                       final String data) {
-    var nrespdata = normalizeXMLData(respdata, filters);
-    var ndata = normalizeXMLData(data, filters);
+    final var filters = args.getStrings("filter");
 
-    var diffs = NodeDiff.diff(nrespdata.getDocumentElement(),
-                              ndata.getDocumentElement());
+    final var nrespdata = normalizeXMLData(respdata, filters);
+    final var ndata = normalizeXMLData(data, filters);
+
+    final var diffs = NodeDiff.diff(nrespdata.getDocumentElement(),
+                                    ndata.getDocumentElement());
 
     if (!Util.isEmpty(diffs)) {
       errorDiff(diffs);

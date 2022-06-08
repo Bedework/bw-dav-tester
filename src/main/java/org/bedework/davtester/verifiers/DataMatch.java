@@ -42,7 +42,6 @@ public class DataMatch extends FileDataMatch {
                       final String respdata,
                       final KeyVals args,
                       final String filepath,
-                      final List<String> filters,
                       final String data) {
     if (data.equals(respdata)) {
       return;
